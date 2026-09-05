@@ -1,14 +1,62 @@
-import { HTMLTable, Icon } from '@blueprintjs/core';
+import { Icon } from '@blueprintjs/core';
 import { useModel } from '@umijs/max';
 import { Button, Select, Space, Tabs } from 'antd';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { api, number, type Row, timeOf } from '../../operator/api';
 import { ConfirmOperation } from '../../operator/ConfirmOperation';
-import { DataGrid } from '../../operator/DataGrid';
+import { DataGrid, type GridColumn } from '../../operator/DataGrid';
 import { valueLabel } from '../../operator/labels';
 import { MarketWorkspace } from '../../operator/MarketWorkspace';
+import { OrderBook, RecentTrades } from '../../operator/OrderBook';
 import { OrderTicket } from '../../operator/OrderTicket';
 import { useMarket } from '../../operator/useMarket';
+import { Watchlist } from '../../operator/Watchlist';
+
+const BARS = ['1m', '5m', '15m', '1H', '4H', '1D'];
+
+// Static column sets live at module scope so the memoized grids never see new props per tick.
+const FILL_COLUMNS: GridColumn[] = [
+  { key: 'fillTime', title: '时间', width: 105, render: timeOf },
+  { key: 'instId', title: '交易品种' },
+  { key: 'side', title: '方向', width: 90 },
+  { key: 'fillPx', title: '成交价', render: (value) => number(value, 6) },
+  { key: 'fillSz', title: '成交数量' },
+  { key: 'fee', title: '手续费' },
+  { key: 'feeCcy', title: '费用币种' },
+  { key: 'ordId', title: '订单号', width: 215 },
+];
+const ASSET_COLUMNS: GridColumn[] = [
+  { key: 'ccy', title: '币种' },
+  {
+    key: 'cashBal',
+    title: '余额',
+    width: 210,
+    render: (value) => number(value, 10),
+  },
+  {
+    key: 'availBal',
+    title: '可用',
+    width: 210,
+    render: (value) => number(value, 10),
+  },
+  { key: 'frozenBal', title: '冻结', render: (value) => number(value, 8) },
+  { key: 'upl', title: '浮动收益' },
+];
+const PAPER_COLUMNS: GridColumn[] = [
+  { key: 'instrument', title: '品种', width: 220 },
+  { key: 'quantity', title: '数量', render: (value) => number(value, 6) },
+  { key: 'averagePrice', title: '均价', render: (value) => number(value) },
+  { key: 'markPrice', title: '估值价格', render: (value) => number(value) },
+  {
+    key: 'unrealizedPnl',
+    title: '未实现 PnL',
+    render: (value) => (
+      <span className={value < 0 ? 'negative' : 'positive'}>
+        {number(value)}
+      </span>
+    ),
+  },
+];
 
 export default function Terminal() {
   const { account, paper, error } = useModel('operator');
@@ -25,6 +73,7 @@ export default function Terminal() {
       ...(paper?.positions || []).map((row: Row) =>
         row.instrument.replace('.OKX', ''),
       ),
+      instrument,
     ]),
   ];
   const ticker = market.ticker || {};
@@ -32,58 +81,42 @@ export default function Terminal() {
     ticker.last && ticker.open24h
       ? (Number(ticker.last) / Number(ticker.open24h) - 1) * 100
       : undefined;
-  const maxBook = Math.max(
-    1,
-    ...[...(market.book?.asks || []), ...(market.book?.bids || [])].map(
-      (row: string[]) => Number(row[1]),
-    ),
+  const cancelable = account.mode === 'demo';
+  const orderColumns = useMemo<GridColumn[]>(
+    () => [
+      { key: 'instId', title: '交易品种' },
+      { key: 'side', title: '方向', width: 90 },
+      { key: 'ordType', title: '类型', width: 100, render: valueLabel },
+      { key: 'px', title: '价格', render: (value) => number(value, 6) },
+      { key: 'sz', title: '委托数量' },
+      { key: 'accFillSz', title: '已成交' },
+      { key: 'state', title: '状态', render: valueLabel },
+      { key: 'ordId', title: '订单号', width: 215 },
+      {
+        key: 'action',
+        title: '操作',
+        width: 85,
+        render: (_, row) => (
+          <Button
+            type="text"
+            disabled={!cancelable}
+            onClick={() =>
+              void api('prepare', {
+                kind: 'mcp',
+                name: 'spot_cancel_order',
+                arguments: { instId: row.instId, ordId: row.ordId },
+              })
+                .then(setTicket)
+                .catch((reason) => setActionError(String(reason)))
+            }
+          >
+            撤单
+          </Button>
+        ),
+      },
+    ],
+    [cancelable],
   );
-  const orderColumns = [
-    { key: 'instId', title: '交易品种' },
-    { key: 'side', title: '方向', width: 90 },
-    { key: 'ordType', title: '类型', width: 100, render: valueLabel },
-    { key: 'px', title: '价格', render: (value: any) => number(value, 6) },
-    { key: 'sz', title: '委托数量' },
-    { key: 'accFillSz', title: '已成交' },
-    { key: 'state', title: '状态', render: valueLabel },
-    { key: 'ordId', title: '订单号', width: 215 },
-    {
-      key: 'action',
-      title: '操作',
-      width: 85,
-      render: (_: unknown, row: Row) => (
-        <Button
-          type="text"
-          disabled={account.mode !== 'demo'}
-          onClick={() =>
-            void api('prepare', {
-              kind: 'mcp',
-              name: 'spot_cancel_order',
-              arguments: { instId: row.instId, ordId: row.ordId },
-            })
-              .then(setTicket)
-              .catch((reason) => setActionError(String(reason)))
-          }
-        >
-          撤单
-        </Button>
-      ),
-    },
-  ];
-  const fillColumns = [
-    { key: 'fillTime', title: '时间', width: 105, render: timeOf },
-    { key: 'instId', title: '交易品种' },
-    { key: 'side', title: '方向', width: 90 },
-    {
-      key: 'fillPx',
-      title: '成交价',
-      render: (value: any) => number(value, 6),
-    },
-    { key: 'fillSz', title: '成交数量' },
-    { key: 'fee', title: '手续费' },
-    { key: 'feeCcy', title: '费用币种' },
-    { key: 'ordId', title: '订单号', width: 215 },
-  ];
   return (
     <div className="terminal-page">
       <section className="instrument-strip">
@@ -141,6 +174,7 @@ export default function Terminal() {
         </div>
       )}
       <div className="trading-grid">
+        <Watchlist selected={instrument} onSelect={setInstrument} />
         <section className="chart-panel panel">
           <div className="panel-heading">
             <div className="workspace-tabs">
@@ -151,7 +185,7 @@ export default function Terminal() {
           </div>
           <div className="chart-toolbar">
             <Space size={0}>
-              {['1m', '5m', '15m', '1H', '4H', '1D'].map((value) => (
+              {BARS.map((value) => (
                 <Button
                   key={value}
                   type={bar === value ? 'primary' : 'text'}
@@ -165,7 +199,11 @@ export default function Terminal() {
               <Icon icon="chart" size={13} /> K 线 · 成交量
             </span>
           </div>
-          <MarketWorkspace market={market} instrument={instrument} mode={mode} />
+          <MarketWorkspace
+            market={market}
+            instrument={instrument}
+            mode={mode}
+          />
           <div className="chart-status">
             <span>
               <span
@@ -181,66 +219,12 @@ export default function Terminal() {
             <strong>订单簿</strong>
             <span className="muted">5 档</span>
           </div>
-          <div className="book-labels">
-            <span>价格 (USDT)</span>
-            <span>数量</span>
-          </div>
-          {[...(market.book?.asks || [])].reverse().map((row: string[]) => (
-            <div
-              key={`ask-${row[0]}`}
-              className="book-row"
-              style={{
-                background: `linear-gradient(to left,#f05b6518 ${(Number(row[1]) / maxBook) * 100}%,transparent 0)`,
-              }}
-            >
-              <span className="negative">{number(row[0], 4)}</span>
-              <span>{number(row[1], 5)}</span>
-            </div>
-          ))}
-          <div className="book-mid">
-            {number(ticker.last || market.book?.bids?.[0]?.[0], 4)}{' '}
-            <span>USDT</span>
-          </div>
-          {(market.book?.bids || []).map((row: string[]) => (
-            <div
-              key={`bid-${row[0]}`}
-              className="book-row"
-              style={{
-                background: `linear-gradient(to left,#25b77d18 ${(Number(row[1]) / maxBook) * 100}%,transparent 0)`,
-              }}
-            >
-              <span className="positive">{number(row[0], 4)}</span>
-              <span>{number(row[1], 5)}</span>
-            </div>
-          ))}
+          <OrderBook book={market.book} last={ticker.last} />
           <div className="panel-heading latest-heading">
             <strong>最新成交</strong>
             <span className="muted">市场</span>
           </div>
-          <div className="latest-trades">
-            <HTMLTable compact>
-              <thead>
-                <tr>
-                  <th>价格</th>
-                  <th>数量</th>
-                  <th>时间</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(market.trades || []).slice(0, 18).map((row: Row) => (
-                  <tr key={row.tradeId}>
-                    <td
-                      className={row.side === 'buy' ? 'positive' : 'negative'}
-                    >
-                      {number(row.px, 4)}
-                    </td>
-                    <td>{number(row.sz, 5)}</td>
-                    <td>{timeOf(Number(row.ts))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </HTMLTable>
-          </div>
+          <RecentTrades trades={market.trades} />
         </section>
         <OrderTicket
           instrument={instrument}
@@ -262,36 +246,15 @@ export default function Terminal() {
             {
               key: 'fills',
               label: `成交 (${account.fills.length})`,
-              children: <DataGrid rows={account.fills} columns={fillColumns} />,
+              children: (
+                <DataGrid rows={account.fills} columns={FILL_COLUMNS} />
+              ),
             },
             {
               key: 'assets',
               label: '资产',
               children: (
-                <DataGrid
-                  rows={account.balances}
-                  columns={[
-                    { key: 'ccy', title: '币种' },
-                    {
-                      key: 'cashBal',
-                      title: '余额',
-                      width: 210,
-                      render: (value) => number(value, 10),
-                    },
-                    {
-                      key: 'availBal',
-                      title: '可用',
-                      width: 210,
-                      render: (value) => number(value, 10),
-                    },
-                    {
-                      key: 'frozenBal',
-                      title: '冻结',
-                      render: (value) => number(value, 8),
-                    },
-                    { key: 'upl', title: '浮动收益' },
-                  ]}
-                />
+                <DataGrid rows={account.balances} columns={ASSET_COLUMNS} />
               ),
             },
             {
@@ -304,33 +267,7 @@ export default function Terminal() {
                   </div>
                   <DataGrid
                     rows={paper?.positions || []}
-                    columns={[
-                      { key: 'instrument', title: '品种', width: 220 },
-                      {
-                        key: 'quantity',
-                        title: '数量',
-                        render: (value) => number(value, 6),
-                      },
-                      {
-                        key: 'averagePrice',
-                        title: '均价',
-                        render: (value) => number(value),
-                      },
-                      {
-                        key: 'markPrice',
-                        title: '估值价格',
-                        render: (value) => number(value),
-                      },
-                      {
-                        key: 'unrealizedPnl',
-                        title: '未实现 PnL',
-                        render: (value) => (
-                          <span className={value < 0 ? 'negative' : 'positive'}>
-                            {number(value)}
-                          </span>
-                        ),
-                      },
-                    ]}
+                    columns={PAPER_COLUMNS}
                   />
                 </>
               ),

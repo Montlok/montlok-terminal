@@ -1,0 +1,227 @@
+import { HTMLTable, Icon } from '@blueprintjs/core';
+import { useModel } from '@umijs/max';
+import { AutoComplete } from 'antd';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { api, dataOf, number, type Row, timeOf } from './api';
+import { usePoll } from './usePoll';
+import {
+  addSymbol,
+  loadWatchlist,
+  normalizeSymbol,
+  priceDigits,
+  removeSymbol,
+  saveWatchlist,
+  WATCHLIST_LIMIT,
+  type WatchRow,
+  watchRows,
+} from './watchlistModel';
+
+const POLL_MS = 5000;
+
+function query(name: string, args: Row): Promise<Row[]> {
+  return api('query', { kind: 'rest', name, arguments: args }).then(
+    (value) => dataOf(value) || [],
+  );
+}
+
+/** Live SPOT instrument ids, fetched once per page and shared by every watchlist. */
+let instrumentsCache: Promise<string[]> | undefined;
+function instruments(): Promise<string[]> {
+  instrumentsCache ||= query('GET /api/v5/public/instruments', {
+    instType: 'SPOT',
+  })
+    .then((rows) =>
+      rows.filter((row) => row.state === 'live').map((row) => row.instId),
+    )
+    .catch((error) => {
+      instrumentsCache = undefined;
+      throw error;
+    });
+  return instrumentsCache;
+}
+
+function formatChange(value?: number): string {
+  if (value === undefined) return '—';
+  return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+}
+
+const WatchTableRow = memo(function WatchTableRow({
+  row,
+  active,
+  onSelect,
+  onRemove,
+}: {
+  row: WatchRow;
+  active: boolean;
+  onSelect: (symbol: string) => void;
+  onRemove: (symbol: string) => void;
+}) {
+  const tone =
+    row.changePct === undefined
+      ? ''
+      : row.changePct < 0
+        ? 'negative'
+        : 'positive';
+  return (
+    <tr
+      className={active ? 'active' : undefined}
+      tabIndex={0}
+      aria-selected={active}
+      onClick={() => onSelect(row.symbol)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect(row.symbol);
+        }
+      }}
+    >
+      <td>{row.symbol.replace('-', '/')}</td>
+      <td className={tone}>{number(row.last, priceDigits(row.last))}</td>
+      <td className={tone}>{formatChange(row.changePct)}</td>
+      <td>
+        <button
+          type="button"
+          className="watch-remove"
+          aria-label={`移除 ${row.symbol}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove(row.symbol);
+          }}
+        >
+          <Icon icon="small-cross" size={12} />
+        </button>
+      </td>
+    </tr>
+  );
+});
+
+/**
+ * Persistent multi-instrument monitor. Polls one public ticker per symbol
+ * every 5 s while the tab is visible; clicking a row switches the terminal.
+ */
+export function Watchlist({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (symbol: string) => void;
+}) {
+  const { account } = useModel('operator');
+  const [symbols, setSymbols] = useState(loadWatchlist);
+  const [tickers, setTickers] = useState<Row[]>([]);
+  const [updatedAt, setUpdatedAt] = useState(0);
+  const [error, setError] = useState('');
+  const [draft, setDraft] = useState('');
+  const [candidates, setCandidates] = useState<string[]>([]);
+
+  const add = useCallback((value: string) => {
+    setSymbols((current) => {
+      const next = addSymbol(current, value);
+      if (next !== current) saveWatchlist(next);
+      return next;
+    });
+    setDraft('');
+  }, []);
+  const remove = useCallback((symbol: string) => {
+    setSymbols((current) => {
+      const next = removeSymbol(current, symbol);
+      saveWatchlist(next);
+      return next;
+    });
+  }, []);
+
+  const refresh = useCallback(
+    async (signal: AbortSignal) => {
+      const settled = await Promise.allSettled(
+        symbols.map((instId) => query('GET /api/v5/market/ticker', { instId })),
+      );
+      if (signal.aborted) return;
+      const fresh = settled.flatMap((item) =>
+        item.status === 'fulfilled' ? item.value : [],
+      );
+      const failure = settled.find(
+        (item): item is PromiseRejectedResult => item.status === 'rejected',
+      );
+      setTickers(fresh);
+      setUpdatedAt(Date.now());
+      setError(
+        failure ? String(failure.reason?.message || failure.reason) : '',
+      );
+    },
+    [symbols],
+  );
+  usePoll(refresh, POLL_MS, symbols.length > 0);
+
+  const rows = useMemo(() => watchRows(symbols, tickers), [symbols, tickers]);
+  const options = useMemo(() => {
+    const needle = draft.trim().toUpperCase().replace('/', '-');
+    if (!needle) return [];
+    return candidates
+      .filter((id) => id.includes(needle) && !symbols.includes(id))
+      .slice(0, 20)
+      .map((value) => ({ value, label: value.replace('-', '/') }));
+  }, [candidates, draft, symbols]);
+
+  return (
+    <section className="watch-panel panel">
+      <div className="panel-heading">
+        <strong>自选</strong>
+        <span className="muted">
+          {symbols.length}/{WATCHLIST_LIMIT} ·{' '}
+          {account.mode === 'demo' ? '模拟盘' : '实盘'}
+        </span>
+      </div>
+      <div className="watch-add">
+        <AutoComplete
+          aria-label="添加自选"
+          value={draft}
+          options={options}
+          placeholder="添加品种，如 SOL-USDT"
+          disabled={symbols.length >= WATCHLIST_LIMIT}
+          onFocus={() => {
+            if (!candidates.length)
+              instruments()
+                .then(setCandidates)
+                .catch(() => undefined);
+          }}
+          onChange={setDraft}
+          onSelect={add}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && normalizeSymbol(draft)) add(draft);
+          }}
+        />
+      </div>
+      {rows.length ? (
+        <HTMLTable compact interactive className="watch-table">
+          <thead>
+            <tr>
+              <th>品种</th>
+              <th>最新价</th>
+              <th>24h</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <WatchTableRow
+                key={row.symbol}
+                row={row}
+                active={row.symbol === selected}
+                onSelect={onSelect}
+                onRemove={remove}
+              />
+            ))}
+          </tbody>
+        </HTMLTable>
+      ) : (
+        <div className="empty-state" style={{ minHeight: 80 }}>
+          暂无自选，请在上方添加
+        </div>
+      )}
+      <div className={`watch-footer ${error ? 'negative' : 'muted'}`}>
+        {error ||
+          (updatedAt ? `更新 ${timeOf(updatedAt)} · 每 5 秒` : '等待行情')}
+      </div>
+    </section>
+  );
+}
