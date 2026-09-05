@@ -1,161 +1,61 @@
-Language : [English](./README.md) | 简体中文
+# Montlok 交易操作台
 
-<h1 align="center">Ant Design Pro</h1>
+Weilan（NautilusTrader）引擎的交易 / 运维前端，以 OKX 为主。
+技术栈：React 19 · Umi Max 4 · antd 6 + ProComponents（导航、表单）· Blueprint 6
+（高密度表格）· TradingView lightweight-charts（K 线）。后端是 `server/` 中的 aiohttp
+桥接服务（会话、CSRF、凭据保险库、OKX REST/WS 转发、模拟引擎快照）。
+第三方来源见 [UPSTREAM.md](./UPSTREAM.md)，设计约定见 [DESIGN.md](./DESIGN.md)，
+生产加固记录见 [SECURITY_DEPLOYMENT.md](./SECURITY_DEPLOYMENT.md)。
 
-<div align="center">
+语言：[English](./README.md) | 简体中文
 
-开箱即用的中台前端/设计解决方案。
+## 常用命令
 
-[![CI](https://github.com/ant-design/ant-design-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/ant-design/ant-design-pro/actions/workflows/ci.yml)
-[![GitHub release](https://img.shields.io/github/v/release/ant-design/ant-design-pro.svg)](https://github.com/ant-design/ant-design-pro/releases)
-[![Build With Utoo](https://img.shields.io/badge/build%20with-utoo-028fe4.svg)](https://utoo.land)
-[![Build With Umi](https://img.shields.io/badge/build%20with-umi-028fe4.svg)](https://umijs.org/)
-[![Checked with Biome](https://img.shields.io/badge/Checked_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev)
-[![Ant Design](https://badgen.net/badge/icon/Ant%20Design?icon=https://gw.alipayobjects.com/zos/antfincdn/Pp4WPgVDB3/KDpgvguMpGfqaHPjicRK.svg&label)](https://ant.design/)
+| 任务 | 命令 |
+| --- | --- |
+| 首次检出 | `npm ci && npx max setup`（生成 `src/.umi`，否则 `@umijs/max` 类型缺失） |
+| 开发服务器（`/api` 代理到 `127.0.0.1:18081`） | `npm run dev` |
+| Lint + 类型检查 | `npm run lint`（`biome lint` + `tsc`）、`npx antd lint ./src` |
+| 自动格式化 | `npm run biome` |
+| 单元测试 | `npm run test`（Vitest，happy-dom） |
+| 生产构建 | `npm run build` → `dist/`（由 `server/app.py --static-dir` 提供） |
+| 后端测试 | `cd server && python -m pytest tests` |
 
-![](https://github.com/user-attachments/assets/fde29061-3d9a-4397-8ac2-397b0e033ef5)
+Node ≥ 22，只使用 `package-lock.json`。提交信息需符合 Conventional Commits（commitlint 强制）。
 
-</div>
-
-- 预览：https://preview.pro.ant.design
-- 使用文档：[docs/cheatsheet.zh-CN.md](./docs/cheatsheet.zh-CN.md)
-- 更新日志: https://github.com/ant-design/ant-design-pro/releases
-- 常见问题：[docs/cheatsheet.zh-CN.md#faq](./docs/cheatsheet.zh-CN.md#faq)
-- **v6 正式发布！** — [查看 v6 更新内容](https://github.com/ant-design/ant-design-pro/releases/tag/v6.0.0)
-
-## 特性
-
-- :bulb: **TypeScript**: 应用程序级 JavaScript 的语言
-- :scroll: **区块**: 通过区块模板快速构建页面
-- :gem: **优雅美观**：基于 [Ant Design 6](https://ant.design/) 体系精心设计
-- :triangular_ruler: **常见设计模式**：提炼自中后台应用的典型页面和场景
-- :rocket: **最新技术栈**：使用 React 19/[Umi Max 4](https://umijs.org/)/[antd 6](https://ant.design/)/[utoopack](https://utoo.land) 等前端前沿技术开发
-- :iphone: **响应式**：针对不同屏幕大小设计
-- :art: **主题**：基于 [Tailwind CSS v4](https://tailwindcss.com/) + [antd-style](https://github.com/ant-design/antd-style) 的可配置主题满足多样化品牌诉求
-- :globe_with_meridians: **国际化**：内建业界通用的国际化方案
-- :gear: **最佳实践**：良好的工程实践助您持续产出高质量代码
-- :1234: **Mock 数据**：实用的本地数据调试方案
-- :robot: **AI 助手**：内置 AI 聊天助手页面，基于 [Ant Design X](https://x.ant.design/)
-- :white_check_mark: **UI 测试**：自动化测试保障前端产品质量
-
-## 模板
+## 目录结构
 
 ```
-- 欢迎页
-- Dashboard
-  - 分析页
-  - 监控页
-  - 工作台
-- 表单页
-  - 基础表单页
-  - 分步表单页
-  - 高级表单页
-- 列表页
-  - 搜索列表（文章/项目/应用）
-  - 查询表格
-  - 标准列表
-  - 卡片列表
-- 详情页
-  - 基础详情页
-  - 高级详情页
-- 结果
-  - 成功页
-  - 失败页
-- 异常
-  - 403 无权限
-  - 404 找不到
-  - 500 服务器出错
-- 用户
-  - 用户中心页
-  - 用户设置页
-- AI 助手
-- 账户
-  - 登录
-  - 注册
-  - 注册成功
+config/        Umi 配置；路由由 src/operator/navigation.ts 生成
+src/app.tsx    运行时布局、antd 暗色主题、会话初始化（getInitialState）
+src/models/    useModel('operator')：账户、模拟盘、连接、目录、SSE /api/events
+src/operator/  共享组件与纯逻辑（见下）
+src/pages/     每个路由一个目录：Terminal、Account、ApiWorkbench、Engine、
+               Server、Connections、Operations、OperatorLogin、exception/404
+src/locales/   仅 zh-CN（只有 404 页使用 useIntl）
+server/        aiohttp 桥接、OKX 目录（server/catalog/*.json）、systemd 单元、测试
 ```
 
-## 使用
+`src/operator/`：
 
-### 开始使用
+- `api.ts` — 同源 `fetch`，处理会话 / CSRF；`dataOf`、`number`、`timeOf` 格式化。
+- `useMarket.ts` + `marketBuffer.ts` — 每个品种一条 WebSocket，帧合并后每 50 ms 刷一次。
+- `MarketChart.tsx`、`DepthChart.tsx`、`OrderBook.tsx`、`DataGrid.tsx`、`OrderTicket.tsx` — memo 化组件；一次行情 tick 只重绘数据变化的组件。
+- `Watchlist.tsx` + `watchlistModel.ts` + `usePoll.ts` — 持久化多品种监控（localStorage `operator.watchlist`，标签页可见时每 5 秒轮询）。
+- `indicators.ts` — 均线与累计深度（纯函数，有单元测试）。
+- `theme.css` — 全部暗色配色通过 `--op-*` 变量；终端 4/3/2/1 列自适应网格。
 
-克隆或下载本项目到本地：
+## 约定
 
-```bash
-git clone --depth=1 https://github.com/ant-design/ant-design-pro.git myapp
-cd myapp
-```
+- 纯逻辑放在 `*Model.ts` / `indicators.ts` / `marketBuffer.ts`，旁边配 `*.test.ts`；组件保持薄且 memo 化。
+- 只读交易所查询走 `POST /api/query`；所有写操作走 `prepare` → `ConfirmOperation`。实盘连接由服务端策略强制只读。
+- 只展示真实交易所数据；缺失数据显示明确的 “—” / 不可用状态。
+- 路由组件路径在 Linux 上区分大小写（`./Account` ↔ `src/pages/Account/`）。
+- 不要手改 `src/services/ant-design-pro/`（自动生成）。只用 Biome，不用 ESLint / Prettier。
+- 使用不熟悉的 antd API 前先 `npx antd info <Component>`。
 
-### 安装依赖
+## 部署
 
-```bash
-npm install
-```
-
-### 开发
-
-```bash
-# 启动开发服务器（默认为完整版）
-npm start
-```
-
-### 精简为简单版本
-
-本项目默认包含所有区块。如果你需要一个最小化的版本，运行：
-
-```bash
-npm run simple
-```
-
-这将会：
-- 删除多余的页面目录（dashboard、form、list/*、profile、result、exception、account 等）
-- 删除多余的 mock 文件
-- 替换路由为简单版本
-- 从 package.json 中移除多余的依赖
-
-**注意**：此操作不可逆，将永久删除文件。
-
-### 构建
-
-```bash
-npm run build
-```
-
-更多信息请参考 [使用文档](./docs/cheatsheet.zh-CN.md)。
-
-## AI Skills（Claude Code）
-
-本项目内置了两个 [Claude Code Skills](https://docs.anthropic.com/en/docs/claude-code/skills)，位于 `.claude/skills/` 目录下：
-
-| Skill | 触发词 | 说明 |
-|---|---|---|
-| `/pro-upgrade` | "升级"、"upgrade pro"、"update to latest" | 自动升级到最新 Ant Design Pro 版本。对比最新模板差异，合并框架变更并保留业务代码。 |
-| `/antd` | antd 相关代码或问题 | 查询 antd 组件 API、props、token、demo；检查废弃用法；跨版本迁移 — 基于 `@ant-design/cli`。 |
-
-**在 Claude Code 中使用：**
-
-```bash
-# 升级项目到最新 Pro 版本
-/pro-upgrade
-
-# 查询 antd 组件信息、调试问题、运行 lint 等
-/antd
-```
-
-> 💡 如果你的项目是从本仓库克隆的，这些 skill 已经内置，无需额外安装。如需获取最新 skill 定义，可以从模板拉取更新或运行 `npx skills add ant-design/ant-design-pro` 刷新。
-
-## 支持环境
-
-现代浏览器。
-
-| [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" alt="Edge" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Edge | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" alt="Firefox" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" alt="Safari" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Safari |
-| --- | --- | --- | --- |
-| Edge | last 2 versions | last 2 versions | last 2 versions |
-
-## 参与贡献
-
-我们非常欢迎你的贡献，你可以通过以下方式和我们一起共建 :smiley:：
-
-- 在你的公司或个人项目中使用 Ant Design Pro。
-- 通过 [Issue](http://github.com/ant-design/ant-design-pro/issues) 报告 bug 或进行咨询。
-- 提交 [Pull Request](http://github.com/ant-design/ant-design-pro/pulls) 改进 Pro 的代码。
+`npm run build` 后把 `dist/` 复制到主机的 `--static-dir`，用提供的 systemd 单元
+（`server/nautilus-operator-terminal.service`）运行 `server/app.py`，前置 Nginx TLS，
+详见 [SECURITY_DEPLOYMENT.md](./SECURITY_DEPLOYMENT.md)。前端构建产物中永远不包含交易所凭据。

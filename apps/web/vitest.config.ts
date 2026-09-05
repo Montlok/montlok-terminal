@@ -14,14 +14,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setupTests.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    // Exclude Umi integration tests that depend on @umijs/max test infrastructure
-    // These require Umi's Jest runner and cannot be used with Vitest directly
-    exclude: [
-      'src/pages/user/login/login.test.tsx',
-      'node_modules',
-      'dist',
-      '.umi',
-    ],
+    exclude: ['node_modules', 'dist', '.umi'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

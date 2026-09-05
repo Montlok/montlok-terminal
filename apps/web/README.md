@@ -1,164 +1,65 @@
-<h1 align="center">Ant Design Pro</h1>
+# Montlok operator terminal
 
-<div align="center">
-
-An out-of-box UI solution for enterprise applications as a React boilerplate.
-
-[![CI](https://github.com/ant-design/ant-design-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/ant-design/ant-design-pro/actions/workflows/ci.yml)
-[![GitHub release](https://img.shields.io/github/v/release/ant-design/ant-design-pro.svg)](https://github.com/ant-design/ant-design-pro/releases)
-[![Build With Utoo](https://img.shields.io/badge/build%20with-utoo-028fe4.svg)](https://utoo.land)
-[![Build With Umi](https://img.shields.io/badge/build%20with-umi-028fe4.svg)](https://umijs.org/)
-[![Checked with Biome](https://img.shields.io/badge/Checked_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev)
-[![Ant Design](https://badgen.net/badge/icon/Ant%20Design?icon=https://gw.alipayobjects.com/zos/antfincdn/Pp4WPgVDB3/KDpgvguMpGfqaHPjicRK.svg&label)](https://ant.design/)
+Trading and operations UI for the Weilan (NautilusTrader) engine, OKX first.
+React 19 · Umi Max 4 · antd 6 + ProComponents (navigation, forms) · Blueprint 6
+(dense tables) · TradingView lightweight-charts (K lines). The backend is the
+aiohttp bridge in `server/` (sessions, CSRF, credential vault, OKX REST/WS relay,
+paper-engine snapshot). Provenance of vendored code: [UPSTREAM.md](./UPSTREAM.md).
+Design contract: [DESIGN.md](./DESIGN.md). Production hardening record:
+[SECURITY_DEPLOYMENT.md](./SECURITY_DEPLOYMENT.md).
 
 Language: English | [简体中文](./README.zh-CN.md)
 
-<img width="1718" height="1191" alt="light theme preview" src="https://github.com/user-attachments/assets/74ad0b4a-e086-4955-8edd-9f2cff31aee8" />
-<img width="1718" height="1191" alt="dark theme preview" src="https://github.com/user-attachments/assets/d4bcb7c1-42c7-4c0f-b130-1193a931f9f7" />
+## Commands
 
-</div>
+| Task | Command |
+| --- | --- |
+| First checkout | `npm ci && npx max setup` (generates `src/.umi`, required for `@umijs/max` types) |
+| Dev server (proxies `/api` to `127.0.0.1:18081`) | `npm run dev` |
+| Lint + type-check | `npm run lint` (`biome lint` + `tsc`), `npx antd lint ./src` |
+| Auto-format | `npm run biome` |
+| Unit tests | `npm run test` (Vitest, happy-dom) |
+| Production build | `npm run build` → `dist/` (served by `server/app.py --static-dir`) |
+| Backend tests | `cd server && python -m pytest tests` |
 
-- Preview: https://preview.pro.ant.design
-- Documentation: [docs/cheatsheet.en-US.md](./docs/cheatsheet.en-US.md)
-- ChangeLog: https://github.com/ant-design/ant-design-pro/releases
-- FAQ: [docs/cheatsheet.en-US.md#faq](./docs/cheatsheet.en-US.md#faq)
-- **v6 Released!** — [What's new in v6](https://github.com/ant-design/ant-design-pro/releases/tag/v6.0.0)
+Node ≥ 22, `package-lock.json` only. Conventional commits are enforced by commitlint.
 
-## Features
-
-- :bulb: **TypeScript**: A language for application-scale JavaScript
-- :scroll: **Blocks**: Build page with block template
-- :gem: **Neat Design**: Built on [Ant Design 6](https://ant.design/) specification
-- :triangular_ruler: **Common Templates**: Typical templates for enterprise applications
-- :rocket: **State of The Art Development**: Newest development stack of React 19/[Umi Max 4](https://umijs.org/)/[antd 6](https://ant.design/)/[utoopack](https://utoo.land)
-- :iphone: **Responsive**: Designed for variable screen sizes
-- :art: **Theming**: Customizable theme with [Tailwind CSS v4](https://tailwindcss.com/) + [antd-style](https://github.com/ant-design/antd-style)
-- :globe_with_meridians: **International**: Built-in i18n solution
-- :gear: **Best Practices**: Solid workflow to make your code healthy
-- :1234: **Mock development**: Easy to use mock development solution
-- :robot: **AI Assistant**: Built-in AI chatbot page powered by [Ant Design X](https://x.ant.design/)
-- :white_check_mark: **UI Test**: Fly safely with unit and e2e tests
-
-## Templates
+## Layout
 
 ```
-- Welcome
-- Dashboard
-  - Analysis
-  - Monitor
-  - Workplace
-- Form
-  - Basic Form
-  - Step Form
-  - Advanced Form
-- List
-  - Search List (Articles/Projects/Applications)
-  - Table List
-  - Basic List
-  - Card List
-- Profile
-  - Basic Profile
-  - Advanced Profile
-- Result
-  - Success
-  - Fail
-- Exception
-  - 403
-  - 404
-  - 500
-- Account
-  - Account Center
-  - Account Settings
-- AI Assistant
-- User
-  - Login
-  - Register
-  - Register Result
+config/        Umi config; routes are generated from src/operator/navigation.ts
+src/app.tsx    runtime layout, dark antd theme, session bootstrap (getInitialState)
+src/models/    useModel('operator'): account, paper, profiles, catalog, SSE /api/events
+src/operator/  shared widgets and pure logic (see below)
+src/pages/     one directory per route: Terminal, Account, ApiWorkbench, Engine,
+               Server, Connections, Operations, OperatorLogin, exception/404
+src/locales/   zh-CN only (the 404 page is the only useIntl consumer)
+server/        aiohttp bridge, OKX catalog (server/catalog/*.json), systemd unit, tests
 ```
 
-## Usage
+`src/operator/`:
 
-### Get Started
+- `api.ts` — same-origin `fetch` with session/CSRF handling; `dataOf`, `number`, `timeOf` formatters.
+- `useMarket.ts` + `marketBuffer.ts` — one WebSocket per instrument, frames coalesced and flushed every 50 ms.
+- `MarketChart.tsx`, `DepthChart.tsx`, `OrderBook.tsx`, `DataGrid.tsx`, `OrderTicket.tsx` — memoized widgets; a tick only re-renders the widget whose data changed.
+- `Watchlist.tsx` + `watchlistModel.ts` + `usePoll.ts` — persistent multi-instrument monitor (localStorage `operator.watchlist`, 5 s polling only while the tab is visible).
+- `indicators.ts` — moving averages and cumulative depth (pure, unit-tested).
+- `theme.css` — the whole dark palette via `--op-*` tokens and the 4/3/2/1-column terminal grid.
 
-Clone or download this repository to your local machine:
+## Conventions
 
-```bash
-git clone --depth=1 https://github.com/ant-design/ant-design-pro.git myapp
-cd myapp
-```
+- Pure logic lives in `*Model.ts` / `indicators.ts` / `marketBuffer.ts` and has a
+  `*.test.ts` next to it; components stay thin and memoized.
+- Read-only exchange calls go through `POST /api/query`; every write goes through
+  `prepare` → `ConfirmOperation`. Live profiles are read-only by server policy.
+- Real exchange values only; missing data renders an explicit "—" / unavailable state.
+- Route component paths are case-sensitive on Linux (`./Account` ↔ `src/pages/Account/`).
+- Never edit `src/services/ant-design-pro/` by hand (generated). Biome only — no ESLint/Prettier.
+- Run `npx antd info <Component>` before using an unfamiliar antd API.
 
-### Installation
+## Deployment
 
-```bash
-npm install
-```
-
-### Development
-
-```bash
-# Start development server (full version by default)
-npm start
-```
-
-### Simplify to Simple Version
-
-This project includes all blocks by default. If you need a minimal version, run:
-
-```bash
-npm run simple
-```
-
-This will:
-- Remove extra page directories (dashboard, form, list/*, profile, result, exception, account, etc.)
-- Remove extra mock files
-- Replace routes with simple version
-- Remove extra dependencies from package.json
-
-**Note**: This operation is irreversible and will permanently delete files.
-
-### Build
-
-```bash
-npm run build
-```
-
-## AI Skills (Claude Code)
-
-This project ships with two built-in [Claude Code Skills](https://docs.anthropic.com/en/docs/claude-code/skills) in `.claude/skills/`:
-
-| Skill | Trigger | Description |
-|---|---|---|
-| `/pro-upgrade` | "upgrade pro", "update to latest" | Auto-upgrade to the latest Ant Design Pro version. Diffs the latest template, merges framework changes while preserving your business code. |
-| `/antd` | antd-related code or questions | Query antd component APIs, props, tokens, demos; lint for deprecated usage; migrate between versions — all via `@ant-design/cli`. |
-
-**Usage in Claude Code:**
-
-```bash
-# Upgrade the project to latest Pro version
-/pro-upgrade
-
-# Query antd component info, debug issues, run lint, etc.
-/antd
-```
-
-> 💡 If your project was cloned from this repo, these skills are already included — no installation needed. To get the latest skill definitions, pull the updates from the template or run `npx skills add ant-design/ant-design-pro` to refresh them.
-
-## Browsers support
-
-Modern browsers.
-
-| [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" alt="Edge" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Edge | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" alt="Firefox" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" alt="Safari" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Safari |
-| --- | --- | --- | --- |
-| Edge | last 2 versions | last 2 versions | last 2 versions |
-
-## Contributing
-
-Any type of contribution is welcome, here are some examples of how you may contribute to this project:
-
-- Use Ant Design Pro in your daily work.
-- Submit [issues](http://github.com/ant-design/ant-design-pro/issues) to report bugs or ask questions.
-- Propose [pull requests](http://github.com/ant-design/ant-design-pro/pulls) to improve our code.
-
-<a href="https://openomy.app/github/ant-design/ant-design-pro" target="_blank" style="display: block; width: 100%;" align="center">
-  <img src="https://openomy.app/svg?repo=ant-design/ant-design-pro&chart=bubble&latestMonth=3" target="_blank" alt="Contribution Leaderboard" style="display: block; width: 100%;" />
-</a>
+Build with `npm run build`, copy `dist/` to the host's `--static-dir`, and run
+`server/app.py` under the provided systemd unit (`server/nautilus-operator-terminal.service`)
+behind Nginx TLS as described in [SECURITY_DEPLOYMENT.md](./SECURITY_DEPLOYMENT.md).
+No exchange credentials are ever part of the frontend build.
