@@ -1,4 +1,5 @@
 import { Cell, Column, Table } from '@blueprintjs/table';
+import { memo } from 'react';
 import type { Row } from './api';
 export type GridColumn = {
   key: string;
@@ -6,7 +7,8 @@ export type GridColumn = {
   width?: number;
   render?: (value: any, row: Row) => React.ReactNode;
 };
-export function DataGrid({
+/** Blueprint table; memoized so market ticks do not re-render the blotter. */
+export const DataGrid = memo(function DataGrid({
   rows,
   columns,
   height = 260,
@@ -50,4 +52,4 @@ export function DataGrid({
       </Table>
     </div>
   );
-}
+});

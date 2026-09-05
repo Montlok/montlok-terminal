@@ -1,16 +1,44 @@
 import {
+  type CandlestickData,
   CandlestickSeries,
   ColorType,
   createChart,
+  type HistogramData,
   HistogramSeries,
-  LineSeries,
   type IChartApi,
   type ISeriesApi,
+  type LineData,
+  LineSeries,
   type UTCTimestamp,
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
 import type { Row } from './api';
-import { movingAverage } from './indicators';
+import { lastMovingAverage, movingAverage } from './indicators';
+
+const AVERAGES = [
+  { period: 20, color: '#d3ad59' },
+  { period: 60, color: '#9c83cb' },
+];
+
+type Stamp = UTCTimestamp;
+
+function bar(row: Row): CandlestickData<Stamp> {
+  return {
+    time: row.time as Stamp,
+    open: row.open,
+    high: row.high,
+    low: row.low,
+    close: row.close,
+  };
+}
+
+function bucket(row: Row): HistogramData<Stamp> {
+  return {
+    time: row.time as Stamp,
+    value: row.volume,
+    color: row.close >= row.open ? '#25b77d66' : '#f05b6566',
+  };
+}
 
 export function MarketChart({
   candles,
@@ -65,7 +93,15 @@ export function MarketChart({
       priceFormat: { type: 'volume' },
       priceScaleId: 'volume',
     });
-    lines.current = ['#d3ad59','#9c83cb'].map(color=>instance.addSeries(LineSeries,{color,lineWidth:1,priceLineVisible:false,lastValueVisible:false,visible:averages}));
+    lines.current = AVERAGES.map(({ color }) =>
+      instance.addSeries(LineSeries, {
+        color,
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        visible: averages,
+      }),
+    );
     instance
       .priceScale('volume')
       .applyOptions({ scaleMargins: { top: 0.8, bottom: 0 }, visible: false });
@@ -74,45 +110,38 @@ export function MarketChart({
       chart.current = undefined;
       price.current = undefined;
       volume.current = undefined;
-      lines.current=[];
+      lines.current = [];
     };
   }, []);
   useEffect(() => {
-    history.current=candles;
-    [20,60].forEach((period,index)=>lines.current[index]?.setData(movingAverage(candles,period) as any));
-    price.current?.setData(
-      candles.map((row) => ({ ...row, time: row.time as UTCTimestamp })) as any,
-    );
-    volume.current?.setData(
-      candles.map((row) => ({
-        time: row.time as UTCTimestamp,
-        value: row.volume,
-        color: row.close >= row.open ? '#25b77d66' : '#f05b6566',
-      })),
-    );
+    // Private copy: live ticks mutate it in place without touching React state.
+    history.current = [...candles];
+    AVERAGES.forEach(({ period }, index) => {
+      lines.current[index]?.setData(
+        movingAverage(candles, period) as LineData<Stamp>[],
+      );
+    });
+    price.current?.setData(candles.map(bar));
+    volume.current?.setData(candles.map(bucket));
     lastTime.current = candles.at(-1)?.time || 0;
     chart.current?.timeScale().fitContent();
   }, [candles]);
   useEffect(() => {
     if (!candle || candle.time < lastTime.current) return;
-    price.current?.update({
-      ...candle,
-      time: candle.time as UTCTimestamp,
-    } as any);
-    volume.current?.update({
-      time: candle.time as UTCTimestamp,
-      value: candle.volume,
-      color: candle.close >= candle.open ? '#25b77d66' : '#f05b6566',
-    });
+    price.current?.update(bar(candle));
+    volume.current?.update(bucket(candle));
     lastTime.current = candle.time;
-    const rows=history.current;
-    history.current = rows.at(-1)?.time===candle.time ? [...rows.slice(0,-1),candle] : [...rows,candle];
-    [20,60].forEach((period,index)=>{
-      const last=movingAverage(history.current,period).at(-1);
-      if(last) lines.current[index]?.update(last as any);
+    const rows = history.current;
+    if (rows.at(-1)?.time === candle.time) rows[rows.length - 1] = candle;
+    else rows.push(candle);
+    AVERAGES.forEach(({ period }, index) => {
+      const point = lastMovingAverage(rows, period);
+      if (point) lines.current[index]?.update(point as LineData<Stamp>);
     });
   }, [candle]);
-  useEffect(()=>{lines.current.forEach(line=>line.applyOptions({visible:averages}));},[averages]);
+  useEffect(() => {
+    for (const line of lines.current) line.applyOptions({ visible: averages });
+  }, [averages]);
   return (
     <div
       className="market-chart"

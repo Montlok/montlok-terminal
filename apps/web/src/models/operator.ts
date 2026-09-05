@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import restMetadata from '../../server/catalog/okx_rest_endpoints.json';
 import { api, ensureSession, type Row } from '../operator/api';
-
-const routeMetadata = new Map(
-  (restMetadata as Row[]).map((route) => [
-    `${route.method} ${route.path}`,
-    route,
-  ]),
-);
 
 export default function useOperator() {
   const [account, setAccount] = useState<Row>({
@@ -30,8 +22,11 @@ export default function useOperator() {
       await Promise.all([
         api('account').then(setAccount),
         api('paper').then(setPaper),
-        api('profiles').then(connections => {setProfiles(connections.profiles); setEpoch(connections.epoch);}),
-        api('catalog').then(directory => setCatalog({...directory, routes:directory.routes.map((route:Row) => ({...routeMetadata.get(route.name), ...route}))})),
+        api('profiles').then((connections) => {
+          setProfiles(connections.profiles);
+          setEpoch(connections.epoch);
+        }),
+        api('catalog').then(setCatalog),
       ]);
       setError('');
     } catch (reason) {

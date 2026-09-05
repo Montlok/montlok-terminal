@@ -1,10 +1,11 @@
 import { useModel } from '@umijs/max';
 import { Alert, Button, Form, Input, Segmented } from 'antd';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { api, number, type Row } from './api';
 import { ConfirmOperation } from './ConfirmOperation';
 
-export function OrderTicket({
+/** Memoized: only a changed last price or instrument re-renders the ticket, not every book frame. */
+export const OrderTicket = memo(function OrderTicket({
   instrument,
   last,
   marketMode,
@@ -185,4 +186,4 @@ export function OrderTicket({
       />
     </aside>
   );
-}
+});
