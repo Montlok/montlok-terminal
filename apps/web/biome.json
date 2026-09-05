@@ -16,6 +16,7 @@
       "!**/src/services",
       "!**/mock",
       "!**/dist",
+      "!**/.turbopack",
       "!**/server",
       "!**/public",
       "!**/coverage",
