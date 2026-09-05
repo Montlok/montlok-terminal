@@ -10,8 +10,12 @@ export class MarketBuffer {
     this.tradesChanged = true;
   }
   drain(): Row | undefined {
-    if (!Object.keys(this.pending).length && !this.tradesChanged) return undefined;
-    const batch = {...this.pending, ...(this.tradesChanged ? {trades:this.trades} : {})};
+    if (!Object.keys(this.pending).length && !this.tradesChanged)
+      return undefined;
+    const batch = {
+      ...this.pending,
+      ...(this.tradesChanged ? { trades: this.trades } : {}),
+    };
     this.pending = {};
     this.tradesChanged = false;
     return batch;

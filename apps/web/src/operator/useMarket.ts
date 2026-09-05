@@ -32,16 +32,20 @@ export function useMarket(
     });
     setCandles([]);
     setCandle(undefined);
-    void api(`market/snapshot?${parameters}`).then(snapshot => {
-      if (disposed || current !== generation.current) return;
-      // Streaming data wins if it arrived while the bootstrap request was in flight.
-      setState(value => ({...snapshot, ...value,
-        ticker: value.ticker?.last ? value.ticker : snapshot.ticker,
-        book: value.book?.bids?.length ? value.book : snapshot.book,
-        trades: value.trades?.length ? value.trades : snapshot.trades,
-      }));
-      if (!buffer.trades.length) buffer.appendTrades(snapshot.trades || []);
-    }).catch(() => {});
+    void api(`market/snapshot?${parameters}`)
+      .then((snapshot) => {
+        if (disposed || current !== generation.current) return;
+        // Streaming data wins if it arrived while the bootstrap request was in flight.
+        setState((value) => ({
+          ...snapshot,
+          ...value,
+          ticker: value.ticker?.last ? value.ticker : snapshot.ticker,
+          book: value.book?.bids?.length ? value.book : snapshot.book,
+          trades: value.trades?.length ? value.trades : snapshot.trades,
+        }));
+        if (!buffer.trades.length) buffer.appendTrades(snapshot.trades || []);
+      })
+      .catch(() => {});
     const parseCandle = (values: string[]): Row => ({
       time: Number(values[0]) / 1000,
       open: Number(values[1]),
@@ -97,10 +101,12 @@ export function useMarket(
         reconnect = setTimeout(() => void connect(), 3000);
       };
     };
-    void connect().catch(error => {if (!disposed) setState(value => ({...value,error:String(error)}));});
+    void connect().catch((error) => {
+      if (!disposed) setState((value) => ({ ...value, error: String(error) }));
+    });
     const flush = setInterval(() => {
       const batch = buffer.drain();
-      if (batch) setState(value => ({...value, ...batch}));
+      if (batch) setState((value) => ({ ...value, ...batch }));
       if (lastCandle) {
         setCandle(lastCandle);
         lastCandle = undefined;
