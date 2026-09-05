@@ -1,0 +1,14 @@
+[Unit]
+Description=Age-encrypted Nautilus operator recovery backup
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/python3 /usr/local/lib/nautilus-operator/backup.py
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/www/nautilus/operator/backups
+MemoryMax=256M
+TimeoutStartSec=60

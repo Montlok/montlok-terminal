@@ -1,0 +1,5786 @@
+[
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "build",
+    "source": "crates/live/src/python/node.rs",
+    "line": 98,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "builder",
+    "source": "crates/live/src/python/node.rs",
+    "line": 110,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "environment",
+    "source": "crates/live/src/python/node.rs",
+    "line": 126,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "trader_id",
+    "source": "crates/live/src/python/node.rs",
+    "line": 133,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "instance_id",
+    "source": "crates/live/src/python/node.rs",
+    "line": 140,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "is_running",
+    "source": "crates/live/src/python/node.rs",
+    "line": 147,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "require_strategy_artifact_admission",
+    "source": "crates/live/src/python/node.rs",
+    "line": 157,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "cache",
+    "source": "crates/live/src/python/node.rs",
+    "line": 168,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "portfolio",
+    "source": "crates/live/src/python/node.rs",
+    "line": 175,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "start",
+    "source": "crates/live/src/python/node.rs",
+    "line": 191,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "poll",
+    "source": "crates/live/src/python/node.rs",
+    "line": 210,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "run",
+    "source": "crates/live/src/python/node.rs",
+    "line": 236,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "stop",
+    "source": "crates/live/src/python/node.rs",
+    "line": 283,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "dispose",
+    "source": "crates/live/src/python/node.rs",
+    "line": 293,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_actor_from_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 313,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_strategy",
+    "source": "crates/live/src/python/node.rs",
+    "line": 473,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_strategy_from_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 549,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_exec_algorithm",
+    "source": "crates/live/src/python/node.rs",
+    "line": 734,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_exec_algorithm_from_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 781,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_plugin",
+    "source": "crates/live/src/python/node.rs",
+    "line": 975,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_builtin_actor",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1002,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNode",
+    "method": "add_builtin_strategy",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1016,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_instance_id",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1173,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_load_state",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1186,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_save_state",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1199,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "require_strategy_artifact_admission",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1213,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_timeout_connection",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1226,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_timeout_reconciliation",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1239,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_timeout_portfolio",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1252,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_timeout_disconnection_secs",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1265,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_delay_post_stop_secs",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1278,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_delay_shutdown_secs",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1291,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_reconciliation",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1304,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_controller",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1317,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_reconciliation_lookback_mins",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1330,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_cache_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1343,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_portfolio_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1356,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_data_engine_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1369,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_risk_engine_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1382,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_exec_engine_config",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1395,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_canonical_event_store",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1412,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "with_logging",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1444,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "add_data_client",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1457,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "add_exec_client",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1508,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "add_simulated_exec_client",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1556,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native live node / builder",
+    "owner": "LiveNodeBuilderPy",
+    "method": "build",
+    "source": "crates/live/src/python/node.rs",
+    "line": 1599,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "trader_id",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1460,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "strategy_id",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1466,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "config",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1472,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "clock",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1481,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "cache",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1494,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "portfolio",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1507,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "order_factory",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1520,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "log",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1533,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "state",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1538,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "is_ready",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1543,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "is_running",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1548,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "is_stopped",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1553,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "is_disposed",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1558,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "is_degraded",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1563,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "is_faulted",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1568,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "start",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1573,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "stop",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1578,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "market_exit",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1588,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "is_exiting",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1593,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "save",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1598,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "load",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1604,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "publish_data",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1610,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "publish_signal",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1615,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "add_synthetic",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1633,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "update_synthetic",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1638,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "resume",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1643,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "reset",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1648,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "dispose",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1653,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "degrade",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1658,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "fault",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1663,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "shutdown_system",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1668,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "registered_indicators",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1683,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "indicators_initialized",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1692,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "register_indicator_for_quote_ticks",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1700,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "register_indicator_for_trade_ticks",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1713,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "register_indicator_for_bars",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1726,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "submit_order",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1738,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "submit_order_list",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1761,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "modify_order",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1788,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "modify_orders",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1819,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "cancel_order",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1838,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "cancel_gtd_expiry",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1859,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "cancel_orders",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1868,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "cancel_all_orders",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1887,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "close_position",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1912,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "close_all_positions",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1945,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "query_account",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1980,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "query_order",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 1997,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_start",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2015,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_stop",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2018,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_resume",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2021,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_reset",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2024,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_dispose",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2027,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_degrade",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2030,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_fault",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2033,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_save",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2036,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_load",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2042,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_time_event",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2046,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_data",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2050,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_signal",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2054,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_instrument",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2058,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_quote",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2062,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_trade",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2066,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_bar",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2070,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_book_deltas",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2074,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_book_depth",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2078,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_book",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2082,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_mark_price",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2086,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_index_price",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2090,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_funding_rate",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2094,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_instrument_status",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2098,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_instrument_close",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2102,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_option_greeks",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2106,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_option_chain",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2110,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_market_exit",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2113,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "post_market_exit",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2116,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_initialized",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2120,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_event",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2124,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_denied",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2128,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_emulated",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2132,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_released",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2136,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_submitted",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2140,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_rejected",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2144,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_accepted",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2148,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_expired",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2152,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_triggered",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2156,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_pending_update",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2160,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_pending_cancel",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2164,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_modify_rejected",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2168,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_cancel_rejected",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2172,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_updated",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2176,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_canceled",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2180,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_filled",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2184,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_order_fill_voided",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2188,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_position_opened",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2192,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_position_event",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2196,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_position_changed",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2200,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_position_closed",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2204,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_data",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2208,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_book_deltas",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2214,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_book_depth",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2218,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_quotes",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2222,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_trades",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2228,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_funding_rates",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2234,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_bars",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2240,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_mark_prices",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2246,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "on_historical_index_prices",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2252,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_data",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2257,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_signal",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2275,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_instruments",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2281,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_instrument",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2299,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_book_deltas",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2317,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_book_depth10",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2347,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_book_at_interval",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2374,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_quotes",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2407,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_trades",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2425,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_bars",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2443,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_mark_prices",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2461,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_index_prices",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2479,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_funding_rates",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2497,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_option_greeks",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2515,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_instrument_status",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2533,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_instrument_close",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2556,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "subscribe_option_chain",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2579,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_data",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2605,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_signal",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2623,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_instruments",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2628,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_instrument",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2646,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_book_deltas",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2664,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_book_depth10",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2682,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_book_at_interval",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2700,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_quotes",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2728,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_trades",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2746,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_bars",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2764,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_mark_prices",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2782,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_index_prices",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2800,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_funding_rates",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2818,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_option_greeks",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2841,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_instrument_status",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2864,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_instrument_close",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2887,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "unsubscribe_option_chain",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2910,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_data",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2920,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_instrument",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2951,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_instruments",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 2979,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_book_snapshot",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 3007,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_book_deltas",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 3035,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_book_depth",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 3066,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_quotes",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 3101,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_trades",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 3132,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_funding_rates",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 3163,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native strategy",
+    "owner": "PyStrategy",
+    "method": "request_bars",
+    "source": "crates/trading/src/python/strategy.rs",
+    "line": 3194,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "clock",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1224,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "cache",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1237,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "log",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1250,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "actor_id",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1256,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "config",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1262,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "trader_id",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1271,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "state",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1276,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "is_ready",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1281,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "is_running",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1286,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "is_stopped",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1291,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "is_degraded",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1296,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "is_faulted",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1301,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "is_disposed",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1306,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "start",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1311,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "stop",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1316,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "save",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1321,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "load",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1327,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "resume",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1333,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "reset",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1338,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "dispose",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1343,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "degrade",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1348,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "fault",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1353,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "shutdown_system",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1358,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "publish_data",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1371,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "publish_signal",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1376,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "add_synthetic",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1396,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "update_synthetic",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1403,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "registered_indicators",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1411,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "indicators_initialized",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1416,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "register_indicator_for_quote_ticks",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1424,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "register_indicator_for_trade_ticks",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1437,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "register_indicator_for_bars",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1450,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_start",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1463,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_stop",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1466,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_resume",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1469,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_reset",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1472,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_dispose",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1475,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_degrade",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1478,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_fault",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1481,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_save",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1484,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_load",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1490,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_time_event",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1494,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_data",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1498,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_signal",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1502,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_instrument",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1506,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_quote",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1510,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_trade",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1514,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_bar",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1518,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_book_deltas",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1522,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_book_depth",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1526,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_book",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1530,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_mark_price",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1534,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_index_price",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1538,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_funding_rate",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1542,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_instrument_status",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1546,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_instrument_close",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1550,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_option_greeks",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1554,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_option_chain",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1558,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_data",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1561,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_signal",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1575,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_instruments",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1581,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_instrument",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1595,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_book_deltas",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1609,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_book_depth10",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1636,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_book_at_interval",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1659,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_quotes",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1689,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_trades",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1703,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_bars",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1717,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_mark_prices",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1731,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_index_prices",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1745,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_funding_rates",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1759,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_option_greeks",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1773,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_instrument_status",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1787,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_instrument_close",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1801,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_option_chain",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1815,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_data",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1838,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_signal",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1852,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_instruments",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1858,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_instrument",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1872,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_book_deltas",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1886,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_book_depth10",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1900,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_book_at_interval",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1914,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_quotes",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1938,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_trades",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1952,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_bars",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1966,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_mark_prices",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1980,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_index_prices",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 1994,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_funding_rates",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2008,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_option_greeks",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2022,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_instrument_status",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2036,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_instrument_close",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2055,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_option_chain",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2069,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_data",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2079,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_instrument",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2107,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_instruments",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2131,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_book_snapshot",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2149,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_book_deltas",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2173,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_book_depth",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2201,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_quotes",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2232,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_trades",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2260,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_funding_rates",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2288,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "request_bars",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2316,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_data",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2345,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_book_deltas",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2351,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_book_depth",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2355,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_quotes",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2359,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_trades",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2365,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_funding_rates",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2371,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_bars",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2377,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_mark_prices",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2383,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_historical_index_prices",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2389,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_block",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2399,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_pool",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2403,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_pool_swap",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2407,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_pool_liquidity_update",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2411,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_pool_fee_collect",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2415,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "on_pool_flash",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2419,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_blocks",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2423,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_pool",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2437,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_pool_swaps",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2451,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_pool_liquidity_updates",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2465,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_pool_fee_collects",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2484,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "subscribe_pool_flash_events",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2498,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_blocks",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2512,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_pool",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2526,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_pool_swaps",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2540,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_pool_liquidity_updates",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2554,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_pool_fee_collects",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2573,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native actor / market subscriptions",
+    "owner": "PyDataActor",
+    "method": "unsubscribe_pool_flash_events",
+    "source": "crates/common/src/python/actor.rs",
+    "line": 2592,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "trader_id",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 101,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "strategy_id",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 107,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "get_client_order_id_count",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 112,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "get_order_list_id_count",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 117,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "generate_client_order_id",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 122,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "generate_order_list_id",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 127,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "reset",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 132,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "market",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 137,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "limit",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 179,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "stop_market",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 239,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "stop_limit",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 299,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "market_to_limit",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 365,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "market_if_touched",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 413,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "limit_if_touched",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 470,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "trailing_stop_market",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 536,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "trailing_stop_limit",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 605,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native order factory",
+    "owner": "PyOrderFactory",
+    "method": "bracket",
+    "source": "crates/common/src/python/order_factory.rs",
+    "line": 683,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "reset",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 92,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "dispose",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 97,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "purge_closed_orders",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 102,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "purge_closed_positions",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 109,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "purge_order",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 116,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "purge_position",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 121,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "purge_instrument",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 126,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "purge_account_events",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 131,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "get",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 138,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "add",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 146,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "quote",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 154,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "trade",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 162,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "bar",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 170,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "quotes",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 175,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "trades",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 180,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "bars",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 185,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "bar_types",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 190,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "mark_price",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 209,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "mark_prices",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 214,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "index_price",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 219,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "index_prices",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 224,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "funding_rate",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 229,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "funding_rates",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 234,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "instrument_status",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 239,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "instrument_statuses",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 244,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "price",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 249,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "order_book",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 254,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_order_book",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 259,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "book_update_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 264,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_quote_ticks",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 269,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_trade_ticks",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 274,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_mark_prices",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 279,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_index_prices",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 284,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_funding_rates",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 289,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_instrument_statuses",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 294,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "has_bars",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 299,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "quote_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 304,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "trade_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 309,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "mark_price_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 314,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "index_price_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 319,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "funding_rate_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 324,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "instrument_status_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 329,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "bar_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 334,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "get_xrate",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 339,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "get_mark_xrate",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 353,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "own_order_book",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 358,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "instrument",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 363,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "instrument_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 376,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "instruments",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 386,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "synthetic",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 408,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "synthetic_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 413,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "account",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 423,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "account_for_venue",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 432,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "account_id",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 441,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "client_order_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 446,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "client_order_ids_open",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 466,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "client_order_ids_closed",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 486,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "client_order_ids_emulated",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 506,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "client_order_ids_inflight",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 526,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 546,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_open_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 566,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_closed_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 586,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "actor_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 606,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "strategy_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 611,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "exec_algorithm_ids",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 616,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "order",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 621,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "client_order_id",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 630,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "venue_order_id",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 635,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "client_id",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 640,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 645,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_open",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 669,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_closed",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 693,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_emulated",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 717,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_inflight",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 741,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_for_position",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 765,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "order_exists",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 779,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "is_order_open",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 784,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "is_order_closed",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 789,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "is_order_emulated",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 794,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "is_order_inflight",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 799,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "is_order_pending_cancel_local",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 804,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_open_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 811,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_closed_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 829,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_emulated_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 847,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_inflight_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 865,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_total_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 883,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "order_list",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 901,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "order_lists",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 906,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "order_list_exists",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 927,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_for_exec_algorithm",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 932,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "orders_for_exec_spawn",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 959,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "exec_spawn_total_quantity",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 973,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "exec_spawn_total_filled_qty",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 984,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "exec_spawn_total_leaves_qty",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 995,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1006,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_for_order",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1015,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_id",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1028,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "positions",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1033,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "positions_open",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1057,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "positions_closed",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1081,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_exists",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1105,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "is_position_open",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1110,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "is_position_closed",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1115,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "positions_open_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1120,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "positions_closed_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1138,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "positions_total_count",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1156,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "strategy_id_for_order",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1174,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "strategy_id_for_position",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1182,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_snapshot_bytes",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1190,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "snapshot_position",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1195,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Native cache / account / orders / positions",
+    "owner": "PyCache",
+    "method": "position_snapshots",
+    "source": "crates/common/src/python/cache.rs",
+    "line": 1205,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "instance_id",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 139,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "actors",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 150,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "strategies",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 161,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "exec_algorithms",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 172,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "actor_ids",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 183,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "strategy_ids",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 194,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "exec_algorithm_ids",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 205,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "actor_states",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 216,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "strategy_states",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 227,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "exec_algorithm_states",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 238,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "add_actor",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 312,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "add_actors",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 355,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "add_strategy",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 375,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "add_strategies",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 440,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "add_exec_algorithm",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 460,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "add_exec_algorithms",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 506,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "start_actor",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 526,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "start_strategy",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 554,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "stop_actor",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 582,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "stop_strategy",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 610,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "market_exit_strategy",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 638,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "remove_actor",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 666,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "remove_strategy",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 696,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "clear_actors",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 726,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "clear_strategies",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 747,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "clear_exec_algorithms",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 768,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "subscribe",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 789,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "unsubscribe",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 803,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "save",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 817,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "load",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 827,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "check_residuals",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 837,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "generate_orders_report",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 843,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "generate_order_fills_report",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 854,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "generate_fills_report",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 865,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "generate_positions_report",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 876,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python trader",
+    "owner": "Trader",
+    "method": "generate_account_report",
+    "source": "nautilus_trader/trading/trader.py",
+    "line": 891,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "register_base",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 71,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "execute",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 81,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "create_actor",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 99,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "create_strategy",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 123,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "start_actor",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 147,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "start_strategy",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 161,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "stop_actor",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 175,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "stop_strategy",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 194,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "market_exit_strategy",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 213,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "remove_actor",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 232,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "remove_strategy",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 252,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "create_actor_from_config",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 271,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "create_strategy_from_config",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 300,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "start_actor_from_id",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 329,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "start_strategy_from_id",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 348,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "stop_actor_from_id",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 367,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "stop_strategy_from_id",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 386,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "market_exit_strategy_from_id",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 405,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "remove_actor_from_id",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 424,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python controller",
+    "owner": "Controller",
+    "method": "remove_strategy_from_id",
+    "source": "nautilus_trader/trading/controller.py",
+    "line": 444,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "trader_id",
+    "source": "nautilus_trader/live/node.py",
+    "line": 103,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "machine_id",
+    "source": "nautilus_trader/live/node.py",
+    "line": 115,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "instance_id",
+    "source": "nautilus_trader/live/node.py",
+    "line": 127,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "trader",
+    "source": "nautilus_trader/live/node.py",
+    "line": 139,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "cache",
+    "source": "nautilus_trader/live/node.py",
+    "line": 151,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "portfolio",
+    "source": "nautilus_trader/live/node.py",
+    "line": 163,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "is_running",
+    "source": "nautilus_trader/live/node.py",
+    "line": 174,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "is_built",
+    "source": "nautilus_trader/live/node.py",
+    "line": 185,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "get_event_loop",
+    "source": "nautilus_trader/live/node.py",
+    "line": 196,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "get_logger",
+    "source": "nautilus_trader/live/node.py",
+    "line": 207,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "add_stream_processor",
+    "source": "nautilus_trader/live/node.py",
+    "line": 218,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "add_data_client_factory",
+    "source": "nautilus_trader/live/node.py",
+    "line": 230,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "add_exec_client_factory",
+    "source": "nautilus_trader/live/node.py",
+    "line": 251,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "build",
+    "source": "nautilus_trader/live/node.py",
+    "line": 272,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "run",
+    "source": "nautilus_trader/live/node.py",
+    "line": 283,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "publish_bus_message",
+    "source": "nautilus_trader/live/node.py",
+    "line": 305,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "run_async",
+    "source": "nautilus_trader/live/node.py",
+    "line": 338,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "stop",
+    "source": "nautilus_trader/live/node.py",
+    "line": 381,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "stop_async",
+    "source": "nautilus_trader/live/node.py",
+    "line": 398,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python live node",
+    "owner": "TradingNode",
+    "method": "dispose",
+    "source": "nautilus_trader/live/node.py",
+    "line": 409,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "to_importable_config",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 207,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_start",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 222,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_stop",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 230,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_resume",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 238,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_reset",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 246,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "register",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 256,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "change_id",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 325,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "change_order_id_tag",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 340,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "stop",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 404,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_market_exit",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 444,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "post_market_exit",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 455,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_event",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 467,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_initialized",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 483,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_denied",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 499,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_emulated",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 515,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_released",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 531,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_submitted",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 547,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_rejected",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 563,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_accepted",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 579,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_canceled",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 595,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_expired",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 611,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_triggered",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 627,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_pending_update",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 643,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_pending_cancel",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 659,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_modify_rejected",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 675,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_cancel_rejected",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 691,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_updated",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 707,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_order_filled",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 723,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_position_event",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 739,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_position_opened",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 755,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_position_changed",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 771,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "on_position_closed",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 787,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "submit_order",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 805,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "submit_order_list",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 899,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "modify_order",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1011,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "cancel_order",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1089,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "cancel_orders",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1134,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "cancel_all_orders",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1215,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "close_position",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1351,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "close_all_positions",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1418,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "query_account",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1492,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "query_order",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1527,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "cancel_gtd_expiry",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1687,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "market_exit",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1750,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "is_exiting",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1813,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Python strategy",
+    "owner": "Strategy",
+    "method": "handle_event",
+    "source": "nautilus_trader/trading/strategy.pyx",
+    "line": 1886,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "trader_id",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 285,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "machine_id",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 297,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "instance_id",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 309,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "kernel",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 323,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "logger",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 335,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "run_config_id",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 347,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "run_id",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 359,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "iteration",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 371,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "run_started",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 383,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "run_finished",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 395,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "backtest_start",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 407,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "backtest_end",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 419,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "trader",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 431,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "cache",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 443,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 455,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "portfolio",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 467,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "get_log_guard",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 478,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "list_venues",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 491,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_venue",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 502,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "change_fill_model",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 715,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_instrument",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 733,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 783,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_data_iterator",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 922,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "dump_pickled_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1063,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "load_pickled_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1074,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_actor",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1100,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_actors",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1113,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_strategy",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1126,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_strategies",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1139,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_exec_algorithm",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1152,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "add_exec_algorithms",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1165,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "reset",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1178,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "sort_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1253,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "clear_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1262,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "clear_actors",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1276,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "clear_strategies",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1283,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "clear_exec_algorithms",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1290,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "dispose",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1297,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "run",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1313,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "end",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1381,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "get_result",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 1434,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestEngine",
+    "method": "set_default_market_data_client",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2262,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "add_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2343,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "init_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2384,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "remove_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2474,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "next",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2546,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "set_index",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2632,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "is_done",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2661,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "all_data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2670,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "BacktestDataIterator",
+    "method": "data",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2677,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "register_client",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2951,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "set_fill_model",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2967,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "set_latency_model",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 2989,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "initialize_account",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3005,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "add_instrument",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3012,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "best_bid_price",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3080,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "best_ask_price",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3102,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_book",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3124,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_matching_engine",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3146,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_matching_engines",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3162,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_books",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3173,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_open_orders",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3189,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_open_bid_orders",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3217,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_open_ask_orders",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3245,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "get_account",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3273,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "adjust_account",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3288,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "update_instrument",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3336,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "send",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3364,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_order_book_delta",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3402,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_order_book_deltas",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3429,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_order_book_depth10",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3456,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_quote_tick",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3483,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_trade_tick",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3512,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_bar",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3541,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_instrument_status",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3570,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process_instrument_close",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3597,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "process",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3624,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "SimulatedExchange",
+    "method": "reset",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 3735,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "reset",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4110,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "set_fill_model",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4159,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "update_instrument",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4176,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "best_bid_price",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4203,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "best_ask_price",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4214,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "get_book",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4225,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "get_open_orders",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4236,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "get_open_bid_orders",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4247,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "get_open_ask_orders",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4258,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "order_exists",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4269,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_order_book_delta",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4274,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_order_book_deltas",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4347,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_order_book_depth10",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4422,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_quote_tick",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4509,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_trade_tick",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4581,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_bar",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4729,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_status",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4817,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_instrument_close",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 4832,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 5050,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_modify",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 5238,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_cancel",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 5258,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_batch_cancel",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 5274,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "process_cancel_all",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 5279,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "iterate",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 5855,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "check_instrument_expiration",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 5934,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "fill_market_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 6225,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "fill_limit_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 6625,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "apply_fills",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 7226,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "fill_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 7805,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "accept_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 8116,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "expire_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 8136,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "cancel_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 8143,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "update_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 8159,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Backtest engine",
+    "owner": "OrderMatchingEngine",
+    "method": "trigger_stop_order",
+    "source": "nautilus_trader/backtest/engine.pyx",
+    "line": 8262,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "execute",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 201,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "process",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 215,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "set_trading_state",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 229,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "force_halt_for_terminal_failure",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 268,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "set_max_notional_per_order",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 299,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "max_order_submit_rate",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 337,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "max_order_modify_rate",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 352,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "max_notionals_per_order",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 367,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Risk engine",
+    "owner": "RiskEngine",
+    "method": "max_notional_per_order",
+    "source": "nautilus_trader/risk/engine.pyx",
+    "line": 378,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "from_env",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 181,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "from_uri",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 202,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "write_data",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 255,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "extend_file_name",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 422,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "reset_all_file_names",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 484,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "reset_data_file_names",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 513,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "consolidate_catalog",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 601,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "consolidate_data",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 656,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "consolidate_catalog_by_period",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 827,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "consolidate_data_by_period",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 891,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "delete_catalog_range",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 1299,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "delete_data_range",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 1383,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "query",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 1648,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "backend_session",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 1795,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "filter_files",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2205,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "get_file_list_from_data_cls",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2286,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "query_first_timestamp",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2314,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "query_last_timestamp",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2329,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "get_missing_intervals_for_request",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2344,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "get_intervals",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2388,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "list_data_types",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2483,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "list_backtest_runs",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2495,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "list_live_runs",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2507,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "read_live_run",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2519,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "read_backtest",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2541,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  },
+  {
+    "area": "Data catalog",
+    "owner": "ParquetDataCatalog",
+    "method": "convert_stream_to_data",
+    "source": "nautilus_trader/persistence/catalog/parquet.py",
+    "line": 2604,
+    "exposure": "in-process; not automatically HTTP/MCP"
+  }
+]

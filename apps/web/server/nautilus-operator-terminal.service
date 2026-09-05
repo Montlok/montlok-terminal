@@ -1,0 +1,27 @@
+[Unit]
+Description=Nautilus Operator Ant Pro and Blueprint terminal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nautilus
+Group=nautilus
+WorkingDirectory=/www/nautilus/operator/server
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/www/nautilus/operator/venv/bin/python /www/nautilus/operator/server/app.py --state-dir /www/nautilus/operator/state --credentials /www/nautilus/credentials/tokyo-demo.env --static-dir /www/nautilus/operator/dashboard --paper-run /www/nautilus/paper/20260905/run-24h-02 --paper-bridge /www/nautilus/paper/20260905/paper_dashboard.py --node /www/nautilus/operator/node/bin/node --mcp /www/nautilus/operator/mcp/node_modules/@okx_ai/okx-trade-mcp/dist/index.js --port 18081
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/www/nautilus/operator/state
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=1G
+TasksMax=128
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
