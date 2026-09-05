@@ -269,7 +269,7 @@ body {
 }
 .trading-grid {
   display: grid;
-  grid-template-columns: 200px minmax(300px, 1fr) 215px 270px;
+  grid-template-columns: 230px minmax(300px, 1fr) 215px 270px;
   gap: 8px;
   padding: 10px 0;
 }
@@ -370,10 +370,14 @@ body {
 }
 .watch-table td,
 .watch-table th {
-  padding: 0 8px;
+  padding: 0 6px;
   height: 28px;
   font-size: 12px;
   white-space: nowrap;
+}
+.watch-table td:first-child,
+.watch-table th:first-child {
+  padding-left: 8px;
 }
 .watch-table th {
   font-size: 11px;
@@ -384,9 +388,10 @@ body {
 .watch-table td:nth-child(3) {
   text-align: right;
 }
-.watch-table td:last-child {
-  width: 28px;
-  padding: 0;
+.watch-table td:last-child,
+.watch-table th:last-child {
+  width: 24px;
+  padding: 0 4px 0 0;
   text-align: center;
 }
 .watch-table tr.active td {
@@ -785,7 +790,7 @@ body {
 }
 @media (min-width: 1700px) {
   .trading-grid {
-    grid-template-columns: 220px minmax(500px, 1fr) 255px 310px;
+    grid-template-columns: 250px minmax(500px, 1fr) 255px 310px;
   }
   .market-chart {
     height: 495px;
