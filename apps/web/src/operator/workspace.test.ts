@@ -13,8 +13,9 @@ const routes = rest.map((route) => ({
   name: `${route.method} ${route.path}`,
 }));
 describe('business navigation', () => {
-  it('has six primary sections and unique three-level pages', () => {
+  it('has a portfolio workspace followed by six business sections and unique three-level pages', () => {
     expect(navigation.map((item) => item.name)).toEqual([
+      '工作台',
       '行情',
       '交易',
       '资产',
@@ -30,9 +31,20 @@ describe('business navigation', () => {
     const missing = [...tools, ...routes].filter(
       (item) =>
         !destinations.has(destination(item)) ||
-        destinations.get(destination(item))?.component,
+        ![undefined, './MarketData'].includes(
+          destinations.get(destination(item))?.component,
+        ),
     );
     expect(missing.map((item) => item.name)).toEqual([]);
+    expect(
+      pages
+        .filter((page) => page.component === './MarketData')
+        .map((page) => page.path),
+    ).toEqual([
+      '/market/prices/quotes',
+      '/market/prices/depth',
+      '/market/prices/candles',
+    ]);
     expect(
       [...tools, ...routes].filter(
         (item) => destination(item) === '/settings/developer/api',

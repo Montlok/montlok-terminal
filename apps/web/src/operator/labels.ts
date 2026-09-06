@@ -1,6 +1,14 @@
 import type { Row } from './api';
 
 export const fieldLabels: Record<string, string> = {
+  artifactId: '模型制品编号',
+  releaseId: '模型发布编号',
+  manifestSha256: '发布清单校验摘要',
+  registryVersion: '运行注册版本',
+  budgetUsdt: '独立虚拟预算 / USDT',
+  durationSeconds: '运行时长 / 秒',
+  groupId: '策略组编号',
+  runId: '运行实例编号',
   instId: '交易品种',
   instIdA: '品种 A',
   instIdB: '品种 B',
@@ -361,6 +369,28 @@ const restTitles: Record<string, string> = {
   'Get GLP today performance': 'GLP 当日表现',
 };
 export function operationLabel(item: Row): string {
+  if (item.kind === 'model_release')
+    return (
+      (
+        {
+          validate: '校验模型',
+          publish: '发布模型',
+          rollback: '回退模型发布',
+        } as Record<string, string>
+      )[item.name] || item.name
+    );
+  if (item.kind === 'group')
+    return (
+      (
+        {
+          start: '开始运行',
+          halt: '暂停开仓',
+          reduce: '仅减仓',
+          resume: '恢复运行',
+          stop: '停止运行',
+        } as Row
+      )[item.name] || item.name
+    );
   if (item.kind === 'native')
     return (
       (

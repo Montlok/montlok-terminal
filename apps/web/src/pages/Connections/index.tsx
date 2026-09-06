@@ -8,6 +8,8 @@ import { ConfirmOperation } from '../../operator/ConfirmOperation';
 
 export default function Connections() {
   const { profiles, refresh } = useModel('operator');
+  const { initialState } = useModel('@@initialState');
+  const canOperate = initialState?.currentUser?.access === 'admin';
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
   const [isNew, setIsNew] = useState(true);
@@ -63,7 +65,12 @@ export default function Connections() {
         <div>
           <h1>API 连接</h1>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => edit()}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => edit()}
+          disabled={!canOperate}
+        >
           添加
         </Button>
       </div>
@@ -114,6 +121,7 @@ export default function Connections() {
                 type="text"
                 size="small"
                 icon={<EditOutlined />}
+                disabled={!canOperate}
                 onClick={() => edit(row)}
               >
                 编辑
@@ -122,7 +130,7 @@ export default function Connections() {
                 key="select"
                 type="text"
                 size="small"
-                disabled={row.active}
+                disabled={!canOperate || row.active}
                 onClick={() => void prepare('select', { id: row.id })}
               >
                 切换
@@ -132,7 +140,7 @@ export default function Connections() {
                 type="text"
                 size="small"
                 danger
-                disabled={row.active}
+                disabled={!canOperate || row.active}
                 onClick={() => void prepare('delete', { id: row.id })}
               >
                 删除
@@ -212,6 +220,7 @@ export default function Connections() {
               <Button
                 loading={busy}
                 icon={<LinkOutlined />}
+                disabled={!canOperate}
                 onClick={() => void test()}
               >
                 测试连接
@@ -219,7 +228,7 @@ export default function Connections() {
               <Button
                 type="primary"
                 htmlType="submit"
-                disabled={!verification || busy}
+                disabled={!canOperate || !verification || busy}
               >
                 保存
               </Button>

@@ -13,6 +13,11 @@ import {
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
 import type { Row } from './api';
+import {
+  CHART_TIME_ZONE_LABEL,
+  chartCrosshairFormatter,
+  chartTickFormatter,
+} from './chartTime';
 import { lastMovingAverage, movingAverage } from './indicators';
 
 const AVERAGES = [
@@ -44,10 +49,12 @@ export function MarketChart({
   candles,
   candle,
   averages = true,
+  showVolume = true,
 }: {
   candles: Row[];
   candle?: Row;
   averages?: boolean;
+  showVolume?: boolean;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | undefined>(undefined);
@@ -60,6 +67,7 @@ export function MarketChart({
     if (!container.current) return;
     const instance = createChart(container.current, {
       autoSize: true,
+      localization: { locale: 'zh-CN', timeFormatter: chartCrosshairFormatter },
       layout: {
         background: { type: ColorType.Solid, color: '#121518' },
         textColor: '#929ba6',
@@ -72,12 +80,16 @@ export function MarketChart({
       },
       rightPriceScale: {
         borderColor: '#2a2e33',
-        scaleMargins: { top: 0.08, bottom: 0.25 },
+        scaleMargins: { top: 0.08, bottom: showVolume ? 0.25 : 0.08 },
       },
       timeScale: {
         borderColor: '#2a2e33',
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: chartTickFormatter,
+        fixRightEdge: true,
+        rightOffset: 0,
+        fixLeftEdge: false,
       },
       crosshair: { mode: 0 },
     });
@@ -89,10 +101,16 @@ export function MarketChart({
       wickDownColor: '#f05b65',
       borderVisible: false,
     });
-    volume.current = instance.addSeries(HistogramSeries, {
-      priceFormat: { type: 'volume' },
-      priceScaleId: 'volume',
-    });
+    if (showVolume) {
+      volume.current = instance.addSeries(HistogramSeries, {
+        priceFormat: { type: 'volume' },
+        priceScaleId: 'volume',
+      });
+      instance.priceScale('volume').applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+        visible: false,
+      });
+    }
     lines.current = AVERAGES.map(({ color }) =>
       instance.addSeries(LineSeries, {
         color,
@@ -102,9 +120,6 @@ export function MarketChart({
         visible: averages,
       }),
     );
-    instance
-      .priceScale('volume')
-      .applyOptions({ scaleMargins: { top: 0.8, bottom: 0 }, visible: false });
     return () => {
       instance.remove();
       chart.current = undefined;
@@ -112,7 +127,7 @@ export function MarketChart({
       volume.current = undefined;
       lines.current = [];
     };
-  }, []);
+  }, [showVolume]);
   useEffect(() => {
     // Private copy: live ticks mutate it in place without touching React state.
     history.current = [...candles];
@@ -125,7 +140,7 @@ export function MarketChart({
     volume.current?.setData(candles.map(bucket));
     lastTime.current = candles.at(-1)?.time || 0;
     chart.current?.timeScale().fitContent();
-  }, [candles]);
+  }, [candles, showVolume]);
   useEffect(() => {
     if (!candle || candle.time < lastTime.current) return;
     price.current?.update(bar(candle));
@@ -138,16 +153,17 @@ export function MarketChart({
       const point = lastMovingAverage(rows, period);
       if (point) lines.current[index]?.update(point as LineData<Stamp>);
     });
-  }, [candle]);
+  }, [candle, showVolume]);
   useEffect(() => {
     for (const line of lines.current) line.applyOptions({ visible: averages });
-  }, [averages]);
+  }, [averages, showVolume]);
   return (
     <div
       className="market-chart"
       ref={container}
       role="img"
-      aria-label="实时 K 线与成交量图"
+      aria-label={`${showVolume ? '实时 K 线与成交量图' : '价格 K 线图'} · ${CHART_TIME_ZONE_LABEL}`}
+      title={`图表时间 ${CHART_TIME_ZONE_LABEL}`}
     />
   );
 }

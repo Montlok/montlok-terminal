@@ -4,6 +4,7 @@ import { useModel } from '@umijs/max';
 import { Button } from 'antd';
 import { number, type Row, timeOf } from '../../operator/api';
 import { DataGrid } from '../../operator/DataGrid';
+import { AssetAllocation } from './AssetAllocation';
 
 export default function Account() {
   const { account, refresh } = useModel('operator');
@@ -18,6 +19,7 @@ export default function Account() {
           刷新
         </Button>
       </div>
+      <AssetAllocation balances={account.balances || []} />
       <ProTable<Row>
         rowKey="ccy"
         search={false}

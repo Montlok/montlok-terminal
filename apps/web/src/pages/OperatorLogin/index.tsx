@@ -1,10 +1,84 @@
-import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { LoginForm, ProFormText } from '@ant-design/pro-components';
-import { Alert, ConfigProvider, theme } from 'antd';
-import { useState } from 'react';
+import { KeyOutlined } from '@ant-design/icons';
+import {
+  browserSupportsWebAuthn,
+  startAuthentication,
+  startRegistration,
+} from '@simplewebauthn/browser';
+import { Alert, Button, ConfigProvider, theme } from 'antd';
+import { useEffect, useState } from 'react';
+
+async function passkeyRequest<T>(
+  action: string,
+  body: unknown = {},
+): Promise<T> {
+  const response = await fetch(`/api/passkeys/${action}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    let message = text;
+    try {
+      message = JSON.parse(text).error || text;
+    } catch {
+      // HTTP errors can be plain text.
+    }
+    throw new Error(message || '暂时无法登录，请重试');
+  }
+  return JSON.parse(text) as T;
+}
 
 export default function OperatorLogin() {
+  const [token, setToken] = useState(
+    () =>
+      new URLSearchParams(window.location.hash.slice(1)).get('enroll') || '',
+  );
   const [error, setError] = useState('');
+  const [registered, setRegistered] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const supported = browserSupportsWebAuthn();
+  useEffect(() => {
+    if (window.location.hash.startsWith('#enroll=')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  async function submit() {
+    setBusy(true);
+    setError('');
+    try {
+      if (token) {
+        const optionsJSON = await passkeyRequest<
+          Parameters<typeof startRegistration>[0]['optionsJSON']
+        >('register-options', { token });
+        const credential = await startRegistration({ optionsJSON });
+        await passkeyRequest('register', { credential });
+        setToken('');
+        setRegistered(true);
+      } else {
+        const optionsJSON =
+          await passkeyRequest<
+            Parameters<typeof startAuthentication>[0]['optionsJSON']
+          >('login-options');
+        const credential = await startAuthentication({ optionsJSON });
+        await passkeyRequest('login', { credential });
+        window.location.replace('/workspace/portfolio/overview');
+      }
+    } catch (reason) {
+      setError(
+        reason instanceof Error && reason.name === 'NotAllowedError'
+          ? '验证已取消或超时，请重试'
+          : reason instanceof Error
+            ? reason.message
+            : '暂时无法登录，请重试',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <ConfigProvider
       theme={{
@@ -13,55 +87,24 @@ export default function OperatorLogin() {
       }}
     >
       <main className="operator-login">
-        <section style={{ width: 'min(400px, 100vw)' }}>
-          <LoginForm
-            title={<span style={{ color: '#e6e8eb' }}>Montlok</span>}
-            submitter={{ searchConfig: { submitText: '登录' } }}
-            onFinish={async (values) => {
-              setError('');
-              try {
-                const response = await fetch('/api/login', {
-                  method: 'POST',
-                  credentials: 'same-origin',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(values),
-                });
-                if (!response.ok) throw new Error(await response.text());
-                window.location.replace('/trade');
-                return true;
-              } catch (reason) {
-                setError(String(reason));
-                return false;
-              }
-            }}
+        <section className="passkey-login" aria-labelledby="login-title">
+          <h1 id="login-title">Montlok</h1>
+          {registered && <p role="status">通行密钥已保存，请验证登录</p>}
+          {error && <Alert title={error} type="error" showIcon />}
+          {!supported && (
+            <Alert title="请使用支持通行密钥的浏览器" type="warning" showIcon />
+          )}
+          <Button
+            type="primary"
+            size="large"
+            block
+            icon={<KeyOutlined />}
+            loading={busy}
+            disabled={!supported}
+            onClick={submit}
           >
-            {error && (
-              <Alert
-                title={error}
-                type="error"
-                showIcon
-                style={{ marginBottom: 20 }}
-              />
-            )}
-            <ProFormText
-              name="username"
-              label="账户"
-              fieldProps={{
-                prefix: <UserOutlined />,
-                autoComplete: 'username',
-              }}
-              rules={[{ required: true, message: '输入账户' }]}
-            />
-            <ProFormText.Password
-              name="password"
-              label="密码"
-              fieldProps={{
-                prefix: <LockOutlined />,
-                autoComplete: 'current-password',
-              }}
-              rules={[{ required: true, message: '输入密码' }]}
-            />
-          </LoginForm>
+            {token ? '创建通行密钥' : '使用通行密钥登录'}
+          </Button>
         </section>
       </main>
     </ConfigProvider>

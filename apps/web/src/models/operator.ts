@@ -1,7 +1,64 @@
-import { useCallback, useEffect, useState } from 'react';
+import {
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { api, ensureSession, type Row } from '../operator/api';
+import {
+  type RunSelection,
+  readSelection,
+  saveSelection,
+  validateSelection,
+} from '../operator/selectionStorage';
 
 export default function useOperator() {
+  const [selection, setSelection] = useState<RunSelection>({
+    selectedGroup: 'live-yesterday-alpha-test-1u',
+    selectedRuns: {},
+  });
+  const [selectionOwner, setSelectionOwner] = useState('');
+  const selectionEdits = useRef(0);
+  const { selectedGroup, selectedRuns } = selection;
+  const setSelectedGroup = useCallback((value: SetStateAction<string>) => {
+    selectionEdits.current += 1;
+    setSelection((current) => ({
+      ...current,
+      selectedGroup:
+        typeof value === 'function' ? value(current.selectedGroup) : value,
+    }));
+  }, []);
+  const setSelectedRuns = useCallback(
+    (value: SetStateAction<Record<string, string>>) => {
+      selectionEdits.current += 1;
+      setSelection((current) => ({
+        ...current,
+        selectedRuns:
+          typeof value === 'function' ? value(current.selectedRuns) : value,
+      }));
+    },
+    [],
+  );
+  useEffect(() => {
+    if (window.location.pathname === '/login') return;
+    let disposed = false;
+    void ensureSession()
+      .then(async ({ operator }) => {
+        const saved = readSelection(operator);
+        const restored = saved ? await validateSelection(saved) : undefined;
+        if (disposed) return;
+        if (restored && selectionEdits.current === 0) setSelection(restored);
+        setSelectionOwner(operator);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+    };
+  }, []);
+  useEffect(() => {
+    if (selectionOwner) saveSelection(selectionOwner, selection);
+  }, [selectionOwner, selection]);
   const [account, setAccount] = useState<Row>({
     balances: [],
     orders: [],
@@ -65,5 +122,17 @@ export default function useOperator() {
       window.clearInterval(timer);
     };
   }, [refresh]);
-  return { account, paper, profiles, catalog, error, epoch, refresh };
+  return {
+    account,
+    paper,
+    profiles,
+    catalog,
+    error,
+    epoch,
+    refresh,
+    selectedGroup,
+    setSelectedGroup,
+    selectedRuns,
+    setSelectedRuns,
+  };
 }

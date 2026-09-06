@@ -240,7 +240,7 @@ export default function ApiWorkbench() {
                 </div>
               </Form>
               {error && <Alert type="error" title={error} showIcon />}
-              <ResultView value={result} />
+              <ResultView value={result} operation={tool?.name} />
               <Collapse
                 ghost
                 items={[

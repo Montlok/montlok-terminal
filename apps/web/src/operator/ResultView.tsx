@@ -1,8 +1,10 @@
 import { Button, Descriptions, Drawer, Tabs } from 'antd';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { dataOf, type Row } from './api';
 import { DataGrid } from './DataGrid';
 import { fieldLabel, valueLabel } from './labels';
+import { ResultCharts } from './ResultCharts';
+import { resultCharts } from './resultChartModel';
 
 export function RecordDetails({ value }: { value: Row }) {
   return (
@@ -28,8 +30,18 @@ function cell(value: any): ReactNode {
   if (typeof value === 'boolean') return value ? '是' : '否';
   return valueLabel(value);
 }
-export function ResultView({ value }: { value?: any }) {
+export function ResultView({
+  value,
+  operation,
+}: {
+  value?: any;
+  operation?: string;
+}) {
   const [selected, setSelected] = useState<Row>();
+  const charts = useMemo(
+    () => resultCharts(value, operation),
+    [value, operation],
+  );
   if (value === undefined) return null;
   const unwrapped = dataOf(value);
   const data =
@@ -110,6 +122,15 @@ export function ResultView({ value }: { value?: any }) {
       <Tabs
         className="result-view"
         items={[
+          ...(charts.length
+            ? [
+                {
+                  key: 'charts',
+                  label: '图表',
+                  children: <ResultCharts charts={charts} />,
+                },
+              ]
+            : []),
           { key: 'data', label: '结果', children: content },
           {
             key: 'raw',

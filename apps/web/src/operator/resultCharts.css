@@ -1,0 +1,30 @@
+.result-charts {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.result-chart {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--op-border);
+  border-radius: 4px;
+}
+.result-chart .market-chart {
+  height: 390px;
+}
+.time-series-chart {
+  position: relative;
+  min-width: 0;
+}
+.time-series-canvas {
+  width: 100%;
+  height: 100%;
+}
+.chart-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--op-muted);
+  pointer-events: none;
+}

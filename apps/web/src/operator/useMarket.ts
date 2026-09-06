@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, ensureSession, type Row } from './api';
+import { api, dataOf, ensureSession, type Row } from './api';
+import { instrumentType } from './instrumentFormat';
 import { MarketBuffer } from './marketBuffer';
 
 export function useMarket(
@@ -32,6 +33,20 @@ export function useMarket(
     });
     setCandles([]);
     setCandle(undefined);
+    void api('query', {
+      kind: 'rest',
+      name: 'GET /api/v5/public/instruments',
+      arguments: { instType: instrumentType(instrument), instId: instrument },
+    })
+      .then((result) => {
+        if (disposed || current !== generation.current) return;
+        const rows = dataOf(result);
+        const definition = Array.isArray(rows)
+          ? rows.find((row: Row) => row.instId === instrument)
+          : undefined;
+        setState((value) => ({ ...value, instrumentDefinition: definition }));
+      })
+      .catch(() => {});
     void api(`market/snapshot?${parameters}`)
       .then((snapshot) => {
         if (disposed || current !== generation.current) return;

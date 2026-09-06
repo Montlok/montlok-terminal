@@ -1,0 +1,67 @@
+.allocation-panel {
+  margin-bottom: 16px;
+}
+.allocation-content {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 12px 20px;
+}
+.allocation-graphic svg {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+}
+.allocation-caption {
+  font-size: 12px;
+  fill: var(--op-muted);
+}
+.allocation-total {
+  font-size: 20px;
+  fill: var(--op-text);
+  font-variant-numeric: tabular-nums;
+}
+.allocation-legend {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.allocation-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) minmax(100px, 1fr) 72px;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--op-border);
+  font-variant-numeric: tabular-nums;
+}
+.allocation-row > span:not(:first-child) {
+  text-align: right;
+}
+.allocation-currency {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.allocation-currency i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.allocation-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 20px 16px;
+  color: var(--op-muted);
+}
+@media (max-width: 700px) {
+  .allocation-content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .allocation-graphic {
+    display: flex;
+    justify-content: center;
+  }
+}

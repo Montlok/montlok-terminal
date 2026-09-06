@@ -25,14 +25,27 @@ const group = (
 });
 export const navigation: NavigationSection[] = [
   {
+    path: '/workspace',
+    name: '工作台',
+    icon: 'DashboardOutlined',
+    groups: [
+      group('/workspace/portfolio', '组合', [
+        ['overview', '总览', './Portfolio'],
+      ]),
+      group('/workspace/execution', '执行', [
+        ['overview', '执行质量', './ExecutionAnalytics'],
+      ]),
+    ],
+  },
+  {
     path: '/market',
     name: '行情',
     icon: 'LineChartOutlined',
     groups: [
       group('/market/prices', '市场', [
-        ['quotes', '行情'],
-        ['depth', '订单簿'],
-        ['candles', 'K 线'],
+        ['quotes', '行情', './MarketData'],
+        ['depth', '订单簿', './MarketData'],
+        ['candles', 'K 线', './MarketData'],
         ['instruments', '交易品种'],
       ]),
       group('/market/data', '数据', [
@@ -117,6 +130,13 @@ export const navigation: NavigationSection[] = [
     name: '策略',
     icon: 'FundProjectionScreenOutlined',
     groups: [
+      group('/strategies/groups', '策略组', [
+        ['overview', '总览', './StrategyGroups'],
+      ]),
+      group('/strategies/resources', '策略资源', [
+        ['artifacts', '模型与因子', './Artifacts'],
+        ['models', '模型发布', './Models'],
+      ]),
       group('/strategies/bots', '交易策略', [
         ['grid', '网格'],
         ['dca', '马丁格尔'],

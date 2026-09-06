@@ -10,6 +10,7 @@ import { ResultView } from '../../operator/ResultView';
 
 export default function Engine() {
   const { paper, refresh } = useModel('operator');
+  const { initialState } = useModel('@@initialState');
   const { pathname } = useLocation();
   const view = pathname.split('/').at(-1) || 'overview';
   const [ticket, setTicket] = useState<Row>();
@@ -41,7 +42,10 @@ export default function Engine() {
           <Button
             danger
             icon={<StopOutlined />}
-            disabled={paper?.tradingState !== 'ACTIVE'}
+            disabled={
+              initialState?.currentUser?.access !== 'admin' ||
+              paper?.tradingState !== 'ACTIVE'
+            }
             onClick={() => void stop()}
           >
             停止运行

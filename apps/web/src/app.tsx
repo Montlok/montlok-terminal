@@ -4,8 +4,9 @@ import { ConfigProvider, theme } from 'antd';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import settings from '../config/defaultSettings';
-import { ensureSession } from './operator/api';
+import { ensureSession, type SessionInfo } from './operator/api';
 import { HeaderStatus } from './operator/HeaderStatus';
+import { QuantWorkspace } from './operator/QuantWorkspace';
 import './operator/theme.css';
 
 dayjs.extend(relativeTime);
@@ -17,15 +18,16 @@ export async function getInitialState(): Promise<{
   settingDrawerOpen?: boolean;
 }> {
   if (window.location.pathname === '/login') return {};
+  let session: SessionInfo;
   try {
-    await ensureSession();
+    session = await ensureSession();
   } catch {
     return {};
   }
   const currentUser: API.CurrentUser = {
-    name: '交易操作员',
-    userid: 'operator',
-    access: 'admin',
+    name: session.operator,
+    userid: session.operator,
+    access: session.role,
   };
   return {
     currentUser,
@@ -62,7 +64,9 @@ export const layout: RunTimeLayoutConfig = () => ({
         },
       }}
     >
-      <div className="operator-root bp6-dark">{children}</div>
+      <div className="operator-root bp6-dark">
+        <QuantWorkspace>{children}</QuantWorkspace>
+      </div>
     </ConfigProvider>
   ),
 });

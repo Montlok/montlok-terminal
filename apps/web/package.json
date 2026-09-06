@@ -31,15 +31,15 @@
     "defaults"
   ],
   "dependencies": {
-    "@blueprintjs/core": "6.18.0",
-    "@blueprintjs/table": "6.2.4",
-    "lightweight-charts": "5.2.0",
     "@ant-design/icons": "^6.3.2",
     "@ant-design/plots": "^2.6.8",
     "@ant-design/pro-components": "^3.1.14-2",
     "@ant-design/x": "^2.9.0",
     "@ant-design/x-markdown": "^2.9.0",
     "@ant-design/x-sdk": "^2.9.0",
+    "@blueprintjs/core": "6.18.0",
+    "@blueprintjs/table": "6.2.4",
+    "@simplewebauthn/browser": "14.0.0",
     "@tanstack/react-query": "^5.101.2",
     "antd": "^6.6.0",
     "antd-style": "^4.1.0",
@@ -48,6 +48,7 @@
     "d3": "^7.9.0",
     "dayjs": "^1.11.21",
     "highlight.js": "^11.11.1",
+    "lightweight-charts": "5.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "topojson-client": "^3.1.0"

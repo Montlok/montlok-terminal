@@ -52,3 +52,4 @@ docs/superpowers
 # cloudflare wrangler
 .wrangler
 requestRecord.mock.js
+!server/requirements.txt

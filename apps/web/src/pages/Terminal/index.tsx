@@ -1,18 +1,10 @@
-import { Icon } from '@blueprintjs/core';
 import { useModel } from '@umijs/max';
-import { Button, Select, Space, Tabs } from 'antd';
+import { Button, Tabs } from 'antd';
 import { useMemo, useState } from 'react';
 import { api, number, type Row, timeOf } from '../../operator/api';
 import { ConfirmOperation } from '../../operator/ConfirmOperation';
 import { DataGrid, type GridColumn } from '../../operator/DataGrid';
 import { valueLabel } from '../../operator/labels';
-import { MarketWorkspace } from '../../operator/MarketWorkspace';
-import { OrderBook, RecentTrades } from '../../operator/OrderBook';
-import { OrderTicket } from '../../operator/OrderTicket';
-import { useMarket } from '../../operator/useMarket';
-import { Watchlist } from '../../operator/Watchlist';
-
-const BARS = ['1m', '5m', '15m', '1H', '4H', '1D'];
 
 // Static column sets live at module scope so the memoized grids never see new props per tick.
 const FILL_COLUMNS: GridColumn[] = [
@@ -60,28 +52,11 @@ const PAPER_COLUMNS: GridColumn[] = [
 
 export default function Terminal() {
   const { account, paper, error } = useModel('operator');
+  const { initialState } = useModel('@@initialState');
   const [ticket, setTicket] = useState<Row>();
   const [actionError, setActionError] = useState('');
-  const [instrument, setInstrument] = useState('BTC-USDT');
-  const [bar, setBar] = useState('5m');
-  const [mode, setMode] = useState('live');
-  const market = useMarket(instrument, bar, mode);
-  const symbols = [
-    ...new Set([
-      'BTC-USDT',
-      'ETH-USDT',
-      ...(paper?.positions || []).map((row: Row) =>
-        row.instrument.replace('.OKX', ''),
-      ),
-      instrument,
-    ]),
-  ];
-  const ticker = market.ticker || {};
-  const change =
-    ticker.last && ticker.open24h
-      ? (Number(ticker.last) / Number(ticker.open24h) - 1) * 100
-      : undefined;
-  const cancelable = account.mode === 'demo';
+  const cancelable =
+    initialState?.currentUser?.access === 'admin' && account.mode === 'demo';
   const orderColumns = useMemo<GridColumn[]>(
     () => [
       { key: 'instId', title: '交易品种' },
@@ -119,119 +94,9 @@ export default function Terminal() {
   );
   return (
     <div className="terminal-page">
-      <section className="instrument-strip">
-        <Select
-          aria-label="交易品种"
-          showSearch
-          value={instrument}
-          onChange={setInstrument}
-          options={symbols.map((value) => ({
-            label: value.replace('-', '/'),
-            value,
-          }))}
-          style={{ width: 190 }}
-        />
-        <strong
-          className={`last-price ${change !== undefined && change < 0 ? 'negative' : 'positive'}`}
-        >
-          {number(ticker.last, 4)}
-        </strong>
-        <span
-          className={
-            change !== undefined && change < 0 ? 'negative' : 'positive'
-          }
-        >
-          {change === undefined
-            ? '—'
-            : `${change > 0 ? '+' : ''}${change.toFixed(2)}%`}
-        </span>
-        <div className="market-stat">
-          <span>24h 最高</span>
-          <b>{number(ticker.high24h, 4)}</b>
-        </div>
-        <div className="market-stat">
-          <span>24h 最低</span>
-          <b>{number(ticker.low24h, 4)}</b>
-        </div>
-        <div className="market-stat">
-          <span>24h 成交额 / USDT</span>
-          <b>{number(ticker.volCcy24h, 0)}</b>
-        </div>
-        <Select
-          aria-label="行情环境"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { label: '公开行情', value: 'live' },
-            { label: '模拟盘行情', value: 'demo' },
-          ]}
-          style={{ width: 150, marginLeft: 'auto' }}
-        />
-      </section>
-      {(error || market.error || actionError) && (
-        <div className="status-message">
-          {error || market.error || actionError}
-        </div>
+      {(error || actionError) && (
+        <div className="status-message">{error || actionError}</div>
       )}
-      <div className="trading-grid">
-        <Watchlist selected={instrument} onSelect={setInstrument} />
-        <section className="chart-panel panel">
-          <div className="panel-heading">
-            <div className="workspace-tabs">
-              <strong>图表</strong>
-              <span>{instrument}</span>
-            </div>
-            <span className="muted">TradingView</span>
-          </div>
-          <div className="chart-toolbar">
-            <Space size={0}>
-              {BARS.map((value) => (
-                <Button
-                  key={value}
-                  type={bar === value ? 'primary' : 'text'}
-                  onClick={() => setBar(value)}
-                >
-                  {value}
-                </Button>
-              ))}
-            </Space>
-            <span className="muted">
-              <Icon icon="chart" size={13} /> K 线 · 成交量
-            </span>
-          </div>
-          <MarketWorkspace
-            market={market}
-            instrument={instrument}
-            mode={mode}
-          />
-          <div className="chart-status">
-            <span>
-              <span
-                className={`connection-dot ${market.connected ? 'online' : ''}`}
-              />{' '}
-              {market.connected ? '实时' : '连接中'}
-            </span>
-            <span>行情接收 {timeOf(market.receivedAt)}</span>
-          </div>
-        </section>
-        <section className="book-panel panel">
-          <div className="panel-heading">
-            <strong>订单簿</strong>
-            <span className="muted">5 档</span>
-          </div>
-          <OrderBook book={market.book} last={ticker.last} />
-          <div className="panel-heading latest-heading">
-            <strong>最新成交</strong>
-            <span className="muted">市场</span>
-          </div>
-          <RecentTrades trades={market.trades} />
-        </section>
-        <OrderTicket
-          instrument={instrument}
-          last={ticker.last}
-          marketMode={mode}
-        />
-      </div>
       <section className="blotter panel">
         <Tabs
           size="small"
@@ -276,7 +141,7 @@ export default function Terminal() {
         />
       </section>
       <footer className="terminal-status">
-        <span>{market.connected ? '行情已连接' : '行情连接中'}</span>
+        <span>账户成交与资产</span>
         <span>
           账户更新 {timeOf(account.updatedAt)} ·{' '}
           {account.mode === 'demo' ? '模拟盘' : '实盘 · 只读'}

@@ -1,0 +1,21 @@
+.models-page .artifact-fields {
+  grid-template-columns: minmax(220px, 1fr) auto;
+}
+.models-page .run-facts {
+  max-width: 720px;
+}
+.models-page .artifact-uploader > .ant-descriptions,
+.models-page .artifact-uploader > details,
+.models-page .artifact-uploader > .run-facts,
+.models-page .artifact-uploader > .run-detail {
+  margin: 12px 16px;
+}
+.models-page .artifact-uploader > a {
+  display: inline-block;
+  margin: 12px 16px;
+}
+@media (max-width: 650px) {
+  .models-page .artifact-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

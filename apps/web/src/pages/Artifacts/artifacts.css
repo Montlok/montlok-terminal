@@ -1,0 +1,73 @@
+.artifact-uploader {
+  margin: 12px 0 20px;
+}
+.artifact-fields {
+  display: grid;
+  grid-template-columns: 160px minmax(140px, 1fr) 130px minmax(170px, 1fr) 120px;
+  align-items: end;
+  gap: 12px;
+  padding: 16px;
+}
+.artifact-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--op-muted);
+  font-size: 12px;
+}
+.artifact-fields .ant-select {
+  width: 100%;
+}
+.artifact-file-control {
+  align-self: center;
+  min-width: 0;
+}
+.artifact-file-control .ant-upload-wrapper {
+  display: block;
+}
+.artifact-hint {
+  margin: 0;
+  padding: 0 16px 14px;
+  color: var(--op-muted);
+  font-size: 12px;
+}
+.artifact-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0;
+  gap: 12px;
+}
+.artifact-list-heading .ant-select {
+  min-width: 180px;
+}
+.artifact-detail {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 8px 20px;
+  font-size: 12px;
+}
+.artifact-detail dt {
+  color: var(--op-muted);
+}
+.artifact-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 1100px) {
+  .artifact-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 650px) {
+  .artifact-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .artifact-detail {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    margin: 8px;
+  }
+}

@@ -1,0 +1,85 @@
+.strategy-run-panel {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 12px;
+}
+.run-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  color: var(--op-muted);
+}
+.run-field .ant-select,
+.run-field .ant-input-number {
+  width: 100%;
+}
+.run-facts {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.run-facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+.run-facts dt {
+  color: var(--op-muted);
+  flex-shrink: 0;
+}
+.run-facts dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.run-inputs {
+  display: grid;
+  gap: 8px;
+}
+.run-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.run-actions:not(.run-control-actions) > * {
+  grid-column: 1 / -1;
+}
+.run-section {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--op-border);
+}
+.run-section h3 {
+  margin: 0;
+  font-size: 12px;
+}
+.run-action small,
+.run-actions > small {
+  display: block;
+  margin-top: 3px;
+  color: var(--op-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+.run-detail {
+  margin: 0;
+  color: var(--op-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.run-check-result {
+  margin: 0;
+  color: var(--op-up);
+  font-size: 11px;
+}
+.run-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}

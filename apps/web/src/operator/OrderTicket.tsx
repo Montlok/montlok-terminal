@@ -15,6 +15,8 @@ export const OrderTicket = memo(function OrderTicket({
   marketMode: string;
 }) {
   const { account, refresh, epoch } = useModel('operator');
+  const { initialState } = useModel('@@initialState');
+  const canOperate = initialState?.currentUser?.access === 'admin';
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [type, setType] = useState('limit');
   const [quantity, setQuantity] = useState('');
@@ -59,7 +61,7 @@ export const OrderTicket = memo(function OrderTicket({
         }),
       );
     } catch (reason) {
-      setError(String(reason));
+      setError(reason instanceof Error ? reason.message : String(reason));
     } finally {
       setBusy(false);
     }
@@ -148,7 +150,9 @@ export const OrderTicket = memo(function OrderTicket({
           type="primary"
           className={`trade-submit ${side}`}
           loading={busy}
-          disabled={!account.available || account.mode !== 'demo'}
+          disabled={
+            !canOperate || !account.available || account.mode !== 'demo'
+          }
           onClick={() => void prepare()}
         >
           {side === 'buy' ? '买入' : '卖出'} {base}
