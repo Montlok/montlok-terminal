@@ -14,14 +14,20 @@ import signal
 import sqlite3
 import time
 from pathlib import Path
+from urllib.parse import unquote
 
 import aiohttp
 import jsonschema
 import psutil
 from aiohttp import web
 
+from artifacts import ArtifactError, ArtifactStore, ArtifactTooLarge
 from auth import Authentication
 from exchange import MCP, rest, verify
+from group_runtime import GroupRuntimeClient
+from group_views import GroupViews
+from model_releases import ModelReleaseStore
+from passkeys import Passkeys
 from profiles import Profiles
 
 
@@ -37,9 +43,13 @@ class Operator:
     def __init__(self, args):
         self.args = args
         self.profiles = Profiles(args.state_dir, args.credentials)
+        self.artifacts = ArtifactStore(args.state_dir / "artifacts")
+        self.model_releases = ModelReleaseStore(args.state_dir / "models", self.artifacts)
+        self.artifact_upload_lock = asyncio.Lock()
         self.mcp = MCP(args.node, args.mcp)
         self.sessions = {}
         self.auth = Authentication(args.auth_file) if getattr(args, "auth_file", None) else None
+        self.passkeys = Passkeys(args.state_dir / "passkeys.sqlite", args.auth_file, args.passkey_origin) if getattr(args, "passkey_origin", None) else None
         self.confirmations = {}
         self.write_lock = asyncio.Lock()
         self.tools = {tool["name"]: tool for tool in json.loads((args.catalog / "okx_mcp_tools.json").read_text())["tools"]}
@@ -51,6 +61,12 @@ class Operator:
         if "session" not in {row[1] for row in self.database.execute("PRAGMA table_info(operations)")}:
             self.database.execute("ALTER TABLE operations ADD COLUMN session TEXT")
             self.database.commit()
+        if "owner" not in {row[1] for row in self.database.execute("PRAGMA table_info(operations)")}:
+            self.database.execute("ALTER TABLE operations ADD COLUMN owner TEXT")
+            self.database.commit()
+        self.database.execute("UPDATE operations SET status='unknown',result=? WHERE status='processing'",
+                              (json.dumps({"error": "服务重启前的操作结果待核对，请查看运行实例与交易记录"}),))
+        self.database.commit()
         self.account = {"available": False, "privateConnected": False, "balances": [], "orders": [], "fills": []}
         self.last_account_epoch = -1
         self.market_snapshots = {}
@@ -60,6 +76,9 @@ class Operator:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self.paper = module.RunView(args.paper_run)
+        self.group_views = GroupViews(args.paper_run, self.paper)
+        self.group_runtime = GroupRuntimeClient(getattr(args, "group_socket", None))
+        self.managed_views = {}
 
     def session(self, request, write=False):
         public = request.headers.get("X-Operator-Public") == "1"
@@ -69,7 +88,8 @@ class Operator:
             raise web.HTTPUnauthorized(text="请登录交易操作台")
         entry["lastSeen"] = time.time()
         if write and not secrets.compare_digest(request.headers.get("X-Operator-CSRF", ""), entry["csrf"]):
-            raise web.HTTPForbidden(text="操作会话校验失败")
+            raise web.HTTPForbidden(text=json.dumps({"code": "SESSION_CSRF_MISMATCH", "error": "操作会话已更新"}),
+                                    content_type="application/json")
         return session_id
 
     def blocked(self, kind, name, arguments=None):
@@ -108,6 +128,8 @@ class Operator:
         return identifier
 
     def validate_operation(self, operation):
+        if not isinstance(operation, dict):
+            raise ValueError("操作必须是 JSON 对象")
         kind, name, arguments = operation.get("kind"), operation.get("name"), operation.get("arguments", {})
         if not isinstance(arguments, dict) and not (kind == "rest" and isinstance(arguments, list) and not name.startswith("GET ")):
             raise ValueError("参数必须是 JSON 对象")
@@ -135,6 +157,22 @@ class Operator:
             if arguments.get("runId") != self.args.paper_run.name:
                 raise ValueError("运行实例已变化，请刷新后重试")
             read_only = name != "stop"
+        elif kind == "group" and name in ("start", "halt", "reduce", "resume", "stop"):
+            if set(arguments) - {"groupId", "runId", "budgetUsdt", "durationSeconds", "registryVersion", "inventoryHash", "action"}:
+                raise ValueError("策略组操作包含未定义参数")
+            if not isinstance(arguments.get("groupId"), str) or not re.fullmatch(r"[a-z][a-z0-9_-]{0,47}", arguments["groupId"]):
+                raise ValueError("策略组标识不正确")
+            if arguments.get("action", name) != name:
+                raise ValueError("策略组操作与确认内容不一致")
+            arguments = {**arguments, "action": name}
+            read_only = False
+        elif kind == "model_release" and name in ("validate", "publish", "rollback"):
+            allowed = {"artifactId"} if name == "validate" else {"artifactId", "releaseId", "manifestSha256", "expectedActiveReleaseId"}
+            if set(arguments) - allowed:
+                raise ValueError("模型发布请求包含未定义字段")
+            if name == "validate" and not isinstance(arguments.get("artifactId"), str):
+                raise ValueError("请选择已登记的模型文件")
+            read_only = False
         elif kind == "profile" and name in ("save", "select", "delete"):
             if name == "save":
                 arguments = self.profiles.validate(arguments)
@@ -201,6 +239,8 @@ class Operator:
         return response
 
     async def login_route(self, request):
+        if self.passkeys and self.passkeys.password_disabled:
+            raise web.HTTPGone(text="请使用通行密钥登录")
         if not self.auth:
             raise web.HTTPServiceUnavailable(text="尚未配置网页登录")
         if request.content_type != "application/json":
@@ -213,9 +253,59 @@ class Operator:
             raise web.HTTPTooManyRequests(text=str(error), headers={"Retry-After": "300"}) from None
         if not accepted:
             raise web.HTTPUnauthorized(text="用户名或密码错误")
+        # A passkey may have activated while the password hash ran in a worker.
+        if self.passkeys and self.passkeys.password_disabled:
+            raise web.HTTPGone(text="请使用通行密钥登录")
         for name in ("operator_session", "__Host-operator_session"):
             self.sessions.pop(request.cookies.get(name), None)
         return self.new_session(request, accepted["username"], accepted["role"])
+
+    async def passkey_route(self, request):
+        if not self.passkeys or not self.auth:
+            raise web.HTTPServiceUnavailable(text="通行密钥暂不可用")
+        if (request.headers.get("Origin") != self.passkeys.origin
+                or request.headers.get("X-Operator-Public") != "1"
+                or request.headers.get("X-Forwarded-Proto") != "https"):
+            raise web.HTTPForbidden(text="请从网站登录页重试")
+        if request.content_type != "application/json":
+            raise web.HTTPUnsupportedMediaType()
+        try:
+            self.passkeys.throttle(request.headers.get("X-Real-IP", request.remote))
+        except OverflowError as error:
+            raise web.HTTPTooManyRequests(text=str(error), headers={"Retry-After": "300"}) from None
+        value = await request.json()
+        if not isinstance(value, dict):
+            raise ValueError("请求格式错误")
+        action = request.match_info["action"]
+        cookie = "__Host-operator_passkey"
+        if action in ("register-options", "login-options"):
+            try:
+                if action == "register-options":
+                    flow, options = self.passkeys.registration_options(value.get("token"))
+                else:
+                    flow, options = self.passkeys.authentication_options()
+            except OverflowError as error:
+                raise web.HTTPTooManyRequests(text=str(error)) from None
+            self.passkeys.pending.pop(request.cookies.get(cookie), None)
+            response = web.json_response(options)
+            response.set_cookie(cookie, flow, secure=True, httponly=True, samesite="Strict", max_age=300, path="/")
+        else:
+            credential = value.get("credential")
+            if not isinstance(credential, dict):
+                raise ValueError("请求格式错误")
+            if action == "register":
+                self.passkeys.register(request.cookies.get(cookie), credential)
+                response = web.json_response({"registered": True})
+            else:
+                user, activated = self.passkeys.authenticate(request.cookies.get(cookie), credential)
+                if activated:
+                    self.sessions.clear()
+                    self.confirmations.clear()
+                else:
+                    self.sessions.pop(request.cookies.get("__Host-operator_session"), None)
+                response = self.new_session(request, user["username"], user["role"])
+            response.del_cookie(cookie, secure=True, httponly=True, samesite="Strict", path="/")
+        return response
 
     async def logout_route(self, request):
         identifier = self.session(request, True)
@@ -251,6 +341,161 @@ class Operator:
         self.session(request)
         return web.json_response(await asyncio.to_thread(self.paper.snapshot))
 
+    async def artifacts_route(self, request):
+        if request.method in {"GET", "HEAD"}:
+            self.session(request)
+        else:
+            self.require_operator(request)
+        try:
+            if request.method in {"GET", "HEAD"}:
+                rows = await asyncio.to_thread(self.artifacts.list, request.query.get("kind"))
+                return web.json_response({"artifacts": rows, "limits": {"maxBytes": self.artifacts.max_bytes}})
+            if request.content_type != "multipart/form-data":
+                raise web.HTTPUnsupportedMediaType(text="请选择上传文件")
+            if request.headers.get("Content-Encoding", "identity") != "identity":
+                raise ArtifactError("上传请求不支持内容编码")
+            # Only this authenticated route accepts larger bodies. Multipart
+            # streaming has its own byte limits; JSON routes retain 1 MiB.
+            request._client_max_size = self.artifacts.max_bytes + 16 * 1024
+            if request.content_length is not None and request.content_length > request._client_max_size:
+                raise ArtifactTooLarge("上传请求超过大小限制")
+            if self.artifact_upload_lock.locked():
+                raise web.HTTPTooManyRequests(text="已有文件正在上传，请稍后重试")
+            async with self.artifact_upload_lock, asyncio.timeout(120):
+                reader = await request.multipart()
+                fields = {}
+                for _ in range(4):
+                    part = await reader.next()
+                    if not isinstance(part, aiohttp.BodyPartReader):
+                        raise ArtifactError("上传须包含 kind、name、version 和一个文件")
+                    if part.headers.get("Content-Encoding") or part.headers.get("Content-Transfer-Encoding"):
+                        raise ArtifactError("上传字段不支持内容编码")
+                    if part.name == "file":
+                        if set(fields) != {"kind", "name", "version"} or not part.filename:
+                            raise ArtifactError("请先提供类型、名称和版本，再上传文件")
+                        filename = unquote(part.filename, errors="strict")
+                        self.artifacts.metadata(**fields, filename=filename)
+                        async def chunks():
+                            while chunk := await part.read_chunk(self.artifacts.CHUNK_BYTES):
+                                if request.content.total_bytes > request._client_max_size:
+                                    raise ArtifactTooLarge("上传请求超过大小限制")
+                                yield chunk
+                            if await reader.next() is not None:
+                                raise ArtifactError("一次只能上传一个文件，文件须为最后一个字段")
+                            if request.content.total_bytes > request._client_max_size:
+                                raise ArtifactTooLarge("上传请求超过大小限制")
+                            self.require_operator(request)
+                        result = await self.artifacts.register_async(chunks(), **fields, filename=filename)
+                        return web.json_response({"artifact": result}, status=201)
+                    if part.name not in {"kind", "name", "version"} or part.name in fields or part.filename:
+                        raise ArtifactError("上传包含重复或未知字段")
+                    value = bytearray()
+                    while chunk := await part.read_chunk(4096):
+                        value.extend(chunk)
+                        if len(value) > 1024:
+                            raise ArtifactTooLarge("上传字段过长")
+                    fields[part.name] = value.decode("utf-8")
+                raise ArtifactError("上传缺少文件")
+        except web.HTTPException:
+            raise
+        except ArtifactError as error:
+            return web.json_response({"error": str(error)}, status=error.status)
+        except (ValueError, AssertionError, aiohttp.ClientPayloadError):
+            return web.json_response({"error": "上传格式无效"}, status=400)
+        except TimeoutError:
+            return web.json_response({"error": "上传超时，请重试"}, status=408)
+        except Exception:
+            # Filesystem paths, SQLite messages and uploaded contents never
+            # cross the API boundary through generic exception formatting.
+            return web.json_response({"error": "文件库暂不可用"}, status=503)
+
+    async def strategy_groups_route(self, request):
+        self.session(request)
+        group_id = request.match_info.get("group_id")
+        registry = []
+        if group_id is None or group_id not in GroupViews.GROUP_IDS:
+            try:
+                registry = (await self.group_runtime.status()).get("groups", [])
+            except ValueError:
+                pass
+        def registered_group(item):
+            return {"id": item["groupId"], "name": item["name"], "description": "已发布运行配置",
+                    "mode": item["mode"], "modeLabel": "OKX 实盘" if item["mode"] == "live" else "影子运行" if item["mode"] == "shadow" else "本地模拟",
+                    "accountId": item.get("profileId") if item["mode"] == "live" else None, "runId": None,
+                    "status": "ready" if item["ready"] else "pending_validation", "observedAt": None,
+                    "metrics": {key: None for key in ("capital", "nav", "pnl", "fees", "fills", "returnPct", "maxDrawdownPct")},
+                    "capabilities": item["capabilities"], "alpha": [], "version": [], "health": {},
+                    **{key: [] for key in ("positions", "orders", "fills", "strategies", "systems", "exceptions", "runtimeConfig")}}
+        view = self.group_views
+        run_id = request.query.get("runId")
+        if run_id:
+            if not group_id or not re.fullmatch(r"[a-z][a-z0-9_-]{0,80}", run_id):
+                raise ValueError("运行实例标识不正确")
+            runtime = await self.group_runtime.status(group_id)
+            run = next((run for group in runtime.get("groups", []) if group["groupId"] == group_id
+                        for run in group.get("runs", []) if run["runId"] == run_id), None)
+            if run is None:
+                raise web.HTTPNotFound(text="运行实例不存在")
+            path = Path(run["runDir"])
+            if path.name != run_id or path.parent.resolve() != self.group_runtime.path.parent.resolve():
+                raise ValueError("运行目录与控制服务不一致")
+            if run_id not in self.managed_views:
+                from managed_run_view import ManagedRunView
+                if len(self.managed_views) >= 16:
+                    self.managed_views.pop(next(iter(self.managed_views)))
+                self.managed_views[run_id] = GroupViews(path, ManagedRunView(path, expected_group_id=group_id), group_id=group_id,
+                    group_name=next(group["name"] for group in runtime["groups"] if group["groupId"] == group_id))
+            view = self.managed_views[run_id]
+        try:
+            if group_id is None:
+                value = await asyncio.to_thread(view.snapshot)
+                existing = {item["id"] for item in value["groups"]}
+                value["groups"].extend(registered_group(item) for item in registry if item["groupId"] not in existing and item.get("dashboardVisible", True))
+            elif not run_id and group_id not in GroupViews.GROUP_IDS:
+                item = next((item for item in registry if item["groupId"] == group_id), None)
+                if item is None:
+                    raise KeyError(group_id)
+                value = registered_group(item)
+                if request.path.endswith("/equity"):
+                    value = {"groupId": group_id, "runId": None, "points": [], "drawdown": [], "sampleCount": 0,
+                             "partial": False, "invalidLines": 0, "sourceAvailable": False,
+                             "sourceStatus": "unconfigured", "sourceIssue": None}
+            elif request.path.endswith("/equity"):
+                value = await asyncio.to_thread(view.equity, group_id)
+            else:
+                value = await asyncio.to_thread(view.detail, group_id)
+        except KeyError:
+            raise web.HTTPNotFound(text="策略组不存在") from None
+        return web.json_response(value)
+
+    async def model_releases_route(self, request):
+        self.session(request)
+        release_id = request.match_info.get("release_id")
+        if release_id:
+            releases = [await asyncio.to_thread(self.model_releases.get, release_id)]
+        else:
+            releases = await asyncio.to_thread(self.model_releases.list)
+        try:
+            runtime = await self.group_runtime.status()
+            groups = runtime.get("groups", []) if runtime.get("available") is True else []
+        except ValueError:
+            groups = []
+        for release in releases:
+            group = next((g for g in groups if g.get("kind") == "model"
+                          and g.get("releaseId") == release["releaseId"]
+                          and g.get("manifestSha256") == release["manifestSha256"]), None)
+            if group is not None:
+                ready = bool(group.get("ready"))
+                release["groupId"] = group["groupId"]
+                release["deployReady"] = ready
+                release["nodeCompatibility"] = {"ready": ready, "reason": group.get("capabilities", {}).get("reason"),
+                    "device": group.get("device", release["manifest"]["runtime"]["device"]),
+                    "capabilities": group.get("nodeCapabilities", {}), "nodeId": "local"}
+            else:
+                release["deployReady"] = False
+                release["nodeCompatibility"] = {"ready": False, "reason": "目标节点尚未注册此模型版本", "nodeId": "local"}
+        return web.json_response(releases[0] if release_id else {"releases": releases})
+
     async def query_route(self, request):
         self.session(request, True)
         operation, read_only = self.validate_operation(await request.json())
@@ -261,6 +506,27 @@ class Operator:
         if epoch != self.profiles.epoch:
             raise ValueError("查询期间连接发生变化，请重新查询")
         return web.json_response({"result": result, "epoch": epoch})
+
+    async def group_runtime_route(self, request):
+        group_id = request.match_info["group_id"]
+        if request.method == "POST":
+            self.require_operator(request)
+            values = await request.json()
+            if not isinstance(values, dict):
+                raise ValueError("配置必须是 JSON 对象")
+            operation, _ = self.validate_operation({"kind": "group", "name": "start",
+                "arguments": {**values, "groupId": group_id}})
+            preview = await self.group_runtime.prepare(operation["arguments"])
+            return web.json_response(preview)
+        self.session(request)
+        try:
+            result = await self.group_runtime.status(group_id)
+        except ValueError as error:
+            result = {"available": False, "groups": [], "reason": str(error)}
+        for group in result.get("groups", []):
+            for run in group.get("runs", []):
+                run.pop("runDir", None)
+        return web.json_response(redact(result))
 
     async def prepare_route(self, request):
         session_id = self.require_operator(request)
@@ -276,12 +542,23 @@ class Operator:
         if len(self.confirmations) >= 100:
             raise ValueError("待确认操作过多，请先完成或等待过期")
         verification = None
+        group_preview = None
+        model_preview = None
+        if operation["kind"] == "model_release":
+            if operation["name"] == "validate":
+                model_preview = await asyncio.to_thread(self.model_releases.validate, operation["arguments"]["artifactId"])
+            else:
+                model_preview = await asyncio.to_thread(self.model_releases.prepare, operation["name"], operation["arguments"])
+                operation["arguments"] = model_preview["request"]
+        if operation["kind"] == "group":
+            group_preview = await self.group_runtime.prepare(operation["arguments"])
+            operation["arguments"] = group_preview["request"]
         if operation["kind"] == "profile" and operation["name"] in ("save", "select"):
             profile = operation["arguments"] if operation["name"] == "save" else self.profiles.get(operation["arguments"]["id"])
             verification = await verify(self.http, profile)
         identifier = secrets.token_urlsafe(24)
         self.confirmations[identifier] = {"session": session_id, "operation": operation, "expires": now + 90, "epoch": self.profiles.epoch}
-        return web.json_response({"id": identifier, "expiresAt": now + 90, "profile": self.profiles.public(), "operation": redact(operation), "newAccountVerification": verification})
+        return web.json_response({"id": identifier, "expiresAt": now + 90, "profile": self.profiles.public(), "operation": redact(operation), "newAccountVerification": verification, "groupPreview": redact(group_preview), "modelPreview": redact(model_preview)})
 
     async def execute_route(self, request):
         session_id = self.require_operator(request)
@@ -299,16 +576,67 @@ class Operator:
                 raise ValueError("API 连接已改变，请重新确认操作")
             operation, _ = self.validate_operation(ticket["operation"])
             self.confirmations.pop(identifier)
-            self.database.execute("INSERT INTO operations VALUES (?,?,?,?,?,?,?,?)", (identifier, time.time(), self.profiles.get()["id"], f"{operation['kind']}:{operation['name']}", json.dumps(redact(operation["arguments"])), "processing", "null", session_id))
+            self.database.execute("INSERT INTO operations (id,at,profile,action,parameters,status,result,session,owner) VALUES (?,?,?,?,?,?,?,?,?)",
+                (identifier, time.time(), self.profiles.get()["id"], f"{operation['kind']}:{operation['name']}",
+                 json.dumps(redact(operation["arguments"])), "processing", "null", session_id,
+                 self.sessions[session_id].get("operator")))
             self.database.commit()
             try:
-                result = await self.perform(operation)
-                status = "error" if isinstance(result, dict) and result.get("isError") else "completed"
+                if operation["kind"] == "group":
+                    result = await self.group_runtime.execute(operation["arguments"], identifier)
+                    receipt = result.get("receiptStatus", result.get("status"))
+                    status = "unknown" if receipt in {"unknown", "processing"} else "error" if receipt == "failed" else "completed"
+                elif operation["kind"] == "model_release":
+                    if operation["name"] == "validate":
+                        result = await asyncio.to_thread(self.model_releases.validate, operation["arguments"]["artifactId"])
+                    else:
+                        result = await asyncio.to_thread(self.model_releases.execute, operation["name"], operation["arguments"],
+                            identifier, self.sessions[session_id]["operator"])
+                    status = "completed"
+                else:
+                    result = await self.perform(operation)
+                    status = "error" if isinstance(result, dict) and result.get("isError") else "completed"
             except Exception as error:
                 result, status = {"error": str(error)}, "unknown" if isinstance(error, (TimeoutError, aiohttp.ClientError)) or "未知" in str(error) else "error"
             self.database.execute("UPDATE operations SET status=?,result=? WHERE id=?", (status, json.dumps(redact(result)), identifier))
             self.database.commit()
             return web.json_response({"id": identifier, "status": status, "result": redact(result)})
+
+    async def group_receipt_route(self, request):
+        """Read a saved confirmation result; never submit/retry its command."""
+        session_id = self.session(request)
+        identifier = request.match_info["operation_id"]
+        row = self.database.execute("SELECT status,result,session,action,owner FROM operations WHERE id=?", (identifier,)).fetchone()
+        if row is None:
+            raise web.HTTPNotFound(text="操作回执不存在")
+        # New sessions may read only their own stable operator identity. Legacy
+        # receipts without an owner retain their original session restriction.
+        if row[4] is not None and row[4] != self.sessions[session_id].get("operator") or row[4] is None and row[2] != session_id:
+            raise web.HTTPForbidden(text="操作回执不属于当前会话")
+        status, result = row[0], json.loads(row[1])
+        if row[3].startswith("model_release:") and status in {"unknown", "processing"}:
+            try:
+                saved = await asyncio.to_thread(self.model_releases.receipt, identifier)
+            except ValueError:
+                saved = None
+            if saved is not None:
+                result, status = saved, "completed"
+                self.database.execute("UPDATE operations SET status=?,result=? WHERE id=?",
+                                      (status, json.dumps(redact(result)), identifier))
+                self.database.commit()
+        if row[3].startswith("group:") and status in {"unknown", "processing"}:
+            try:
+                result = await self.group_runtime.receipt(identifier)
+                receipt = result.get("receiptStatus", result.get("status"))
+                status = "completed" if receipt == "completed" else "error" if receipt == "failed" else "unknown"
+                self.database.execute("UPDATE operations SET status=?,result=? WHERE id=?",
+                                      (status, json.dumps(redact(result)), identifier))
+                self.database.commit()
+            except (ValueError, TimeoutError, OSError):
+                # A temporarily unavailable worker does not change a receipt
+                # into a failure and must not cause an automatic retry.
+                status = "unknown"
+        return web.json_response({"id": identifier, "status": status, "result": redact(result)})
 
     async def history_route(self, request):
         self.session(request)
@@ -460,7 +788,7 @@ class Operator:
         instrument = request.query.get("instrument", "BTC-USDT")
         bar = request.query.get("bar", "1m")
         mode = request.query.get("mode", "live")
-        if not re.fullmatch(r"[A-Z0-9]{1,20}-USDT", instrument) or bar not in ("1m", "5m", "15m", "1H", "4H", "1D") or mode not in ("live", "demo"):
+        if not re.fullmatch(r"[A-Z0-9]{1,20}-USDT(?:-SWAP)?", instrument) or bar not in ("1m", "5m", "15m", "1H", "4H", "1D") or mode not in ("live", "demo"):
             raise ValueError("不支持的品种、周期或行情环境")
         return instrument, bar, mode
 
@@ -533,6 +861,8 @@ class Operator:
         await self.mcp.close()
         await self.http.close()
         self.database.close()
+        if self.passkeys:
+            self.passkeys.database.close()
 
     def application(self):
         @web.middleware
@@ -566,12 +896,22 @@ class Operator:
         app.on_response_prepare.append(security_headers)
         app.cleanup_ctx.append(self.lifecycle)
         app.add_routes([web.post("/api/login", self.login_route), web.post("/api/logout", self.logout_route)])
+        app.add_routes([web.post("/api/passkeys/{action:register-options|register|login-options|login}", self.passkey_route)])
         app.add_routes([web.get("/api/market/snapshot", self.market_snapshot_route), web.get("/api/host", self.host_route)])
+        app.add_routes([web.get("/api/artifacts", self.artifacts_route), web.post("/api/artifacts", self.artifacts_route)])
+        app.add_routes([web.get("/api/strategy-groups", self.strategy_groups_route),
+                        web.get("/api/model-releases", self.model_releases_route),
+                        web.get("/api/model-releases/{release_id}", self.model_releases_route),
+                        web.get("/api/strategy-groups/{group_id}/runtime", self.group_runtime_route),
+                        web.post("/api/strategy-groups/{group_id}/preflight", self.group_runtime_route),
+                        web.get("/api/strategy-groups/{group_id}", self.strategy_groups_route),
+                        web.get("/api/strategy-groups/{group_id}/equity", self.strategy_groups_route)])
         app.add_routes([web.get("/api/session", self.session_route), web.get("/api/catalog", self.catalog_route),
             web.get("/api/profiles", self.profiles_route), web.post("/api/profiles/test", self.profile_test),
             web.get("/api/account", self.account_route), web.get("/api/paper", self.paper_route),
             web.post("/api/query", self.query_route), web.post("/api/prepare", self.prepare_route),
             web.post("/api/execute", self.execute_route), web.get("/api/history", self.history_route),
+            web.get("/api/operations/{operation_id}", self.group_receipt_route),
             web.get("/api/events", self.events_route), web.get("/api/market/candles", self.candles_route),
             web.get("/api/market/stream", self.stream_route), web.get("/{path:.*}", self.static_route)])
         return app
@@ -582,9 +922,11 @@ if __name__ == "__main__":
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--credentials", type=Path)
     parser.add_argument("--auth-file", type=Path, help="Required for public HTTPS; absence permits only SSH-loopback sessions")
+    parser.add_argument("--passkey-origin", help="Exact HTTPS origin; requires an initialized state/passkeys.sqlite")
     parser.add_argument("--catalog", type=Path, default=Path(__file__).parent / "catalog")
     parser.add_argument("--static-dir", type=Path, required=True)
     parser.add_argument("--paper-run", type=Path, required=True)
+    parser.add_argument("--group-socket", type=Path, help="UNIX socket of the independent strategy group supervisor")
     parser.add_argument("--paper-bridge", type=Path, required=True)
     parser.add_argument("--node", required=True)
     parser.add_argument("--mcp", required=True)

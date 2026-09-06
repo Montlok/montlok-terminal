@@ -1,0 +1,31 @@
+[Unit]
+Description=Montlok sandbox strategy-group supervisor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nautilus
+Group=nautilus
+WorkingDirectory=/usr/local/lib/montlok-groups
+ExecStart=/opt/montlok-runtime/bin/python /usr/local/lib/montlok-groups/server/group_runtime.py --registry /etc/montlok-groups/registry.json --state-dir /www/nautilus/group-runs --socket /www/nautilus/group-runs/supervisor.sock
+Environment=PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+UnsetEnvironment=OKX_API_KEY OKX_API_SECRET OKX_API_PASSPHRASE HTTP_PROXY HTTPS_PROXY ALL_PROXY
+UMask=0077
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=50
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/www/nautilus/group-runs
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryHigh=3G
+MemoryMax=4G
+TasksMax=512
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

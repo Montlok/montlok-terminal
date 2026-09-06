@@ -1,0 +1,120 @@
+{
+  "instrument": "BTC-USDT",
+  "bar": "15m",
+  "prepared_at_utc": "2026-09-05T05:03:13.660281+00:00",
+  "feature_names": [
+    "btc_return_lag_1",
+    "btc_momentum_1",
+    "btc_return_lag_2",
+    "btc_momentum_2",
+    "btc_return_lag_4",
+    "btc_momentum_4",
+    "btc_return_lag_8",
+    "btc_momentum_8",
+    "btc_return_lag_16",
+    "btc_momentum_16",
+    "btc_return_lag_32",
+    "btc_momentum_32",
+    "btc_return_lag_96",
+    "btc_momentum_96",
+    "btc_vol_4",
+    "btc_volume_z_4",
+    "btc_vol_16",
+    "btc_volume_z_16",
+    "btc_vol_96",
+    "btc_volume_z_96",
+    "btc_range",
+    "btc_body",
+    "perp_spot_basis",
+    "basis_change_1",
+    "basis_change_4",
+    "basis_change_16",
+    "basis_z_96",
+    "perp_spot_log_volume_ratio",
+    "eth_momentum_1",
+    "btc_eth_relative_1",
+    "eth_momentum_4",
+    "btc_eth_relative_4",
+    "eth_momentum_16",
+    "btc_eth_relative_16",
+    "eth_momentum_96",
+    "btc_eth_relative_96",
+    "eth_vol_16",
+    "btc_eth_corr_96",
+    "hour_sin",
+    "hour_cos"
+  ],
+  "feature_count": 40,
+  "sequence_bars": 32,
+  "horizon_bars": 4,
+  "feature_available": "after close t",
+  "entry": "open t+1",
+  "label_exit": "open t+5",
+  "scaler": "train-only z-score clipped to [-8,8]",
+  "sources": {
+    "BTC-USDT": {
+      "path": "/Users/gabiri/Documents/量化/model_training/data/recent_20260905/BTC-USDT-15m.csv",
+      "sha256": "c245e28aa07e2d1afb91515d7c30cb579e9fc81d47b7aad384b30430fc52e390"
+    },
+    "BTC-USDT-SWAP": {
+      "path": "/Users/gabiri/Documents/量化/model_training/data/recent_20260905/BTC-USDT-SWAP-15m.csv",
+      "sha256": "1bef4a18fd95ca0ffb56eaf6a1ed768779ef7109682267dae1fc9ee06cf1617c"
+    },
+    "ETH-USDT": {
+      "path": "/Users/gabiri/Documents/量化/model_training/data/recent_20260905/ETH-USDT-15m.csv",
+      "sha256": "11ddb650ac68da5d516a4f5560e4bae66af647cad52af658d47642bb70cb35e3"
+    }
+  },
+  "last_confirmed_bar": "2026-09-05 04:45:00+00:00",
+  "splits": {
+    "train": {
+      "rows": 17168,
+      "start": "2026-03-10 07:45:00+00:00",
+      "end": "2026-09-05 03:30:00+00:00"
+    }
+  },
+  "threshold_grid_bps": [
+    0,
+    12,
+    24,
+    36,
+    60
+  ],
+  "fee_bps": 10,
+  "slippage_bps": 2,
+  "experiment_config": {
+    "experiment": "btc_recent_20260905",
+    "data_start": "2026-03-09T00:00:00Z",
+    "bar": "15m",
+    "instruments": [
+      "BTC-USDT",
+      "BTC-USDT-SWAP",
+      "ETH-USDT"
+    ],
+    "validation_start": "2026-07-01T00:00:00Z",
+    "test_start": "2026-08-01T00:00:00Z",
+    "horizon_bars": 4,
+    "sequence_bars": 32,
+    "threshold_grid_bps": [
+      0,
+      12,
+      24,
+      36,
+      60
+    ],
+    "fee_bps": 10,
+    "slippage_bps": 2,
+    "model": "GRU",
+    "hidden_size": 64,
+    "max_epochs": 20,
+    "early_stopping_patience": 4,
+    "seed": 7,
+    "leverage": 1,
+    "execution": "research_only_next_bar_open",
+    "training_host": "DGX Spark GB10"
+  },
+  "test_is_new_global_blind_holdout": false,
+  "note": "Includes former validation/test dates after research selection; no independent test score for this artifact.",
+  "mode": "latest_refit_no_independent_test",
+  "fixed_epochs": 3
+}

@@ -1,0 +1,5 @@
+aiohttp>=3.12,<4
+cryptography>=44
+jsonschema>=4.23,<5
+psutil>=6
+webauthn==3.0.0

@@ -1,0 +1,34 @@
+{
+  "model": "ReturnGRU",
+  "hidden_size": 64,
+  "seed": 7,
+  "best_epoch": 3,
+  "parameters": 20545,
+  "torch": "2.12.0+cu130",
+  "device": "cuda",
+  "gpu": "NVIDIA GB10",
+  "peak_gpu_allocated_bytes": 139696128,
+  "elapsed_seconds": 1.1260726710024755,
+  "history": [
+    {
+      "epoch": 1,
+      "train_huber_scaled": 2.342618482088443,
+      "valid_mse": null,
+      "elapsed_seconds": 0.6422059410033398
+    },
+    {
+      "epoch": 2,
+      "train_huber_scaled": 2.3238122118819238,
+      "valid_mse": null,
+      "elapsed_seconds": 0.851190724002663
+    },
+    {
+      "epoch": 3,
+      "train_huber_scaled": 2.3089917088265968,
+      "valid_mse": null,
+      "elapsed_seconds": 1.1143464019987732
+    }
+  ],
+  "weight_selection": "fixed epochs selected by prior research run; all eligible latest data used",
+  "mode": "latest_refit"
+}

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 from aiohttp import CookieJar
 from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import make_mocked_request
 
 from app import Operator
 from auth import Authentication, password_hash
@@ -54,11 +55,18 @@ class BoundaryTests(unittest.IsolatedAsyncioTestCase):
     async def test_mutation_needs_csrf(self):
         response = await self.client.post("/api/prepare", json=self.operation)
         self.assertEqual(response.status, 403)
+        self.assertEqual((await response.json())["code"], "SESSION_CSRF_MISMATCH")
         self.assertEqual(self.calls, 0)
 
     async def test_cross_origin_rejected(self):
         response = await self.client.get("/api/session", headers={"Origin": "https://untrusted.example"})
         self.assertEqual(response.status, 403)
+
+    def test_public_swap_charts_do_not_enable_derivative_trading(self):
+        request = make_mocked_request('GET', '/api/market/candles?instrument=BTC-USDT-SWAP&bar=1H&mode=live')
+        self.assertEqual(self.operator.market_parameters(request), ('BTC-USDT-SWAP', '1H', 'live'))
+        with self.assertRaises(ValueError):
+            self.operator.market_parameters(make_mocked_request('GET', '/api/market/candles?instrument=BTC-USDT-SWAP/other'))
 
     async def test_prepare_does_not_execute(self):
         await self.ticket()
@@ -124,9 +132,20 @@ class BoundaryTests(unittest.IsolatedAsyncioTestCase):
     async def test_anonymous_cannot_mint_session_when_login_enabled(self):
         self.enable_login()
         self.client.session.cookie_jar.clear()
-        for path in ("/api/session", "/api/account", "/api/profiles", "/api/catalog", "/api/events"):
+        for path in ("/api/session", "/api/account", "/api/profiles", "/api/catalog", "/api/events",
+                     "/api/strategy-groups", "/api/strategy-groups/baseline", "/api/strategy-groups/baseline/equity"):
             response = await self.client.get(path)
             self.assertEqual(response.status, 401, path)
+
+    async def test_groups_are_read_only_and_unknown_ids_are_not_paths(self):
+        response = await self.client.get("/api/strategy-groups/enhanced")
+        self.assertEqual(response.status, 200)
+        group = await response.json()
+        self.assertIsNone(group["metrics"]["nav"])
+        self.assertEqual(group["positions"], [])
+        self.assertEqual((await self.client.get("/api/strategy-groups/unknown")).status, 404)
+        self.assertEqual((await self.client.post("/api/strategy-groups/baseline", json={})).status, 405)
+        self.assertEqual(self.calls, 0)
 
     async def test_login_secure_cookie_and_logout_revoke(self):
         self.enable_login()

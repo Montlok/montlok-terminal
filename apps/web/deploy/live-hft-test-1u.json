@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "account": {
+    "uid": "882269162176042453",
+    "mainUid": "871770733410976190",
+    "type": "1",
+    "acctLv": "2",
+    "posMode": "net_mode",
+    "ip": "64.83.36.66"
+  },
+  "instruments": [
+    "BTC-USDT"
+  ],
+  "capitalUtilization": 0.995,
+  "maxQuoteExposureUsdt": "1",
+  "preserveInitialInventory": true,
+  "numLevels": 1,
+  "gridStepBps": 12,
+  "minimumEdgeBps": 4,
+  "requoteThresholdBps": 2,
+  "expireTimeSecs": 30,
+  "maxOrderSubmitRate": "2/00:00:01",
+  "maxOrderModifyRate": "2/00:00:01",
+  "cancelAllAfterSecs": 30,
+  "cancelAllAfterHeartbeatSecs": 5
+}

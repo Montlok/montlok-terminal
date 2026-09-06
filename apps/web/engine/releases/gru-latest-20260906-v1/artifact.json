@@ -1,0 +1,19 @@
+{
+  "role": "latest",
+  "model_sha256": "e14b9e6327ca24bfe0d8d4ca969f0b5c76c912c068bb0ce84f091172d2cc1b9c",
+  "metadata_sha256": "810b6aebebe7db8a04c47ec4186d2d3648bb3f9a6deeb6ba5cbcc599e3b59294",
+  "threshold_from_research_validation_bps": 12,
+  "status": "trained_research_artifact_not_verified_alpha",
+  "independent_test_metrics": null,
+  "implementation_hashes": {
+    "export_model.py": "2ecfc599f015907f5eded5438d20e5413eb5d42016d296a8f83b615c802d8ad6",
+    "test_protocol.py": "438ae49e791678b541dd49850e1dca965c7079115b9164bffb7619702d0fc97e",
+    "predict_latest.py": "ac29f9b19d803707a4e1c7680d4c07b46c6c9e6f5b49c744ec90f65d5dad06b9",
+    "train_gru.py": "a88577d4056864e486aca926402b0cdb4d92fc9945f3bec40256b7f246e0ad47",
+    "evaluate.py": "f52295a1dbe1a695bbb68a72a1bfdadb08f94330fa988d25f4f9caea9c1ed1ef",
+    "refresh_tail.py": "3cfc1bf9bc594765cd20737c9e8fa5564dbef745244327e1ee179c9a4e15ca61",
+    "verify_reload.py": "b0d89265c9cb58ca275b852b37f500c164db64a2e46c065216402ecc99533a34",
+    "prepare_refit.py": "6b450679e1c3b7f8df0c05542fe911c4175f2ddca34d48e09beac0a98b1092cd",
+    "prepare.py": "186cea5c66fd1b58c7c5862455d245918333f17b3a0b6b98bd66e9afc4bddd92"
+  }
+}
