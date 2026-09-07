@@ -150,6 +150,9 @@ describe('run-scoped execution analytics', () => {
     expect(executionTime(null)).toBeUndefined();
     expect(executionTime(true)).toBeUndefined();
     expect(executionTime('invalid')).toBeUndefined();
+    expect(executionTime('1788748954123456789')).toBe(1788748954);
+    expect(executionTime('1788748954123456')).toBe(1788748954);
+    expect(executionTime('1788748954123')).toBe(1788748954);
   });
 
   it('retains unknown order states without claiming zero rejects', () => {

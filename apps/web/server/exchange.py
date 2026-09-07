@@ -16,6 +16,16 @@ import aiohttp
 from profiles import SITES
 
 
+def mcp_flags(mode: str) -> list[str]:
+    if mode == "demo":
+        return ["--demo"]
+    if mode == "live":
+        return ["--live"]
+    if mode == "live_readonly":
+        return ["--live", "--read-only"]
+    raise ValueError("交易环境未配置")
+
+
 def headers(profile: dict, method: str, path: str, body: str = "") -> dict:
     timestamp = datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
     signature = base64.b64encode(hmac.new(profile["secret"].encode(), (timestamp + method + path + body).encode(), hashlib.sha256).digest()).decode()
@@ -110,7 +120,7 @@ class MCP:
                 await self.close()
                 env = {key: value for key, value in os.environ.items() if not key.startswith("OKX_")}
                 env.update(OKX_API_KEY=profile["apiKey"], OKX_SECRET_KEY=profile["secret"], OKX_PASSPHRASE=profile["passphrase"], OKX_API_BASE_URL=SITES[profile["site"]])
-                flags = ["--demo"] if profile["mode"] == "demo" else ["--live", "--read-only"]
+                flags = mcp_flags(profile["mode"])
                 self.process = await asyncio.create_subprocess_exec(self.node, self.entry, "--modules", "all", "--site", profile["site"], "--no-log", *flags,
                     stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, env=env, limit=4_194_304)
                 await self.rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "nautilus-operator", "version": "1.0"}})

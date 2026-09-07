@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from managed_run_view import ManagedRunView
+from managed_run_view import ManagedRunView, read_coherent_pair
 from group_views import GroupViews
 
 
@@ -33,6 +33,22 @@ class ManagedRunViewTests(unittest.TestCase):
     def publish(self):
         for name, value in (("manifest.json", self.manifest), ("status.json", self.status), ("view.json", self.view)):
             (self.path / name).write_text(json.dumps(value))
+
+    def test_coherent_pair_retries_the_status_then_view_publish_window(self):
+        stale = {"observed_at": "old"}
+        current = {"observed_at": "current"}
+        with patch(
+            "managed_run_view.read_object",
+            side_effect=[stale, current, current, current],
+        ) as reader:
+            status, view = read_coherent_pair(
+                self.path / "status.json",
+                self.path / "view.json",
+                retry_delay=0,
+            )
+        self.assertEqual(status["observed_at"], "current")
+        self.assertEqual(view["observed_at"], "current")
+        self.assertEqual(reader.call_count, 4)
 
     def test_run_budget_native_market_versions_and_actual_state(self):
         self.publish()

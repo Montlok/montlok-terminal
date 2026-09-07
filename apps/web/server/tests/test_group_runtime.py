@@ -261,6 +261,29 @@ class SupervisorTests(RegistryFixture, unittest.IsolatedAsyncioTestCase):
             with self.subTest(fields=fields), self.assertRaises(ValueError):
                 await self.supervisor.prepare({"groupId": "baseline", "action": "start", **fields})
 
+    async def test_registry_reload_updates_launch_metadata_without_restarting_supervisor(self):
+        previous = self.supervisor.registry.digest
+        self.document["groups"][0]["name"] = "四板块 60/40 · 新版"
+        self.registry_path.write_text(json.dumps(self.document))
+
+        result = await self.supervisor.reload_registry()
+
+        self.assertEqual(result["previousRegistryVersion"], previous)
+        self.assertNotEqual(result["registryVersion"], previous)
+        self.assertEqual(self.supervisor.registry.spec("baseline")["name"], "四板块 60/40 · 新版")
+
+    async def test_registry_reload_preserves_a_running_instance(self):
+        _, run = await self.launch()
+        previous = self.supervisor.registry.digest
+        self.document["groups"][0]["name"] = "不应在运行中切换"
+        self.registry_path.write_text(json.dumps(self.document))
+
+        with self.assertRaisesRegex(ValueError, run["runId"]):
+            await self.supervisor.reload_registry()
+
+        self.assertEqual(self.supervisor.registry.digest, previous)
+        self.assertIsNotNone(self.supervisor.owned_process(self.supervisor.row(run["runId"], "baseline")))
+
     async def test_start_dedup_controls_and_exact_stop(self):
         request, result = await self.launch()
         repeated = await self.supervisor.execute(request, "operation_start_001")

@@ -3,25 +3,31 @@ import { modelRuntimeCharts } from './modelRuntimeCharts';
 import { TimeSeriesChart } from './TimeSeriesChart';
 
 export function ModelRuntime({ model }: { model?: Row }) {
-  if (!model) return <p className="run-detail">暂无模型运行数据</p>;
+  if (!model) return <p className="run-detail">选择模型策略组后显示推理指标</p>;
   const window = model.budgetWindow || model.window;
   const charts = modelRuntimeCharts(model.recentInferences);
   return (
     <>
       <dl className="run-facts" aria-label="模型推理状态">
+        {model.backend && (
+          <div>
+            <dt>推理后端</dt>
+            <dd>{model.backend}</dd>
+          </div>
+        )}
         <div>
           <dt>模型编号</dt>
-          <dd>{model.modelId || model.releaseId || '未上报'}</dd>
+          <dd>{model.modelId || model.releaseId || '等待上报'}</dd>
         </div>
         <div>
           <dt>运行版本</dt>
-          <dd>{model.modelVersion || model.version || '未上报'}</dd>
+          <dd>{model.modelVersion || model.version || '等待上报'}</dd>
         </div>
         <div>
           <dt>推理设备</dt>
           <dd>
-            {model.device || '未上报'}
-            {model.warmupComplete === false ? '（模型尚未就绪）' : ''}
+            {model.device || '等待上报'}
+            {model.warmupComplete === false ? '（预热中）' : ''}
           </dd>
         </div>
         <div>
@@ -29,14 +35,14 @@ export function ModelRuntime({ model }: { model?: Row }) {
           <dd>
             {model.lastInferenceAt
               ? timeOf(model.lastInferenceAt)
-              : '尚无推理记录'}
+              : '等待首次推理'}
           </dd>
         </div>
         <div>
           <dt>推理耗时</dt>
           <dd>
             {model.latencyMs == null
-              ? '未上报'
+              ? '等待上报'
               : `${number(model.latencyMs, 3)} ms`}
           </dd>
         </div>
@@ -44,7 +50,7 @@ export function ModelRuntime({ model }: { model?: Row }) {
           <dt>排队耗时</dt>
           <dd>
             {model.queueMs == null
-              ? '未上报'
+              ? '等待上报'
               : `${number(model.queueMs, 3)} ms`}
           </dd>
         </div>
@@ -54,16 +60,16 @@ export function ModelRuntime({ model }: { model?: Row }) {
             {model.windowReady === true
               ? '已就绪'
               : model.windowReady === false
-                ? '尚未就绪'
-                : '未上报'}
+                ? '特征窗口构建中'
+                : '等待上报'}
           </dd>
         </div>
         <div>
           <dt>推理预算窗口</dt>
           <dd>
             {window
-              ? `${window.usedMs == null ? '未上报' : number(window.usedMs, 3)} / ${window.limitMs == null ? '未上报' : number(window.limitMs, 3)} ms`
-              : '未上报'}
+              ? `${window.usedMs == null ? '等待上报' : number(window.usedMs, 3)} / ${window.limitMs == null ? '等待上报' : number(window.limitMs, 3)} ms`
+              : '等待上报'}
           </dd>
         </div>
         {model.status && (
@@ -115,7 +121,9 @@ export function ModelRuntime({ model }: { model?: Row }) {
             />
           ) : (
             <p className="run-detail">
-              {charts.predictions.length ? '已记录 1 次预测' : '尚无预测观测'}
+              {charts.predictions.length
+                ? '已记录 1 次预测'
+                : '等待首个预测观测'}
             </p>
           )}
           <strong>目标资金比例 / %</strong>
@@ -130,7 +138,7 @@ export function ModelRuntime({ model }: { model?: Row }) {
             <p className="run-detail">
               {charts.targets.length
                 ? '已记录 1 次目标比例'
-                : '尚无目标比例观测'}
+                : '等待首个目标比例观测'}
             </p>
           )}
           <p className="run-detail">目标资金比例由模型信号计算。</p>

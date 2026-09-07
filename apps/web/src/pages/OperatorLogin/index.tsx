@@ -64,7 +64,15 @@ export default function OperatorLogin() {
           >('login-options');
         const credential = await startAuthentication({ optionsJSON });
         await passkeyRequest('login', { credential });
-        window.location.replace('/workspace/portfolio/overview');
+        const next = new URLSearchParams(window.location.search).get('next');
+        let destination = '/workspace/portfolio/overview';
+        if (next) {
+          const url = new URL(next, window.location.origin);
+          if (url.origin === window.location.origin && /^\/(workspace|strategies|trade|market|assets|engine|settings)(\/|$)/.test(url.pathname)) {
+            destination = url.pathname + url.search;
+          }
+        }
+        window.location.replace(destination);
       }
     } catch (reason) {
       setError(

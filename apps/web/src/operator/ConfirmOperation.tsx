@@ -1,8 +1,10 @@
 import { Alert, Descriptions, Modal } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { strategyDisplayName } from '../pages/StrategyGroups/groupModel';
 import { api, type Row } from './api';
 import { operationLabel } from './labels';
-import { RecordDetails } from './ResultView';
+import { OperationProgress } from './OperationProgress';
+import { RecordDetails } from './RecordDetails';
 export function ConfirmOperation({
   ticket,
   onClose,
@@ -15,6 +17,14 @@ export function ConfirmOperation({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [now, setNow] = useState(Date.now);
+  const dismissed = useRef(new Set<string>());
+  const executing = useRef<string | undefined>(undefined);
+  const currentTicket = useRef(ticket);
+  currentTicket.current = ticket;
+  function close() {
+    if (ticket?.id) dismissed.current.add(ticket.id);
+    onClose();
+  }
   useEffect(() => {
     setError('');
     setNow(Date.now());
@@ -29,30 +39,50 @@ export function ConfirmOperation({
   const expired = remaining === 0;
   const changingAccount =
     ticket?.operation?.kind === 'profile' && ticket.operation.name === 'select';
-  const active = ticket?.profile?.find((profile: Row) =>
+  const savingAccount =
+    ticket?.operation?.kind === 'profile' && ticket.operation.name === 'save';
+  const selectedProfile = ticket?.profile?.find((profile: Row) =>
     changingAccount
       ? profile.id === ticket?.operation?.arguments?.id
       : profile.active,
   );
+  const active = savingAccount
+    ? { ...selectedProfile, ...ticket?.operation?.arguments }
+    : selectedProfile;
   async function execute() {
-    if (busy || (Number.isFinite(expiry) && expiry * 1000 <= Date.now()))
+    if (
+      !ticket?.id ||
+      dismissed.current.has(ticket.id) ||
+      currentTicket.current?.id !== ticket.id ||
+      executing.current === ticket.id ||
+      busy ||
+      (Number.isFinite(expiry) && expiry * 1000 <= Date.now())
+    )
       return;
+    executing.current = ticket.id;
     setBusy(true);
     setError('');
     try {
-      const result = await api('execute', { id: ticket?.id });
+      const result = await api('execute', {
+        id: ticket?.id,
+        ...(ticket.operation?.kind === 'group' &&
+        ticket.operation?.name === 'start'
+          ? { async: true }
+          : {}),
+      });
       onComplete(result);
-      onClose();
+      close();
     } catch (reason) {
       setError(String(reason));
     } finally {
       setBusy(false);
+      executing.current = undefined;
     }
   }
   return (
     <Modal
       open={!!ticket}
-      onCancel={onClose}
+      onCancel={close}
       keyboard={!busy}
       closable={!busy}
       mask={{ closable: false }}
@@ -67,7 +97,16 @@ export function ConfirmOperation({
       destroyOnHidden
     >
       <div>
-        {remaining !== undefined && (
+        {busy && (
+          <OperationProgress
+            label={
+              ticket?.operation?.name === 'start'
+                ? '提交启动请求'
+                : '正在处理操作'
+            }
+          />
+        )}
+        {!busy && remaining !== undefined && (
           <Alert
             type={expired ? 'warning' : 'info'}
             title={
@@ -83,7 +122,7 @@ export function ConfirmOperation({
               ? ticket.operation.arguments.releaseId ||
                 ticket.operation.arguments.artifactId
               : ticket?.operation?.kind === 'group'
-                ? ticket.groupPreview?.groupName
+                ? strategyDisplayName(ticket.groupPreview?.groupName)
                 : ticket?.operation?.kind === 'native'
                   ? ticket.operation.arguments.runId
                   : active?.name}
@@ -94,12 +133,12 @@ export function ConfirmOperation({
               : ticket?.operation?.kind === 'group'
                 ? ticket.groupPreview?.mode === 'live'
                   ? 'OKX 实盘 · 订单启用'
-                  : 'Nautilus 本地模拟'
+                  : '研究运行'
                 : ticket?.operation?.kind === 'native'
-                  ? '本地模拟'
-                  : active?.mode === 'demo'
-                    ? '模拟盘'
-                    : '实盘 · 只读'}
+                  ? '历史运行'
+                  : active?.mode === 'live'
+                    ? 'OKX 实盘'
+                    : '实盘 · 查看'}
           </span>
         </div>
         {ticket?.groupPreview && <p>{ticket.groupPreview.effect}</p>}
@@ -128,9 +167,9 @@ export function ConfirmOperation({
                 key: 'environment',
                 label: '环境',
                 children:
-                  ticket.newAccountVerification.environment === 'demo'
-                    ? '模拟盘'
-                    : '实盘 · 只读',
+                  ticket.newAccountVerification.environment === 'live'
+                    ? '实盘 · 交易'
+                    : '实盘 · 查看',
               },
             ]}
           />
@@ -144,7 +183,7 @@ export function ConfirmOperation({
                 {
                   key: 'group',
                   label: '策略组',
-                  children: ticket.groupPreview.groupName,
+                  children: strategyDisplayName(ticket.groupPreview.groupName),
                 },
                 {
                   key: 'action',
@@ -156,20 +195,45 @@ export function ConfirmOperation({
                   label: '目标实例',
                   children: ticket.operation.arguments.runId || '新建独立实例',
                 },
+                ...(ticket.operation.arguments.instruments
+                  ? [
+                      {
+                        key: 'scope',
+                        label: '平仓品种',
+                        children:
+                          ticket.operation.arguments.instruments.join('、'),
+                      },
+                    ]
+                  : []),
                 ...(ticket.operation.name === 'start'
                   ? [
                       ...(ticket.operation.arguments.budgetUsdt === undefined
                         ? []
-                        : [{
-                        key: 'budget',
-                        label: '独立虚拟预算',
-                        children: `${ticket.operation.arguments.budgetUsdt} USDT`,
-                      }]),
+                        : [
+                            {
+                              key: 'budget',
+                              label: '运行预算',
+                              children: `${ticket.operation.arguments.budgetUsdt} USDT`,
+                            },
+                          ]),
                       {
                         key: 'duration',
                         label: '运行时长',
-                        children: `${Number(ticket.operation.arguments.durationSeconds) / 60} 分钟`,
+                        children:
+                          ticket.operation.arguments.durationSeconds === 0
+                            ? '持续运行 · 手动停止'
+                            : `${Number(ticket.operation.arguments.durationSeconds) / 60} 分钟`,
                       },
+                      ...(ticket.groupPreview?.executionPolicy
+                        ? [
+                            {
+                              key: 'execution-policy',
+                              label: '策略执行方式',
+                              children:
+                                ticket.groupPreview.executionPolicy.label,
+                            },
+                          ]
+                        : []),
                     ]
                   : []),
                 ...(ticket.groupPreview?.liveInventory
@@ -186,8 +250,20 @@ export function ConfirmOperation({
                       {
                         key: 'account-capital',
                         label: '账户总权益',
-                        children: `${ticket.groupPreview.liveInventory.totalEqUsd} USDT 等值`,
+                        children: `${ticket.groupPreview.liveInventory.totalEqUsd} USD`,
                       },
+                      ...(ticket.groupPreview.liveInventory
+                        .allocationCapitalUsdt
+                        ? [
+                            {
+                              key: 'strategy-capital',
+                              label: '本组资金 / USDT',
+                              children:
+                                ticket.groupPreview.liveInventory
+                                  .allocationCapitalUsdt,
+                            },
+                          ]
+                        : []),
                       {
                         key: 'live-pairs',
                         label: '交易范围',
@@ -212,6 +288,35 @@ export function ConfirmOperation({
                 },
               ]}
             />
+            {ticket.groupPreview.liveInventory?.orderPlan?.length > 0 && (
+              <section className="launch-order-plan" aria-label="初始调仓预览">
+                <h3>初始调仓预览</h3>
+                <div style={{ maxHeight: 220, overflow: 'auto' }}>
+                  <table className="launch-plan-table">
+                    <thead>
+                      <tr>
+                        <th>品种</th>
+                        <th>方向</th>
+                        <th>数量</th>
+                        <th>预估 USDT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ticket.groupPreview.liveInventory.orderPlan.map(
+                        (row: Row) => (
+                          <tr key={row.instrument}>
+                            <td>{row.instrument}</td>
+                            <td>{row.side === 'buy' ? '买入' : '卖出'}</td>
+                            <td>{row.quantity}</td>
+                            <td>{Number(row.estimatedUsdt).toFixed(2)}</td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
             <details>
               <summary>完整技术参数与版本</summary>
               <RecordDetails

@@ -168,6 +168,109 @@ async function selectRun(label: string) {
 }
 
 describe('strategy group run controls', () => {
+  it('offers a restart action and the recorded cause after a failed live run', async () => {
+    mocks.api.mockImplementation((path: string, body?: unknown) => {
+      if (path === 'strategy-groups')
+        return Promise.resolve({
+          groups: [
+            {
+              id: 'baseline',
+              name: '四板块 60/40 · 实盘',
+              managed: true,
+              runId: 'failed-run',
+            },
+          ],
+        });
+      if (path === 'strategy-groups/baseline/runtime')
+        return Promise.resolve({
+          available: true,
+          groups: [
+            {
+              groupId: 'baseline',
+              kind: 'live',
+              mode: 'live',
+              name: '四板块 60/40 · 实盘',
+              runId: null,
+              maxDurationSeconds: null,
+              durationPolicy: { continuous: true, maxSeconds: null },
+              capabilities: { start: true, stop: false },
+              runs: [
+                {
+                  runId: 'failed-run',
+                  status: 'failed',
+                  error: 'exec-events receiver closed',
+                },
+              ],
+            },
+          ],
+        });
+      return defaultAPI(path, body);
+    });
+    render(<StrategyRunPanel />);
+    expect(await screen.findByText('策略运行已停止')).toBeInTheDocument();
+    expect(screen.getByText('exec-events receiver closed')).toBeInTheDocument();
+    const restart = screen.getByRole('button', { name: '开始运行' });
+    expect(restart).toHaveTextContent('重新启动实盘策略');
+    expect(restart).toBeEnabled();
+  });
+  it('offers continuous operation and a chosen duration beyond one day without changing trading mode', async () => {
+    mocks.api.mockImplementation((path: string, body?: unknown) => {
+      if (path.endsWith('/runtime')) {
+        const result = runtime(path.split('/')[1]);
+        return Promise.resolve({
+          ...result,
+          groups: result.groups.map((group) => ({
+            ...group,
+            kind: 'live',
+            mode: 'live',
+            maxDurationSeconds: null,
+            durationPolicy: { continuous: true, maxSeconds: null },
+            executionPolicy: {
+              kind: 'initial_allocation',
+              label: '初始调仓',
+              description: '按已发布信号配置目标仓位，完成后跟踪持仓与收益。',
+            },
+          })),
+        });
+      }
+      return defaultAPI(path, body);
+    });
+    render(<StrategyRunPanel />);
+    await ready();
+    expect(screen.getByLabelText('策略执行方式')).toHaveTextContent('初始调仓');
+    expect(screen.queryByLabelText('运行时长 分钟')).not.toBeInTheDocument();
+    await preflight();
+    expect(mocks.api).toHaveBeenCalledWith(
+      'strategy-groups/baseline/preflight',
+      { durationSeconds: 0 },
+    );
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '运行方式' }));
+    fireEvent.click(await screen.findByText('定时结束'));
+    const duration = screen.getByLabelText('运行时长 分钟');
+    expect(duration).not.toHaveAttribute('aria-valuemax');
+    fireEvent.change(duration, { target: { value: '10080' } });
+    await preflight();
+    expect(mocks.api).toHaveBeenCalledWith(
+      'strategy-groups/baseline/preflight',
+      { durationSeconds: 604800 },
+    );
+    expect(mocks.api.mock.calls.some(([path]) => path === 'execute')).toBe(
+      false,
+    );
+  });
+
+  it('keeps run settings editable while an existing instance prevents another start', async () => {
+    mocks.baselineRunning = true;
+    mocks.start = false;
+    render(<StrategyRunPanel />);
+    await screen.findByText('baseline signal');
+    expect(screen.getByLabelText('运行时长 分钟')).toBeEnabled();
+    expect(screen.getByRole('button', { name: '开始运行' })).toBeDisabled();
+    expect(mocks.api.mock.calls.some(([path]) => path === 'execute')).toBe(
+      false,
+    );
+  });
+
   it('shows a fixed live exposure cap and omits virtual budget', async () => {
     mocks.api.mockImplementation((path: string, body?: unknown) => {
       if (path === 'strategy-groups')
@@ -204,14 +307,20 @@ describe('strategy group run controls', () => {
     await ready();
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '运行策略组' }));
     fireEvent.click(await screen.findByText('实盘高频'));
-    await waitFor(() => expect(screen.getByText('OKX 实盘')).toBeInTheDocument());
-    expect(screen.queryByLabelText('虚拟预算 USDT')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByLabelText('策略执行环境')).toHaveTextContent(
+        'OKX 实盘',
+      ),
+    );
+    expect(screen.queryByLabelText('运行预算 USDT')).not.toBeInTheDocument();
     await preflight();
     expect(mocks.api).toHaveBeenCalledWith(
       'strategy-groups/live-hft-inventory/preflight',
       { durationSeconds: 3600 },
     );
-    expect(screen.getAllByText(/新增净敞口 ≤ 1 USDT/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/新增净敞口 ≤ 1 USDT/).length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getByText(/4 个交易对 · 60 分钟/)).toBeInTheDocument();
   });
   it('reads actual model telemetry nested in engine and identifies shadow mode', async () => {
@@ -239,7 +348,7 @@ describe('strategy group run controls', () => {
     render(<StrategyRunPanel />);
     await ready();
     await selectRun('baseline-run-old · 运行中');
-    expect(screen.getByText('影子运行')).toBeInTheDocument();
+    expect(screen.getAllByText('研究运行').length).toBeGreaterThan(0);
     expect(screen.getByText('actual-browser-v1')).toBeInTheDocument();
     expect(screen.queryByText('legacy-stale')).not.toBeInTheDocument();
   });
@@ -323,12 +432,14 @@ describe('strategy group run controls', () => {
     );
     render(<StrategyRunPanel />);
     expect(
-      await screen.findByText('尚未选择实例 · 共 2 个'),
+      await screen.findByText('选择记录 · 共 2 个实例'),
     ).toBeInTheDocument();
     expect(screen.queryByText('尚无运行实例')).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: '暂停开仓' }),
-    ).toHaveAccessibleDescription('请先选择一个运行实例');
+      screen.queryByRole('button', { name: '暂停开仓' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '查看当前运行' }));
+    expect(screen.getByRole('button', { name: '暂停开仓' })).toBeEnabled();
   });
 
   it('shows the selected run budget independently from new-run inputs and updates a stop receipt from final runtime status', async () => {
@@ -362,7 +473,7 @@ describe('strategy group run controls', () => {
     await selectRun('baseline-run-old · 运行中');
     expect(screen.getByText('1234 USDT')).toBeInTheDocument();
     expect(
-      screen.getByRole('spinbutton', { name: '虚拟预算 USDT' }),
+      screen.getByRole('spinbutton', { name: '运行预算 USDT' }),
     ).toHaveValue('2000.00');
     fireEvent.click(screen.getByRole('button', { name: '停止运行' }));
     await screen.findByRole('dialog');
@@ -416,7 +527,7 @@ describe('strategy group run controls', () => {
   it('checks the exact budget and duration without preparing or executing a run', async () => {
     render(<StrategyRunPanel instrument="BTC-USDT" />);
     await ready();
-    expect(screen.getByRole('button', { name: '开始运行' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '开始运行' })).toBeEnabled();
     await preflight();
     expect(mocks.api).toHaveBeenCalledWith(
       'strategy-groups/baseline/preflight',
@@ -466,12 +577,12 @@ describe('strategy group run controls', () => {
     await ready();
     await preflight();
     fireEvent.change(
-      screen.getByRole('spinbutton', { name: '虚拟预算 USDT' }),
+      screen.getByRole('spinbutton', { name: '运行预算 USDT' }),
       {
         target: { value: '1500' },
       },
     );
-    expect(screen.getByRole('button', { name: '开始运行' })).toBeDisabled();
+    expect(screen.queryByText(/配置已核验/)).not.toBeInTheDocument();
     await preflight();
     expect(mocks.api).toHaveBeenLastCalledWith(
       'strategy-groups/baseline/preflight',
@@ -486,7 +597,7 @@ describe('strategy group run controls', () => {
         target: { value: '30' },
       },
     );
-    expect(screen.getByRole('button', { name: '开始运行' })).toBeDisabled();
+    expect(screen.queryByText(/配置已核验/)).not.toBeInTheDocument();
     expect(mocks.api.mock.calls.some(([path]) => path === 'prepare')).toBe(
       false,
     );
@@ -520,7 +631,7 @@ describe('strategy group run controls', () => {
     await selectRun('baseline-run-old · 运行中');
     expect(screen.getByText('baseline-run-old')).toBeInTheDocument();
     fireEvent.change(
-      screen.getByRole('spinbutton', { name: '虚拟预算 USDT' }),
+      screen.getByRole('spinbutton', { name: '运行预算 USDT' }),
       {
         target: { value: '1500' },
       },
@@ -529,13 +640,13 @@ describe('strategy group run controls', () => {
     fireEvent.click(screen.getByRole('button', { name: '开始运行' }));
     await screen.findByRole('dialog');
     await selectEnhanced();
-    await screen.findByText('enhanced signal');
+    await ready();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('baseline-run-old')).not.toBeInTheDocument();
     expect(
-      screen.getByRole('spinbutton', { name: '虚拟预算 USDT' }),
+      screen.getByRole('spinbutton', { name: '运行预算 USDT' }),
     ).toHaveValue('2000.00');
-    expect(screen.getByRole('button', { name: '开始运行' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '开始运行' })).toBeEnabled();
     expect(screen.queryByText(/配置已核验/)).not.toBeInTheDocument();
   });
 
@@ -553,27 +664,51 @@ describe('strategy group run controls', () => {
     fireEvent.click(screen.getByRole('button', { name: '检查配置' }));
     await selectEnhanced();
     await act(async () => complete?.({ ok: true }));
-    expect(screen.getByRole('button', { name: '开始运行' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '开始运行' })).toBeEnabled();
     expect(screen.queryByText(/配置已核验/)).not.toBeInTheDocument();
     expect(mocks.api.mock.calls.some(([path]) => path === 'prepare')).toBe(
       false,
     );
   });
 
-  it('keeps start disabled after failed validation', async () => {
+  it('does not prepare or execute when the automatic configuration check fails', async () => {
     mocks.api.mockImplementation((path: string, input?: unknown) =>
-      path.endsWith('/preflight')
+      path.endsWith('/preflight') || path === 'prepare'
         ? Promise.reject(new Error('信号文件校验失败'))
         : defaultAPI(path, input),
     );
     render(<StrategyRunPanel />);
     await ready();
-    fireEvent.click(screen.getByRole('button', { name: '检查配置' }));
+    fireEvent.click(screen.getByRole('button', { name: '开始运行' }));
     await screen.findByText(/信号文件校验失败/);
-    expect(screen.getByRole('button', { name: '开始运行' })).toBeDisabled();
-    expect(mocks.api.mock.calls.some(([path]) => path === 'prepare')).toBe(
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mocks.api.mock.calls.some(([path]) => path === 'execute')).toBe(
       false,
     );
+  });
+
+  it('opens confirmation from one start action using the server configuration preview once', async () => {
+    render(<StrategyRunPanel />);
+    await ready();
+    fireEvent.click(screen.getByRole('button', { name: '开始运行' }));
+    await screen.findByRole('dialog');
+    const calls = mocks.api.mock.calls.map(([path]) => path);
+    expect(calls.filter((path) => path === 'prepare')).toHaveLength(1);
+    expect(calls).not.toContain('strategy-groups/baseline/preflight');
+    expect(calls).not.toContain('execute');
+  });
+
+  it('opens the current run for viewing without sending a lifecycle command', async () => {
+    mocks.baselineRunning = true;
+    render(<StrategyRunPanel />);
+    await screen.findByRole('button', { name: '查看当前运行' });
+    fireEvent.click(screen.getByRole('button', { name: '查看当前运行' }));
+    expect(screen.getByRole('button', { name: '停止运行' })).toBeEnabled();
+    expect(
+      mocks.api.mock.calls.some(
+        ([path]) => path === 'prepare' || path === 'execute',
+      ),
+    ).toBe(false);
   });
 
   it('never stops history or another managed run and binds an explicit current-run stop', async () => {

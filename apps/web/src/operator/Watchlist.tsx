@@ -1,8 +1,11 @@
 import { HTMLTable, Icon } from '@blueprintjs/core';
-import { useModel } from '@umijs/max';
-import { AutoComplete } from 'antd';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { AutoComplete, Tabs } from 'antd';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { api, dataOf, number, type Row, timeOf } from './api';
+import {
+  type StrategyInstrument,
+  watchedStrategySymbols,
+} from './strategyMarketModel';
 import { usePoll } from './usePoll';
 import {
   addSymbol,
@@ -16,7 +19,7 @@ import {
   watchRows,
 } from './watchlistModel';
 
-const POLL_MS = 5000;
+const POLL_MS = 1000;
 
 function query(name: string, args: Row): Promise<Row[]> {
   return api('query', { kind: 'rest', name, arguments: args }).then(
@@ -50,11 +53,13 @@ const WatchTableRow = memo(function WatchTableRow({
   active,
   onSelect,
   onRemove,
+  position,
 }: {
   row: WatchRow;
   active: boolean;
   onSelect: (symbol: string) => void;
-  onRemove: (symbol: string) => void;
+  onRemove?: (symbol: string) => void;
+  position?: StrategyInstrument;
 }) {
   const tone =
     row.changePct === undefined
@@ -75,22 +80,35 @@ const WatchTableRow = memo(function WatchTableRow({
         }
       }}
     >
-      <td>{row.symbol.replace('-', '/')}</td>
+      <td>
+        <strong>{row.symbol.replace('-', '/')}</strong>
+        {position && (
+          <small className="watch-position" title={`持仓 ${position.quantity}`}>
+            {Math.abs(Number(position.quantity)) > 0
+              ? `持仓 ${position.quantity}`
+              : position.weight
+                ? `目标 ${number(position.weight * 100, 2)}%`
+                : '未持有'}
+          </small>
+        )}
+      </td>
       <td className={tone}>{number(row.last, priceDigits(row.last))}</td>
       <td className={tone}>{formatChange(row.changePct)}</td>
-      <td>
-        <button
-          type="button"
-          className="watch-remove"
-          aria-label={`移除 ${row.symbol}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRemove(row.symbol);
-          }}
-        >
-          <Icon icon="small-cross" size={12} />
-        </button>
-      </td>
+      {onRemove && (
+        <td>
+          <button
+            type="button"
+            className="watch-remove"
+            aria-label={`移除 ${row.symbol}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove(row.symbol);
+            }}
+          >
+            <Icon icon="small-cross" size={12} />
+          </button>
+        </td>
+      )}
     </tr>
   );
 });
@@ -102,12 +120,32 @@ const WatchTableRow = memo(function WatchTableRow({
 export function Watchlist({
   selected,
   onSelect,
+  universe,
+  scopeKey,
+  groupName,
 }: {
   selected: string;
   onSelect: (symbol: string) => void;
+  universe?: StrategyInstrument[];
+  scopeKey?: string;
+  groupName?: string;
 }) {
-  const { account } = useModel('operator');
-  const [symbols, setSymbols] = useState(loadWatchlist);
+  const [customSymbols, setSymbols] = useState(loadWatchlist);
+  const [scope, setScope] = useState(universe ? 'strategy' : 'custom');
+  useEffect(() => {
+    if (universe) setScope('strategy');
+  }, [scopeKey]);
+  const symbols = useMemo(
+    () =>
+      universe && scope !== 'custom'
+        ? watchedStrategySymbols(universe, scope)
+        : customSymbols,
+    [universe, scope, customSymbols],
+  );
+  const byInstrument = useMemo(
+    () => new Map((universe || []).map((row) => [row.instrument, row])),
+    [universe],
+  );
   const [tickers, setTickers] = useState<Row[]>([]);
   const [updatedAt, setUpdatedAt] = useState(0);
   const [error, setError] = useState('');
@@ -132,6 +170,25 @@ export function Watchlist({
 
   const refresh = useCallback(
     async (signal: AbortSignal) => {
+      if (symbols.every((s) => /^[A-Z0-9]+-USDT$/.test(s))) {
+        try {
+          const value = await api(
+            `market/watchlist?instruments=${encodeURIComponent(symbols.join(','))}`,
+          );
+          if (signal.aborted) return;
+          setTickers(value.tickers || []);
+          setUpdatedAt(value.observedAt * 1000);
+          setError(
+            value.missing?.length
+              ? `${value.missing.length} 个品种等待报价`
+              : '',
+          );
+        } catch (reason) {
+          if (!signal.aborted)
+            setError(reason instanceof Error ? reason.message : String(reason));
+        }
+        return;
+      }
       const settled = await Promise.allSettled(
         symbols.map((instId) => query('GET /api/v5/market/ticker', { instId })),
       );
@@ -163,34 +220,57 @@ export function Watchlist({
   }, [candidates, draft, symbols]);
 
   return (
-    <section className="watch-panel panel">
+    <section className="watch-panel panel" data-scope={scope}>
       <div className="panel-heading">
-        <strong>自选</strong>
+        <strong>{universe ? '策略行情' : '自选'}</strong>
         <span className="muted">
-          {symbols.length}/{WATCHLIST_LIMIT} ·{' '}
-          {account.mode === 'demo' ? '模拟盘' : '实盘'}
+          {symbols.length}
+          {scope === 'custom' ? `/${WATCHLIST_LIMIT}` : ' 个'} · OKX
         </span>
       </div>
-      <div className="watch-add">
-        <AutoComplete
-          aria-label="添加自选"
-          value={draft}
-          options={options}
-          placeholder="添加品种，如 SOL-USDT"
-          disabled={symbols.length >= WATCHLIST_LIMIT}
-          onFocus={() => {
-            if (!candidates.length)
-              instruments()
-                .then(setCandidates)
-                .catch(() => undefined);
-          }}
-          onChange={setDraft}
-          onSelect={add}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && normalizeSymbol(draft)) add(draft);
-          }}
-        />
-      </div>
+      {universe && (
+        <>
+          <div className="watch-group-name" title={groupName}>
+            {groupName}
+          </div>
+          <Tabs
+            size="small"
+            activeKey={scope}
+            onChange={setScope}
+            className="watch-scope-tabs"
+            items={[
+              { key: 'strategy', label: `标的 ${universe.length}` },
+              {
+                key: 'positions',
+                label: `持仓 ${watchedStrategySymbols(universe, 'positions').length}`,
+              },
+              { key: 'custom', label: '自选' },
+            ]}
+          />
+        </>
+      )}
+      {scope === 'custom' && (
+        <div className="watch-add">
+          <AutoComplete
+            aria-label="添加自选"
+            value={draft}
+            options={options}
+            placeholder="添加品种，如 SOL-USDT"
+            disabled={symbols.length >= WATCHLIST_LIMIT}
+            onFocus={() => {
+              if (!candidates.length)
+                instruments()
+                  .then(setCandidates)
+                  .catch(() => undefined);
+            }}
+            onChange={setDraft}
+            onSelect={add}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && normalizeSymbol(draft)) add(draft);
+            }}
+          />
+        </div>
+      )}
       {rows.length ? (
         <HTMLTable compact interactive className="watch-table">
           <thead>
@@ -198,7 +278,7 @@ export function Watchlist({
               <th>品种</th>
               <th>最新价</th>
               <th>24h</th>
-              <th />
+              {scope === 'custom' && <th />}
             </tr>
           </thead>
           <tbody>
@@ -208,19 +288,26 @@ export function Watchlist({
                 row={row}
                 active={row.symbol === selected}
                 onSelect={onSelect}
-                onRemove={remove}
+                onRemove={scope === 'custom' ? remove : undefined}
+                position={
+                  scope === 'custom' ? undefined : byInstrument.get(row.symbol)
+                }
               />
             ))}
           </tbody>
         </HTMLTable>
       ) : (
         <div className="empty-state" style={{ minHeight: 80 }}>
-          暂无自选，请在上方添加
+          {scope === 'custom'
+            ? '在上方添加自选品种'
+            : scope === 'positions'
+              ? '持仓记录将随成交更新'
+              : '读取策略标的'}
         </div>
       )}
       <div className={`watch-footer ${error ? 'negative' : 'muted'}`}>
         {error ||
-          (updatedAt ? `更新 ${timeOf(updatedAt)} · 每 5 秒` : '等待行情')}
+          (updatedAt ? `更新 ${timeOf(updatedAt)} · 每秒刷新` : '等待行情')}
       </div>
     </section>
   );

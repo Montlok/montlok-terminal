@@ -22,6 +22,7 @@ export function useMarket(
     let socket: WebSocket | undefined;
     let reconnect: ReturnType<typeof setTimeout> | undefined;
     let disposed = false;
+    let suspended = false;
     const buffer = new MarketBuffer();
     let lastCandle: Row | undefined;
     const parameters = new URLSearchParams({ instrument, bar, mode });
@@ -33,6 +34,7 @@ export function useMarket(
     });
     setCandles([]);
     setCandle(undefined);
+    if (!instrument) return;
     void api('query', {
       kind: 'rest',
       name: 'GET /api/v5/public/instruments',
@@ -84,7 +86,7 @@ export function useMarket(
       });
     const connect = async () => {
       await ensureSession();
-      if (disposed) return;
+      if (disposed || suspended) return;
       socket = new WebSocket(
         `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/market/stream?${parameters}`,
       );
@@ -93,7 +95,7 @@ export function useMarket(
           setState((value) => ({ ...value, connected: true, error: '' }));
       };
       socket.onmessage = (message) => {
-        if (disposed) return;
+        if (disposed || suspended) return;
         const envelope = JSON.parse(message.data);
         const payload = envelope.payload;
         if (payload.event === 'error') {
@@ -111,7 +113,7 @@ export function useMarket(
         if (channel?.startsWith('candle')) lastCandle = parseCandle(data[0]);
       };
       socket.onclose = () => {
-        if (disposed) return;
+        if (disposed || suspended) return;
         setState((value) => ({ ...value, connected: false }));
         reconnect = setTimeout(() => void connect(), 3000);
       };
@@ -127,11 +129,26 @@ export function useMarket(
         lastCandle = undefined;
       }
     }, 50);
+    const hide = () => {
+      suspended = true;
+      socket?.close();
+      clearTimeout(reconnect);
+    };
+    const show = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        suspended = false;
+        void connect();
+      }
+    };
+    window.addEventListener('pagehide', hide);
+    window.addEventListener('pageshow', show);
     return () => {
       disposed = true;
       socket?.close();
       clearInterval(flush);
       clearTimeout(reconnect);
+      window.removeEventListener('pagehide', hide);
+      window.removeEventListener('pageshow', show);
     };
   }, [instrument, bar, mode]);
   return { ...state, candles, candle };

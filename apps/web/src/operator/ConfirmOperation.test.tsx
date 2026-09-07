@@ -16,6 +16,31 @@ vi.mock('./api', async (original) => ({
 vi.mock('./ResultView', () => ({ RecordDetails: () => <span>技术参数</span> }));
 
 describe('confirmation expiry', () => {
+  it('describes continuous execution as manual stop, not zero minutes', () => {
+    render(
+      <ConfirmOperation
+        ticket={{
+          id: 'continuous-ticket',
+          expiresAt: Date.now() / 1000 + 60,
+          operation: {
+            kind: 'group',
+            name: 'start',
+            arguments: { durationSeconds: 0 },
+          },
+          groupPreview: {
+            mode: 'live',
+            executionPolicy: { label: '连续报价' },
+          },
+        }}
+        onClose={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('持续运行 · 手动停止')).toBeInTheDocument();
+    expect(screen.getByText('连续报价')).toBeInTheDocument();
+    expect(screen.queryByText('0 分钟')).not.toBeInTheDocument();
+    expect(api).not.toHaveBeenCalled();
+  });
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
@@ -55,7 +80,11 @@ describe('confirmation expiry', () => {
         ticket={{
           id: 'live-ticket',
           expiresAt: Date.now() / 1000 + 60,
-          operation: { kind: 'group', name: 'start', arguments: { durationSeconds: 3600 } },
+          operation: {
+            kind: 'group',
+            name: 'start',
+            arguments: { durationSeconds: 3600 },
+          },
           groupPreview: {
             mode: 'live',
             groupName: '实盘高频',
@@ -73,8 +102,29 @@ describe('confirmation expiry', () => {
     );
     expect(screen.getByText('OKX 实盘 · 订单启用')).toBeInTheDocument();
     expect(screen.getByText('1 USDT')).toBeInTheDocument();
-    expect(screen.getByText('417.5 USDT 等值')).toBeInTheDocument();
+    expect(screen.getByText('417.5 USD')).toBeInTheDocument();
     expect(screen.getByText('BTC-USDT、XNVDA-USDT')).toBeInTheDocument();
     expect(screen.queryByText('独立虚拟预算')).not.toBeInTheDocument();
+  });
+  it('cannot confirm a dismissed ticket during its closing animation', () => {
+    const close = vi.fn();
+    render(
+      <ConfirmOperation
+        ticket={{
+          id: 'closing',
+          operation: {
+            kind: 'group',
+            name: 'flatten',
+            arguments: { runId: 'run-a' },
+          },
+        }}
+        onClose={close}
+        onComplete={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '取 消' }));
+    expect(close).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: '确 认' }));
+    expect(api).not.toHaveBeenCalled();
   });
 });

@@ -1,35 +1,15 @@
-import { Button, Descriptions, Drawer, Tabs } from 'antd';
-import { type ReactNode, useMemo, useState } from 'react';
+import { Button, Drawer, Tabs } from 'antd';
+import { useMemo, useState } from 'react';
 import { dataOf, type Row } from './api';
 import { DataGrid } from './DataGrid';
-import { fieldLabel, valueLabel } from './labels';
+import { fieldLabel } from './labels';
+import { recordCell as cell, RecordDetails } from './RecordDetails';
+
+export { RecordDetails } from './RecordDetails';
+
 import { ResultCharts } from './ResultCharts';
 import { resultCharts } from './resultChartModel';
 
-export function RecordDetails({ value }: { value: Row }) {
-  return (
-    <Descriptions
-      size="small"
-      column={1}
-      items={Object.entries(value || {}).map(([key, item]) => ({
-        key,
-        label: fieldLabel(key),
-        children: cell(item),
-      }))}
-    />
-  );
-}
-function cell(value: any): ReactNode {
-  if (typeof value === 'object' && value !== null)
-    return (
-      <details>
-        <summary>详情</summary>
-        <pre className="json-output">{JSON.stringify(value, null, 2)}</pre>
-      </details>
-    );
-  if (typeof value === 'boolean') return value ? '是' : '否';
-  return valueLabel(value);
-}
 export function ResultView({
   value,
   operation,

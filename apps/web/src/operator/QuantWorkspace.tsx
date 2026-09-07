@@ -56,7 +56,10 @@ export function QuantWorkspace({ children }: { children: ReactNode }) {
       return !previous;
     });
   const visiblePaths = openWorkspaceTab(paths, pathname);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(
+    () => saved('montlok.workspace.controls.v1') !== 'false',
+  );
+  useEffect(() => save('montlok.workspace.controls.v1', String(inspectorOpen)), [inspectorOpen]);
 
   useEffect(() => {
     setPaths((current) => openWorkspaceTab(current, pathname));
@@ -110,6 +113,9 @@ export function QuantWorkspace({ children }: { children: ReactNode }) {
                 tabBarExtraContent={
                   <Button
                     className="workspace-inspector-toggle"
+                    type={inspectorOpen ? 'default' : 'primary'}
+                    aria-expanded={inspectorOpen}
+                    aria-controls="workspace-strategy-controls"
                     onClick={() => setInspectorOpen(!inspectorOpen)}
                   >
                     策略控制
@@ -134,7 +140,7 @@ export function QuantWorkspace({ children }: { children: ReactNode }) {
           </Splitter.Panel>
         </Splitter>
       </div>
-      <aside className="workspace-inspector" aria-label="策略控制">
+      <aside id="workspace-strategy-controls" className="workspace-inspector" aria-label="策略控制">
         <div className="panel-heading">
           <strong>策略控制</strong>
           <Button

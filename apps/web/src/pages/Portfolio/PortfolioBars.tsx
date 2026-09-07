@@ -19,10 +19,10 @@ export const PortfolioBars = memo(function PortfolioBars({
   return (
     <section className="portfolio-bars" aria-label={label}>
       {!available ? (
-        <div className="portfolio-empty">持仓数据未同步</div>
+        <div className="portfolio-empty">持仓数据正在对齐</div>
       ) : !rows.length ? (
         <div className="portfolio-empty">
-          {missing ? '估值数据未提供' : '暂无持仓'}
+          {missing ? '估值数据正在补充' : '持仓记录将随成交更新'}
         </div>
       ) : (
         <div className="portfolio-bars-list">

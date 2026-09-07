@@ -74,8 +74,8 @@ class Profiles:
             raise ValueError("连接 ID 只允许 1–40 个字母、数字、下划线或短横线")
         previous = self.state["profiles"].get(identifier, {})
         value = {key: draft.get(key) or previous.get(key) for key in ("id", "name", "mode", "site", "apiKey", "secret", "passphrase")}
-        if value["mode"] not in ("demo", "live_readonly") or value["site"] not in SITES:
-            raise ValueError("仅支持 OKX Demo 或实盘只读，以及已知 OKX 站点")
+        if value["mode"] not in ("demo", "live", "live_readonly") or value["site"] not in SITES:
+            raise ValueError("请选择有效的交易环境和 OKX 站点")
         if any(not isinstance(value[key], str) or not value[key].strip() for key in value):
             raise ValueError("名称、Key、Secret 和 Passphrase 均必填")
         if any(len(value[key]) > 512 for key in value):

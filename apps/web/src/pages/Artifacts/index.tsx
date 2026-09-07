@@ -176,7 +176,7 @@ export default function Artifacts() {
           </p>
         </section>
       ) : (
-        <p className="artifact-hint">只读账户可查看已登记版本</p>
+        <p className="artifact-hint">已登记版本可浏览与查询</p>
       )}
       <div className="artifact-list-heading">
         <strong>已登记版本</strong>

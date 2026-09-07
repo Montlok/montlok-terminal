@@ -11,7 +11,7 @@ import {
   Tag,
   Tooltip,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, type Operation, type Row } from '../../operator/api';
 import { ConfirmOperation } from '../../operator/ConfirmOperation';
 import { DataGrid } from '../../operator/DataGrid';
@@ -19,6 +19,7 @@ import { operationLabel } from '../../operator/labels';
 import { breadcrumbs, destination, pageFor } from '../../operator/navigation';
 import { ResultView } from '../../operator/ResultView';
 import { formArguments, SchemaFields } from '../../operator/SchemaFields';
+import { canAutoQuery, operationDefaults } from './defaults';
 
 export default function ApiWorkbench() {
   const { catalog, refresh, epoch } = useModel('operator');
@@ -67,20 +68,40 @@ export default function ApiWorkbench() {
       ? tool.method === 'GET'
       : tool?.annotations?.readOnlyHint;
   const schema = tool?.inputSchema;
+  const scope = `${epoch}/${pathname}/${tool?.key}`;
+  const currentScope = useRef(scope);
+  currentScope.current = scope;
   useEffect(() => {
     form.resetFields();
-    const defaults: Row = {};
-    const properties = schema?.properties || {};
-    for (const [key, field] of Object.entries(properties) as [string, Row][])
-      if (field.default !== undefined) defaults[key] = field.default;
-    if (properties.tdMode) defaults.tdMode = 'cash';
+    const defaults = operationDefaults(schema, pathname);
     form.setFieldsValue(defaults);
     setInputMode(schema ? 'form' : 'json');
     setRaw('{}');
     setResult(undefined);
     setError('');
     setTicket(undefined);
-  }, [tool?.key, epoch, form, schema]);
+    let disposed = false;
+    if (tool && readOnly && !developer && canAutoQuery(schema, defaults)) {
+      setBusy(true);
+      void api('query', {
+        kind: tool.kind,
+        name: tool.name,
+        arguments: formArguments(defaults, schema),
+      })
+        .then((value) => {
+          if (!disposed) setResult(value);
+        })
+        .catch((reason) => {
+          if (!disposed) setError(String(reason));
+        })
+        .finally(() => {
+          if (!disposed) setBusy(false);
+        });
+    } else setBusy(false);
+    return () => {
+      disposed = true;
+    };
+  }, [tool?.key, epoch, form, schema, pathname]);
   useEffect(() => {
     setProtocol('all');
   }, [pathname]);
@@ -98,12 +119,14 @@ export default function ApiWorkbench() {
             ? formArguments(values, schema)
             : JSON.parse(raw),
       };
-      if (readOnly) setResult(await api('query', operation));
-      else setTicket(await api('prepare', operation));
+      const value = await api(readOnly ? 'query' : 'prepare', operation);
+      if (currentScope.current !== scope) return;
+      if (readOnly) setResult(value);
+      else setTicket(value);
     } catch (reason) {
-      setError(String(reason));
+      if (currentScope.current === scope) setError(String(reason));
     } finally {
-      setBusy(false);
+      if (currentScope.current === scope) setBusy(false);
     }
   }
   const nativeRows = catalog.nativeMethods.filter((row: Row) =>
@@ -270,7 +293,7 @@ export default function ApiWorkbench() {
               />
             </section>
           ) : (
-            <div className="empty-state">暂无功能</div>
+            <div className="empty-state">从左侧选择一项功能</div>
           )}
         </>
       )}

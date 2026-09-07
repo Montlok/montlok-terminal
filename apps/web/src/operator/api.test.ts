@@ -20,6 +20,24 @@ describe('operator session recovery', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
+  it('shares concurrent reads but refreshes again after the response', async () => {
+    fetchMock
+      .mockResolvedValueOnce(reply(identity('same')))
+      .mockResolvedValueOnce(reply({ groups: [] }))
+      .mockResolvedValueOnce(reply({ groups: ['new'] }));
+    const { api } = await import('./api');
+    const results = await Promise.all([
+      api('strategy-groups'),
+      api('strategy-groups'),
+      api('strategy-groups'),
+    ]);
+    expect(results).toEqual([{ groups: [] }, { groups: [] }, { groups: [] }]);
+    expect(
+      fetchMock.mock.calls.filter(([url]) => url === '/api/strategy-groups'),
+    ).toHaveLength(1);
+    expect(await api('strategy-groups')).toEqual({ groups: ['new'] });
+  });
+
   it('refreshes a changed session and retries a read-only query once', async () => {
     fetchMock
       .mockResolvedValueOnce(reply(identity('old')))
@@ -91,6 +109,20 @@ describe('operator session recovery', () => {
     const { ensureSession } = await import('./api');
     await Promise.all([ensureSession(), ensureSession(), ensureSession()]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it('returns the operation identity for an uncertain write without replaying', async () => {
+    fetchMock
+      .mockResolvedValueOnce(reply(identity('same')))
+      .mockRejectedValueOnce(new DOMException('deadline', 'TimeoutError'));
+    const { api } = await import('./api');
+    expect(await api('execute', { id: 'operation-123' })).toMatchObject({
+      id: 'operation-123',
+      status: 'unknown',
+      result: { receiptStatus: 'unknown' },
+    });
+    expect(
+      fetchMock.mock.calls.filter(([url]) => url === '/api/execute'),
+    ).toHaveLength(1);
   });
 
   it('formats OKX millisecond strings and epoch seconds in explicit UTC+8', async () => {

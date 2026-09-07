@@ -95,7 +95,9 @@ export const TimeSeriesChart = memo(function TimeSeriesChart({
         aria-label={`${label} · ${CHART_TIME_ZONE_LABEL}`}
         title={`图表时间 ${CHART_TIME_ZONE_LABEL}`}
       />
-      {!data.length && <div className="chart-empty">暂无历史数据</div>}
+      {!data.length && (
+        <div className="chart-empty">等待首个时间序列采样点</div>
+      )}
     </div>
   );
 });

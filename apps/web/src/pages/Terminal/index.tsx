@@ -34,29 +34,13 @@ const ASSET_COLUMNS: GridColumn[] = [
   { key: 'frozenBal', title: '冻结', render: (value) => number(value, 8) },
   { key: 'upl', title: '浮动收益' },
 ];
-const PAPER_COLUMNS: GridColumn[] = [
-  { key: 'instrument', title: '品种', width: 220 },
-  { key: 'quantity', title: '数量', render: (value) => number(value, 6) },
-  { key: 'averagePrice', title: '均价', render: (value) => number(value) },
-  { key: 'markPrice', title: '估值价格', render: (value) => number(value) },
-  {
-    key: 'unrealizedPnl',
-    title: '未实现 PnL',
-    render: (value) => (
-      <span className={value < 0 ? 'negative' : 'positive'}>
-        {number(value)}
-      </span>
-    ),
-  },
-];
-
 export default function Terminal() {
-  const { account, paper, error } = useModel('operator');
+  const { account, error } = useModel('operator');
   const { initialState } = useModel('@@initialState');
   const [ticket, setTicket] = useState<Row>();
   const [actionError, setActionError] = useState('');
   const cancelable =
-    initialState?.currentUser?.access === 'admin' && account.mode === 'demo';
+    initialState?.currentUser?.access === 'admin' && account.mode === 'live';
   const orderColumns = useMemo<GridColumn[]>(
     () => [
       { key: 'instId', title: '交易品种' },
@@ -122,21 +106,6 @@ export default function Terminal() {
                 <DataGrid rows={account.balances} columns={ASSET_COLUMNS} />
               ),
             },
-            {
-              key: 'paper',
-              label: '本地模拟',
-              children: (
-                <>
-                  <div className="paper-context">
-                    {paper?.runId} · 净值 {number(paper?.risk?.nav)} USDT
-                  </div>
-                  <DataGrid
-                    rows={paper?.positions || []}
-                    columns={PAPER_COLUMNS}
-                  />
-                </>
-              ),
-            },
           ]}
         />
       </section>
@@ -144,7 +113,7 @@ export default function Terminal() {
         <span>账户成交与资产</span>
         <span>
           账户更新 {timeOf(account.updatedAt)} ·{' '}
-          {account.mode === 'demo' ? '模拟盘' : '实盘 · 只读'}
+          {account.mode === 'live' ? '实盘 · 交易' : '实盘 · 查看'}
         </span>
       </footer>
       <ConfirmOperation

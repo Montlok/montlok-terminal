@@ -6,11 +6,13 @@ import { api, number } from '../../operator/api';
 import { TimeSeriesChart } from '../../operator/TimeSeriesChart';
 import { usePoll } from '../../operator/usePoll';
 import {
+  executionModeLabel,
   type GroupEquity,
   runDateTime,
   type StrategyGroup,
   stateWarning,
   statusLabel,
+  strategyDisplayName,
 } from '../StrategyGroups/groupModel';
 import { PortfolioBars } from './PortfolioBars';
 import {
@@ -29,7 +31,12 @@ type Snapshot = {
 
 export default function Portfolio() {
   const { selectedGroup, setSelectedGroup, selectedRuns, setSelectedRuns } =
-    useModel('operator');
+    useModel('operator', (model) => ({
+      selectedGroup: model.selectedGroup,
+      setSelectedGroup: model.setSelectedGroup,
+      selectedRuns: model.selectedRuns,
+      setSelectedRuns: model.setSelectedRuns,
+    }));
   const selectedRun = selectedRuns[selectedGroup] || '';
   const selection = `${selectedGroup}/${selectedRun}`;
   const current = useRef(selection);
@@ -41,13 +48,17 @@ export default function Portfolio() {
   const load = useCallback(
     async (signal?: AbortSignal) => {
       try {
-        const suffix = selectedRun
-          ? `?runId=${encodeURIComponent(selectedRun)}`
+        const runQuery = selectedRun
+          ? `runId=${encodeURIComponent(selectedRun)}`
           : '';
+        const detailQuery = `?${[runQuery, 'view=summary'].filter(Boolean).join('&')}`;
+        const runSuffix = runQuery ? `?${runQuery}` : '';
         const [listing, group, equity, runtime] = await Promise.all([
           api<{ groups: StrategyGroup[] }>('strategy-groups'),
-          api<StrategyGroup>(`strategy-groups/${selectedGroup}${suffix}`),
-          api<GroupEquity>(`strategy-groups/${selectedGroup}/equity${suffix}`),
+          api<StrategyGroup>(`strategy-groups/${selectedGroup}${detailQuery}`),
+          api<GroupEquity>(
+            `strategy-groups/${selectedGroup}/equity${runSuffix}`,
+          ),
           api<RuntimeGroups>(`strategy-groups/${selectedGroup}/runtime`).catch(
             () => undefined,
           ),
@@ -87,7 +98,11 @@ export default function Portfolio() {
   const warning = stateWarning(group?.status || '');
   const basis = analytics.basis === 'sector' ? '按板块' : '按品种';
   const orderedGroups = useMemo(
-    () => [...groups].sort((left, right) => Number(right.mode === 'live') - Number(left.mode === 'live')),
+    () =>
+      [...groups].sort(
+        (left, right) =>
+          Number(right.mode === 'live') - Number(left.mode === 'live'),
+      ),
     [groups],
   );
 
@@ -98,7 +113,7 @@ export default function Portfolio() {
           <h1>{group?.mode === 'live' ? '实盘组合' : '组合总览'}</h1>
           <span className="muted">
             {group
-              ? `${group.accountId || '未分配账户'} · ${group.modeLabel}`
+              ? `${group.accountId || '读取执行账户'} · ${executionModeLabel(group)}`
               : '读取运行实例'}
           </span>
         </div>
@@ -110,7 +125,7 @@ export default function Portfolio() {
             showSearch={{ optionFilterProp: 'label' }}
             options={orderedGroups.map((item) => ({
               value: item.id,
-              label: item.name,
+              label: strategyDisplayName(item),
             }))}
           />
           <Select
@@ -127,8 +142,8 @@ export default function Portfolio() {
               {
                 value: '',
                 label: original?.runId
-                  ? `原始运行 · ${original.runId}`
-                  : '原始运行 · 尚无实例',
+                  ? `${original.managed ? '当前 / 最近一次' : '原始运行'} · ${original.runId}`
+                  : '等待首次运行',
               },
               ...runs
                 .filter(
@@ -164,11 +179,12 @@ export default function Portfolio() {
                 key={item.id}
                 onClick={() => setSelectedGroup(item.id)}
               >
-                <strong>{item.name}</strong>
+                <strong>{strategyDisplayName(item)}</strong>
                 <span>
-                  {statusLabel(displayed.status)} · {displayed.modeLabel}
+                  {statusLabel(displayed.status)} ·{' '}
+                  {executionModeLabel(displayed)}
                 </span>
-                <small>{displayed.runId || '尚无运行实例'}</small>
+                <small>{displayed.runId || '等待首次运行'}</small>
               </button>
             );
           })}
@@ -187,10 +203,10 @@ export default function Portfolio() {
                 className="portfolio-run-context"
                 aria-label="组合运行来源"
               >
-                <strong>{group.name}</strong>
+                <strong>{strategyDisplayName(group)}</strong>
                 <span>{statusLabel(group.status)}</span>
-                <span>{group.runId || '尚无运行实例'}</span>
-                <span>信号 {group.signalAsOf || '未发布'}</span>
+                <span>{group.runId || '等待首次运行'}</span>
+                <span>信号 {group.signalAsOf || '读取中'}</span>
                 <span>快照 {runDateTime(group.observedAt)} UTC+8</span>
               </section>
               {(warning ||
@@ -202,7 +218,7 @@ export default function Portfolio() {
                     warning?.title ||
                     (group.status === 'stale'
                       ? '运行快照已超过 120 秒未更新'
-                      : '运行数据不可用')
+                      : '运行数据连接中')
                   }
                   showIcon
                 />
@@ -210,8 +226,16 @@ export default function Portfolio() {
               {group.status === 'pending_validation' && (
                 <Alert
                   type="info"
-                  title="组合尚未发布"
+                  title="组合配置检查中"
                   description={group.capabilities.reason}
+                />
+              )}
+              {group.sources?.accounting === false && (
+                <Alert
+                  type="warning"
+                  title="收益数据待核对"
+                  description="成交回报与持仓正在对齐，完成后更新净值与回撤。"
+                  showIcon
                 />
               )}
               <section
@@ -235,7 +259,7 @@ export default function Portfolio() {
               {equity?.sourceAvailable === false && group.runId && (
                 <Alert
                   type="warning"
-                  title="历史曲线来源不可用"
+                  title="历史曲线读取异常"
                   description={equity.sourceIssue || undefined}
                   showIcon
                 />
@@ -258,7 +282,7 @@ export default function Portfolio() {
                 <section className="panel">
                   <div className="panel-heading">
                     <strong>最大回撤 / %</strong>
-                    <span className="muted">{group.modeLabel}</span>
+                    <span className="muted">{executionModeLabel(group)}</span>
                   </div>
                   <TimeSeriesChart
                     key={`${selection}/drawdown`}
@@ -298,7 +322,8 @@ export default function Portfolio() {
               </div>
               <footer className="portfolio-footer">
                 <span>
-                  {group.marketSource || group.modeLabel} · {group.accountId}
+                  {group.marketSource || executionModeLabel(group)} ·{' '}
+                  {group.accountId}
                 </span>
                 <Button
                   type="text"

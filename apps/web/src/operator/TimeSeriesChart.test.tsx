@@ -22,7 +22,10 @@ vi.mock('lightweight-charts', () => ({
   createChart: (_container: HTMLElement, options: unknown) => {
     calls.options(options);
     return {
-      addSeries: () => ({ setData: calls.data, applyOptions: calls.seriesOptions }),
+      addSeries: () => ({
+        setData: calls.data,
+        applyOptions: calls.seriesOptions,
+      }),
       timeScale: () => ({ fitContent: calls.fit }),
       remove: calls.remove,
     };
@@ -86,7 +89,7 @@ describe('time series rendering', () => {
   });
   it('shows an explicit empty state rather than generating history', () => {
     render(<TimeSeriesChart label="净值" points={[]} />);
-    expect(screen.getByText('暂无历史数据')).toBeInTheDocument();
+    expect(screen.getByText('等待首个时间序列采样点')).toBeInTheDocument();
     expect(calls.data).toHaveBeenLastCalledWith([]);
   });
 });

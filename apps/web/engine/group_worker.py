@@ -108,6 +108,11 @@ def assemble(registry, request, spec, directory, loop):
     configuration = msgspec.structs.replace(
         configuration,
         data_engine=msgspec.structs.replace(configuration.data_engine, emit_quotes_from_book=True),
+        # SandboxExecutionClient.generate_position_status_reports returns []
+        # unconditionally. Periodic venue-position checks would interpret that
+        # unsupported report as flat and manufacture EXTERNAL offset fills.
+        # Keep startup/order reconciliation and the risk engine unchanged.
+        exec_engine=msgspec.structs.replace(configuration.exec_engine, position_check_interval_secs=None),
         exec_clients={"OKX": msgspec.structs.replace(configuration.exec_clients["OKX"],
                                                     book_type="L2_MBP", default_leverage=Decimal(1))},
     )

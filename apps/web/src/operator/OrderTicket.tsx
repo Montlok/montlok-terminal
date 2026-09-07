@@ -1,6 +1,6 @@
 import { useModel } from '@umijs/max';
 import { Alert, Button, Form, Input, Segmented } from 'antd';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { api, number, type Row } from './api';
 import { ConfirmOperation } from './ConfirmOperation';
 
@@ -25,6 +25,17 @@ export const OrderTicket = memo(function OrderTicket({
   const [result, setResult] = useState<Row>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const context = JSON.stringify([
+    instrument,
+    epoch,
+    side,
+    type,
+    quantity,
+    price,
+  ]);
+  const currentContext = useRef(context);
+  currentContext.current = context;
+  useEffect(() => setTicket(undefined), [context]);
   useEffect(() => {
     setQuantity('');
     setPrice('');
@@ -37,29 +48,33 @@ export const OrderTicket = memo(function OrderTicket({
     (row: Row) => row.ccy === (side === 'buy' ? 'USDT' : base),
   );
   async function prepare() {
+    const preparingContext = context;
     setBusy(true);
     setError('');
     setResult(undefined);
     try {
-      if (!(Number(quantity) > 0)) throw new Error('输入交易数量');
-      if (type === 'limit' && !(Number(price) > 0))
+      if (!Number.isFinite(Number(quantity)) || !(Number(quantity) > 0))
+        throw new Error('输入交易数量');
+      if (
+        type === 'limit' &&
+        (!Number.isFinite(Number(price)) || !(Number(price) > 0))
+      )
         throw new Error('输入委托价格');
-      setTicket(
-        await api('prepare', {
-          kind: 'mcp',
-          name: 'spot_place_order',
-          arguments: {
-            instId: instrument,
-            tdMode: 'cash',
-            tgtCcy: 'base_ccy',
-            stpMode: 'cancel_taker',
-            side,
-            ordType: type,
-            sz: quantity,
-            ...(type === 'limit' ? { px: price } : {}),
-          },
-        }),
-      );
+      const prepared = await api('prepare', {
+        kind: 'mcp',
+        name: 'spot_place_order',
+        arguments: {
+          instId: instrument,
+          tdMode: 'cash',
+          tgtCcy: 'base_ccy',
+          stpMode: 'cancel_taker',
+          side,
+          ordType: type,
+          sz: quantity,
+          ...(type === 'limit' ? { px: price } : {}),
+        },
+      });
+      if (currentContext.current === preparingContext) setTicket(prepared);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
     } finally {
@@ -71,7 +86,7 @@ export const OrderTicket = memo(function OrderTicket({
       <div className="panel-heading">
         <strong>现货交易</strong>
         <span className="environment">
-          {account.mode === 'demo' ? '模拟盘' : '只读'}
+          {account.mode === 'live' ? '实盘' : '查看'}
         </span>
       </div>
       <div className="ticket-body">
@@ -143,7 +158,7 @@ export const OrderTicket = memo(function OrderTicket({
         </div>
         <div className="ticket-summary">
           <span>行情</span>
-          <span>{marketMode === 'live' ? '公开市场' : '模拟盘'}</span>
+          <span>{marketMode === 'live' ? '公开市场' : '行情数据'}</span>
         </div>
         <Button
           block
@@ -151,7 +166,7 @@ export const OrderTicket = memo(function OrderTicket({
           className={`trade-submit ${side}`}
           loading={busy}
           disabled={
-            !canOperate || !account.available || account.mode !== 'demo'
+            !canOperate || !account.available || account.mode !== 'live'
           }
           onClick={() => void prepare()}
         >

@@ -5,7 +5,7 @@ export const fieldLabels: Record<string, string> = {
   releaseId: '模型发布编号',
   manifestSha256: '发布清单校验摘要',
   registryVersion: '运行注册版本',
-  budgetUsdt: '独立虚拟预算 / USDT',
+  budgetUsdt: '运行预算 / USDT',
   durationSeconds: '运行时长 / 秒',
   groupId: '策略组编号',
   runId: '运行实例编号',
@@ -317,7 +317,7 @@ const actions: Record<string, string> = {
   get_capabilities: '服务能力',
 };
 const restTitles: Record<string, string> = {
-  'Adjust demo account balance': '调整模拟盘余额',
+  'Adjust demo account balance': '调整测试账户余额',
   'Cancel withdrawal order': '撤销提款',
   'Create withdrawal order': '提款',
   'Get deposit order detail': '充值详情',
@@ -388,6 +388,8 @@ export function operationLabel(item: Row): string {
           reduce: '仅减仓',
           resume: '恢复运行',
           stop: '停止运行',
+          cancel: '撤单并暂停',
+          flatten: '平仓',
         } as Row
       )[item.name] || item.name
     );

@@ -2,6 +2,8 @@ import type { Row } from '../../operator/api';
 import type { TimePoint } from '../../operator/resultChartModel';
 
 export type StrategyGroup = {
+  managed?: boolean;
+  activeRunId?: string | null;
   id: string;
   name: string;
   description: string;
@@ -99,19 +101,40 @@ export function statusLabel(status: string): string {
       reducing: '仅减仓',
       recovering: '恢复中',
       error: '运行异常',
-      unknown: '状态未知',
+      unknown: '状态核对中',
       completed: '已结束',
       stale: '数据延迟',
-      unavailable: '无运行数据',
-      pending_validation: '待验证',
+      unavailable: '数据连接中',
+      pending_validation: '配置检查中',
       ready: '待运行',
       interrupted: '运行中断',
       engine_stopped: '进程收尾中',
       starting: '启动中',
       stopping: '停止中',
       failed: '运行失败',
-      unresponsive: '引擎未响应',
-    }[status] || '未知状态'
+      unresponsive: '引擎响应超时',
+    }[status] || '状态核对中'
+  );
+}
+
+export function executionModeLabel(value?: { mode?: string | null }): string {
+  if (value?.mode === 'live') return 'OKX 实盘';
+  if (value?.mode === 'shadow') return '研究评估';
+  if (value?.mode === 'nautilus_sandbox') return '研究回放';
+  return '运行配置';
+}
+
+export function strategyDisplayName(
+  value?: string | { name?: string | null },
+): string {
+  const name =
+    typeof value === 'string'
+      ? value
+      : typeof value?.name === 'string'
+        ? value.name
+        : '';
+  return (
+    name.replace(/(?:\s*·\s*(?:OKX\s*)?实盘)+\s*$/u, '').trim() || '策略组'
   );
 }
 
@@ -128,9 +151,9 @@ export function stateWarning(
   if (status === 'reducing')
     return { type: 'warning', title: '引擎处于仅减仓状态' };
   if (status === 'recovering')
-    return { type: 'warning', title: '引擎正在恢复，交易状态尚未恢复正常' };
+    return { type: 'warning', title: '引擎正在恢复交易连接' };
   if (status === 'unknown')
-    return { type: 'warning', title: '无法确认引擎交易状态' };
+    return { type: 'warning', title: '引擎交易状态正在核对' };
   return undefined;
 }
 

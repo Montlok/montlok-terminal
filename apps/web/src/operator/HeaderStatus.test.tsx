@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applicationAccess,
+  connectionEnvironment,
   connectionPermissions,
   HeaderStatus,
 } from './HeaderStatus';
@@ -62,7 +63,7 @@ describe('account and environment selector', () => {
     ).toBeEnabled();
     expect(
       screen.getByRole('combobox', { name: '账户与交易环境' }).parentElement,
-    ).toHaveAttribute('title', 'Demo · 模拟盘');
+    ).toHaveAttribute('title', 'Demo · 连接配置');
     expect(mocks.api).not.toHaveBeenCalled();
   });
 
@@ -87,7 +88,7 @@ describe('account and environment selector', () => {
     });
     expect(
       screen.getByRole('combobox', { name: '账户与交易环境' }).parentElement,
-    ).toHaveAttribute('title', 'Demo · 模拟盘');
+    ).toHaveAttribute('title', 'Demo · 连接配置');
   });
 
   it('does not give a viewer connection-management controls', () => {
@@ -115,8 +116,10 @@ describe('account and environment selector', () => {
       verification: { permissions: 'read_only,trade' },
     };
     expect(connectionPermissions(profile)).toBe('读取、交易');
-    expect(applicationAccess(profile, 'admin')).toBe('应用：策略控制');
-    expect(applicationAccess({ mode: 'demo' }, 'admin')).toBe('应用：可操作');
+    expect(applicationAccess(profile, 'admin')).toBe('操作：查看');
+    expect(applicationAccess({ mode: 'demo' }, 'admin')).toBe('操作：交易');
+    expect(applicationAccess({ mode: 'live' }, 'admin')).toBe('操作：交易');
+    expect(connectionEnvironment({ mode: 'live' })).toBe('实盘');
     expect(applicationAccess({ mode: 'demo' }, 'viewer')).toBe('应用：查看者');
     expect(connectionPermissions({ mode: 'demo' })).toBe('未核验');
   });

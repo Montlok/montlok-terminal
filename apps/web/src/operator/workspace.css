@@ -137,7 +137,7 @@
 .market-dock .trading-grid {
   flex: 1;
   min-height: 0;
-  grid-template-columns: minmax(140px, 180px) minmax(260px, 1fr) minmax(
+  grid-template-columns: minmax(210px, 255px) minmax(260px, 1fr) minmax(
       180px,
       215px
     );
@@ -153,9 +153,27 @@
   overflow: auto;
 }
 .dock-watchlist .watch-panel {
+  display:block;
   min-height: 100%;
   overflow: auto;
 }
+.strategy-market-context {display:flex;align-items:center;gap:14px;flex-shrink:0;min-height:27px;font-size:11px;color:var(--op-muted);border-bottom:1px solid var(--op-border);white-space:nowrap;overflow:auto;}
+.strategy-market-context strong {color:var(--op-text);font-weight:500;}
+.watch-group-name {padding:6px 8px 0;font-size:11px;color:var(--op-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.strategy-market-drawer .watch-panel {display:block;}
+.strategy-market-drawer .positive {color:var(--op-up);}
+.strategy-market-drawer .negative {color:var(--op-down);}
+.strategy-market-drawer .ant-drawer-body {padding:12px;background:var(--op-bg);}
+.strategy-market-drawer .watch-panel .watch-table td {font-size:12px;}
+.watch-scope-tabs .ant-tabs-nav {margin:0;min-height:32px;padding:0 6px;}
+.watch-scope-tabs .ant-tabs-tab {font-size:11px;padding:6px 0;}
+.watch-scope-tabs .ant-tabs-tab+.ant-tabs-tab {margin-left:12px;}
+.watch-position {display:block;font-size:10px;color:var(--op-muted);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:105px;}
+.watch-table td strong {font-weight:500;font-size:11px;}
+.watch-panel:not([data-scope="custom"]) .watch-table td:last-child,
+.watch-panel:not([data-scope="custom"]) .watch-table th:last-child {width:auto;text-align:right;padding-right:6px;}
+.watch-panel:not([data-scope="custom"]) .watch-table td {height:42px;vertical-align:middle;}
+.market-dock-compact .strategy-market-context {display:none;}
 .market-dock .chart-panel,
 .market-dock .book-panel {
   display: flex;
@@ -321,10 +339,7 @@
 }
 @container analysis (max-width: 1050px) {
   .market-dock .trading-grid {
-    grid-template-columns: minmax(220px, 1fr) 180px;
-  }
-  .dock-watchlist {
-    display: none;
+    grid-template-columns: 220px minmax(220px, 1fr) 180px;
   }
   .market-dock .market-stat {
     display: none;
@@ -333,6 +348,10 @@
     display: none;
   }
 }
+@container analysis (max-width: 780px) {
+  .market-dock .trading-grid {grid-template-columns:210px minmax(200px,1fr);}
+  .market-dock .book-panel {display:none;}
+}
 @container analysis (max-width: 580px) {
   .market-dock .trading-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -340,6 +359,7 @@
   .market-dock .book-panel {
     display: none;
   }
+  .dock-watchlist {display:none;}
   .market-dock .instrument-strip {
     gap: 8px;
   }

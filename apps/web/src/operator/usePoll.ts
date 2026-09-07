@@ -14,25 +14,31 @@ export function usePoll(
     if (!enabled) return;
     const controller = new AbortController();
     let inFlight = false;
-    const run = async () => {
-      if (inFlight || document.visibilityState === 'hidden') return;
+    let queued = false;
+    const run = async (force = false) => {
+      if (controller.signal.aborted || document.visibilityState === 'hidden') return;
+      if (inFlight) { queued ||= force; return; }
       inFlight = true;
       try {
         await task(controller.signal);
       } finally {
         inFlight = false;
+        if (queued && !controller.signal.aborted) { queued = false; void run(); }
       }
     };
     void run();
     const timer = window.setInterval(run, intervalMs);
     const onVisible = () => {
-      if (document.visibilityState === 'visible') void run();
+      if (document.visibilityState === 'visible') void run(true);
     };
     document.addEventListener('visibilitychange', onVisible);
+    const onRefresh = () => void run(true);
+    window.addEventListener('montlok:refresh', onRefresh);
     return () => {
       controller.abort();
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('montlok:refresh', onRefresh);
     };
   }, [task, intervalMs, enabled]);
 }

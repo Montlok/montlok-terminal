@@ -28,6 +28,26 @@ def read_object(path):
         return {}
 
 
+def read_coherent_pair(status_path, view_path, attempts=6, retry_delay=0.005):
+    """Read one matching status/view generation across atomic file swaps.
+
+    The worker publishes status first and view second. Reading view before
+    status gives us either a coherent previous generation or, during the
+    narrow swap window, a mismatch which is retried without relaxing identity
+    validation.
+    """
+    status = {}
+    view = {}
+    for attempt in range(attempts):
+        view = read_object(view_path)
+        status = read_object(status_path)
+        if view.get("observed_at") == status.get("observed_at"):
+            break
+        if attempt + 1 < attempts:
+            time.sleep(retry_delay)
+    return status, view
+
+
 def number(value):
     if isinstance(value, bool):
         return None
@@ -74,8 +94,10 @@ class ManagedRunView:
     def snapshot(self):
         manifest = read_object(self.path / "manifest.json")
         final = (self.path / "final.json").exists()
-        status = read_object(self.path / ("final.json" if final else "status.json"))
-        view = read_object(self.path / "view.json")
+        status, view = read_coherent_pair(
+            self.path / ("final.json" if final else "status.json"),
+            self.path / "view.json",
+        )
         expected = self.path.name
         valid_manifest = (manifest.get("run_id") == expected and manifest.get("execution") in {"nautilus_sandbox", "okx_live"}
                           and manifest.get("group_id") == self.expected_group_id
@@ -93,7 +115,10 @@ class ManagedRunView:
                       and all(type(view.get(key)) is int and view[key] >= 0 for key in ("ordersTotal", "fillsTotal")))
         if not valid_view:
             view = {}
-        mode = ("live" if valid_manifest and manifest.get("mode") == "live" else
+        foreign_only = bool(view.get('orders') and all(str(o.get('strategy', '')).startswith('EXTERNAL') for o in view['orders']))
+        if foreign_only:
+            view = {**view, 'orders': [], 'fills': [], 'positions': [], 'ordersTotal': 0, 'fillsTotal': 0}
+        mode = ("live" if valid_manifest and (manifest.get("mode") == "live" or manifest.get('execution') == 'okx_live') else
                 "shadow" if valid_manifest and manifest.get("mode") == "shadow" else "nautilus_sandbox")
         model = bound_model(manifest, status.get("model")) if valid_status else None
         if model is None and valid_view:
@@ -107,6 +132,9 @@ class ManagedRunView:
             elif not alive or age is None or age > 120:
                 state = "UNKNOWN"
         exceptions = []
+        if foreign_only:
+            exceptions.append({'id': 'historical-fill-attribution', 'severity': 'WARNING',
+                'title': '历史成交已排除', 'detail': '对账导入的旧成交不计入本次运行，原始记录保留。', 'status': 'OPEN'})
         if not valid_manifest or not valid_status:
             exceptions.append({"id": "run-source", "severity": "CRITICAL", "title": "实例数据不可用",
                                "detail": "运行编号与文件内容不一致或快照缺失", "status": "OPEN"})
@@ -154,6 +182,8 @@ class ManagedRunView:
             config.update({"运行模式": "影子运行", "撮合环境": "预测与目标仓位", "生成模拟订单": False})
         elif mode == "live":
             config.pop("生成模拟订单", None)
+            config.pop("初始模拟资金 / USDT", None)
+            config["分配资金 / USDT"] = number(status.get("capital_usdt"))
             config.update({"运行模式": "OKX 实盘", "撮合环境": "OKX 现货", "订单启用": True})
         if model is not None:
             config.update({"模型发布版本": model["releaseId"], "模型权重版本": model["modelHash"],
@@ -163,14 +193,19 @@ class ManagedRunView:
                 "accountId": manifest.get("account_id") if mode == "live" else f"SANDBOX:{expected}", "tradingState": state,
                 "mode": mode, "modeLabel": "OKX 实盘" if mode == "live" else "影子运行" if mode == "shadow" else "本地模拟",
                 "matchingLabel": "OKX 现货 · CASH · 1x" if mode == "live" else "预测与目标仓位" if mode == "shadow" else "Nautilus Sandbox · CASH · 1x",
-                "readyToTrade": bool(mode != "shadow" and valid_view and alive and state == "ACTIVE" and healthy_market and connected.get("exec") is True),
+                "readyToTrade": bool(mode != "shadow" and valid_view and alive and state == "ACTIVE" and healthy_market and connected.get("exec") is True
+                                     and (model is None or model.get("warmupComplete") is True)),
                 "observedAtNs": int(observed * 1e9) if observed is not None else None,
                 "sources": {"manifest": valid_manifest, "status": valid_status, "view": valid_view,
+                            "accounting": not foreign_only,
                             "orders": valid_view, "fills": valid_view, "model": model is not None,
                             "snapshotAgeSeconds": age, "processAlive": alive},
                 "positions": view.get("positions", []), "orders": view.get("orders", []), "fills": view.get("fills", []),
                 "ordersTotal": number(view.get("ordersTotal")) if valid_view else None,
                 "fillsTotal": number(view.get("fillsTotal")) if valid_view else None,
+                "ordersAccepted": number(view.get("ordersAccepted")) if valid_view else None,
+                "ordersDenied": number(view.get("ordersDenied")) if valid_view else None,
+                "ordersRejected": number(view.get("ordersRejected")) if valid_view else None,
                 "strategies": view.get("strategies", []), "systems": systems, "exceptions": exceptions,
                 **({"model": model} if model is not None else {}),
                 "runtimeConfig": [{"key": key, "value": value, "previous": value, "changed": False} for key, value in config.items()]}

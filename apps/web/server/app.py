@@ -29,6 +29,8 @@ from group_views import GroupViews
 from model_releases import ModelReleaseStore
 from passkeys import Passkeys
 from profiles import Profiles
+from sessions import SessionStore
+from watch_market import PublicWatchMarket, parse_symbols
 
 
 def redact(value):
@@ -49,6 +51,8 @@ class Operator:
         self.mcp = MCP(args.node, args.mcp)
         self.sessions = {}
         self.auth = Authentication(args.auth_file) if getattr(args, "auth_file", None) else None
+        self.session_store = SessionStore(args.state_dir,self.profiles.cipher,getattr(args,'auth_file',None),getattr(args,'passkey_origin',None))
+        self.sessions = self.session_store.load()
         self.passkeys = Passkeys(args.state_dir / "passkeys.sqlite", args.auth_file, args.passkey_origin) if getattr(args, "passkey_origin", None) else None
         self.confirmations = {}
         self.write_lock = asyncio.Lock()
@@ -72,13 +76,33 @@ class Operator:
         self.market_snapshots = {}
         self.snapshot_lock = asyncio.Lock()
         self.account_changed = asyncio.Event()
-        spec = importlib.util.spec_from_file_location("paper_view", args.paper_bridge)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        self.paper = module.RunView(args.paper_run)
-        self.group_views = GroupViews(args.paper_run, self.paper)
+        self.live_only = getattr(args, "live_only", False)
+        self.paper = None
+        self.group_views = None
+        if not self.live_only:
+            spec = importlib.util.spec_from_file_location("paper_view", args.paper_bridge)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.paper = module.RunView(args.paper_run)
+            self.group_views = GroupViews(args.paper_run, self.paper)
         self.group_runtime = GroupRuntimeClient(getattr(args, "group_socket", None))
         self.managed_views = {}
+        self.watch_market = PublicWatchMarket(self.fetch_watch_market)
+        self.pending_starts = set()
+
+    async def fetch_watch_market(self):
+        # Public quotes are independent of the active private account. No
+        # credentials or account data enter this shared market cache.
+        async with self.http.get('https://www.okx.com/api/v5/market/tickers',params={'instType':'SPOT'},
+                allow_redirects=False,timeout=aiohttp.ClientTimeout(total=10)) as response:
+            value=await response.json(content_type=None)
+            if response.status!=200 or value.get('code')!='0':
+                raise ValueError('行情暂时不可用')
+            return value['data']
+
+    async def watch_market_route(self, request):
+        self.session(request)
+        return web.json_response(await self.watch_market.read(parse_symbols(request.query.get('instruments',''))))
 
     def session(self, request, write=False):
         public = request.headers.get("X-Operator-Public") == "1"
@@ -87,6 +111,7 @@ class Operator:
         if not entry or entry["expires"] < time.time() or time.time() - entry["lastSeen"] > 1800 or entry["public"] != public:
             raise web.HTTPUnauthorized(text="请登录交易操作台")
         entry["lastSeen"] = time.time()
+        self.session_store.save(self.sessions)
         if write and not secrets.compare_digest(request.headers.get("X-Operator-CSRF", ""), entry["csrf"]):
             raise web.HTTPForbidden(text=json.dumps({"code": "SESSION_CSRF_MISMATCH", "error": "操作会话已更新"}),
                                     content_type="application/json")
@@ -101,19 +126,16 @@ class Operator:
         is_write |= kind == "rest" and not name.startswith("GET ")
         if not is_write:
             return None
-        if profile["mode"] != "demo":
-            return "当前实盘连接只读"
-        if re.search(r"set.leverage|borrow|flexible-loan|adjust.leverage", name, re.I):
-            return "当前策略约束：禁止杠杆和借贷"
-        if re.match(r"(swap|futures|option)_(place|batch_orders)", name):
-            return "当前仅启用现货交易；衍生品下单未启用"
+        if profile["mode"] == "live_readonly":
+            return "此连接的手动操作权限为只读，可在 API 连接中设置"
+        if profile["mode"] not in ("demo", "live"):
+            return "交易环境未配置"
+        if profile["mode"] == "live":
+            permissions = (profile.get("verification") or {}).get("permissions", "")
+            if "trade" not in re.split(r"[,;\s]+", permissions):
+                return "此 API 尚未核验交易权限，请测试并保存连接"
         if name == "skills_download":
             return "技能安装需要主机级流程，此账户操作面板仅提供查询"
-        if arguments.get("tdMode", "cash") != "cash" and ("/trade/" in name or name.startswith("spot_")):
-            return "当前仅允许现货 cash 模式"
-        instrument = str(arguments.get("instId", ""))
-        if is_write and "/trade/" in name and (instrument.endswith("SWAP") or len(instrument.split("-")) > 2):
-            return "当前仅启用现货交易"
         if isinstance(arguments.get("orders"), list):
             for order in arguments["orders"]:
                 reason = self.blocked(kind, name, order)
@@ -154,11 +176,13 @@ class Operator:
                 raise ValueError("请求不可覆盖服务器认证与目的地址")
             read_only = name.startswith("GET ")
         elif kind == "native" and name in ("status", "positions", "orders", "fills", "strategies", "config", "exceptions", "stop"):
+            if self.live_only:
+                raise ValueError("生产工作台不提供模拟运行操作")
             if arguments.get("runId") != self.args.paper_run.name:
                 raise ValueError("运行实例已变化，请刷新后重试")
             read_only = name != "stop"
-        elif kind == "group" and name in ("start", "halt", "reduce", "resume", "stop"):
-            if set(arguments) - {"groupId", "runId", "budgetUsdt", "durationSeconds", "registryVersion", "inventoryHash", "action"}:
+        elif kind == "group" and name in ("start", "halt", "reduce", "resume", "stop", "cancel", "flatten"):
+            if set(arguments) - {"groupId", "runId", "budgetUsdt", "durationSeconds", "registryVersion", "inventoryHash", "action", "instruments", "executionSettings"}:
                 raise ValueError("策略组操作包含未定义参数")
             if not isinstance(arguments.get("groupId"), str) or not re.fullmatch(r"[a-z][a-z0-9_-]{0,47}", arguments["groupId"]):
                 raise ValueError("策略组标识不正确")
@@ -178,6 +202,9 @@ class Operator:
                 arguments = self.profiles.validate(arguments)
             else:
                 self.profiles.get(arguments.get("id"))
+            selected = arguments if name == "save" else self.profiles.get(arguments.get("id")) if name == "select" else None
+            if self.live_only and selected and selected.get("mode") == "demo":
+                raise ValueError("生产工作台只接受实盘连接")
             read_only = False
         else:
             raise ValueError("未知操作")
@@ -205,6 +232,8 @@ class Operator:
             self.account = {"available": False, "privateConnected": False, "balances": [], "orders": [], "fills": []}
             return result
         if kind == "native":
+            if self.live_only or self.paper is None:
+                raise ValueError("生产工作台不提供模拟运行操作")
             snapshot = await asyncio.to_thread(self.paper.snapshot)
             if name == "stop":
                 manifest = json.loads((self.args.paper_run / "manifest.json").read_text())
@@ -233,6 +262,7 @@ class Operator:
         public = request.headers.get("X-Operator-Public") == "1"
         self.sessions[identifier] = {"csrf": csrf, "expires": now + 8 * 3600, "lastSeen": now,
                                      "operator": operator, "public": public, "role": role}
+        self.session_store.save(self.sessions,True)
         response = web.json_response({"csrf": csrf, "operator": operator, "role": role, "mode": self.profiles.get()["mode"]})
         response.set_cookie("__Host-operator_session" if public else "operator_session", identifier,
                             secure=public, httponly=True, samesite="Strict", max_age=8 * 3600, path="/")
@@ -310,6 +340,7 @@ class Operator:
     async def logout_route(self, request):
         identifier = self.session(request, True)
         self.sessions.pop(identifier, None)
+        self.session_store.save(self.sessions,True)
         self.confirmations = {key: value for key, value in self.confirmations.items() if value["session"] != identifier}
         response = web.json_response({"loggedOut": True})
         public = request.headers.get("X-Operator-Public") == "1"
@@ -330,7 +361,9 @@ class Operator:
     async def profile_test(self, request):
         self.require_operator(request)
         value = await request.json()
-        profile = self.profiles.validate(value) if any(value.get(key) for key in ("apiKey", "secret", "passphrase")) else self.profiles.get(value.get("id"))
+        profile = self.profiles.get(value.get('id')) if set(value) <= {'id'} else self.profiles.validate(value)
+        if self.live_only and profile.get("mode") == "demo":
+            raise ValueError("生产工作台只接受实盘连接")
         return web.json_response(await verify(self.http, profile))
 
     async def account_route(self, request):
@@ -339,6 +372,8 @@ class Operator:
 
     async def paper_route(self, request):
         self.session(request)
+        if self.live_only or self.profiles.get()["mode"] in ("live", "live_readonly"):
+            raise web.HTTPNotFound(text="生产工作台不提供模拟运行接口")
         return web.json_response(await asyncio.to_thread(self.paper.snapshot))
 
     async def artifacts_route(self, request):
@@ -412,12 +447,37 @@ class Operator:
     async def strategy_groups_route(self, request):
         self.session(request)
         group_id = request.match_info.get("group_id")
+        detail_view = request.query.get('view')
+        if detail_view not in (None,'summary','market'):
+            raise ValueError('策略视图无效')
+        scope = 'live' if self.live_only else request.query.get('scope') or ('live' if self.profiles.get()['mode'] in ('live','live_readonly') else 'all')
+        if self.live_only and request.query.get('scope') not in (None,'live'):
+            raise ValueError('生产工作台只提供实盘运行')
+        if scope not in ('all','live','research'):
+            raise ValueError('策略范围无效')
+        if scope == 'live' and group_id in GroupViews.GROUP_IDS:
+            raise web.HTTPNotFound(text='该记录属于研究历史')
         registry = []
-        if group_id is None or group_id not in GroupViews.GROUP_IDS:
-            try:
-                registry = (await self.group_runtime.status()).get("groups", [])
-            except ValueError:
-                pass
+        try:
+            registry = (await self.group_runtime.status()).get("groups", [])
+        except ValueError:
+            pass
+        if self.live_only:
+            registry = [item for item in registry if item.get('mode') == 'live']
+        def managed_view(item, run):
+            identifier = run["runId"]
+            path = Path(run["runDir"])
+            if path.name != identifier or self.group_runtime.path is None or path.parent.resolve() != self.group_runtime.path.parent.resolve():
+                raise ValueError("运行目录与控制服务不一致")
+            if identifier not in self.managed_views:
+                from managed_run_view import ManagedRunView
+                if len(self.managed_views) >= 16:
+                    self.managed_views.pop(next(iter(self.managed_views)))
+                self.managed_views[identifier] = GroupViews(path, ManagedRunView(path, expected_group_id=item["groupId"]),
+                    group_id=item["groupId"], group_name=item["name"])
+            return self.managed_views[identifier]
+        def preferred_run(item):
+            return next((run for run in item.get("runs", []) if run["runId"] == item.get("runId")), None) or next(iter(item.get("runs", [])), None)
         def registered_group(item):
             return {"id": item["groupId"], "name": item["name"], "description": "已发布运行配置",
                     "mode": item["mode"], "modeLabel": "OKX 实盘" if item["mode"] == "live" else "影子运行" if item["mode"] == "shadow" else "本地模拟",
@@ -427,30 +487,43 @@ class Operator:
                     "capabilities": item["capabilities"], "alpha": [], "version": [], "health": {},
                     **{key: [] for key in ("positions", "orders", "fills", "strategies", "systems", "exceptions", "runtimeConfig")}}
         view = self.group_views
-        run_id = request.query.get("runId")
+        item = next((item for item in registry if item["groupId"] == group_id), None)
+        if not self.live_only and group_id == 'baseline' and request.query.get('runId') == self.args.paper_run.name:
+            legacy = await asyncio.to_thread(view.equity if request.path.endswith('/equity') else view.detail, group_id)
+            return web.json_response({**legacy,'managed':False,'historical':True})
+        default_run = preferred_run(item) if item else None
+        run_id = request.query.get("runId") or (default_run["runId"] if default_run else None)
         if run_id:
             if not group_id or not re.fullmatch(r"[a-z][a-z0-9_-]{0,80}", run_id):
                 raise ValueError("运行实例标识不正确")
-            runtime = await self.group_runtime.status(group_id)
+            runtime = {"groups": registry}
             run = next((run for group in runtime.get("groups", []) if group["groupId"] == group_id
                         for run in group.get("runs", []) if run["runId"] == run_id), None)
             if run is None:
                 raise web.HTTPNotFound(text="运行实例不存在")
-            path = Path(run["runDir"])
-            if path.name != run_id or path.parent.resolve() != self.group_runtime.path.parent.resolve():
-                raise ValueError("运行目录与控制服务不一致")
-            if run_id not in self.managed_views:
-                from managed_run_view import ManagedRunView
-                if len(self.managed_views) >= 16:
-                    self.managed_views.pop(next(iter(self.managed_views)))
-                self.managed_views[run_id] = GroupViews(path, ManagedRunView(path, expected_group_id=group_id), group_id=group_id,
-                    group_name=next(group["name"] for group in runtime["groups"] if group["groupId"] == group_id))
-            view = self.managed_views[run_id]
+            view = managed_view(item, run)
         try:
             if group_id is None:
-                value = await asyncio.to_thread(view.snapshot)
-                existing = {item["id"] for item in value["groups"]}
-                value["groups"].extend(registered_group(item) for item in registry if item["groupId"] not in existing and item.get("dashboardVisible", True))
+                value = ({"groups": []} if view is None else await asyncio.to_thread(view.snapshot))
+                listing = {row["id"]: row for row in value["groups"]}
+                for registered in registry:
+                    if scope != 'all' and not registered.get("dashboardVisible", True):
+                        continue
+                    chosen = preferred_run(registered)
+                    if chosen:
+                        detail = await asyncio.to_thread(managed_view(registered, chosen).detail, registered["groupId"])
+                        listing[registered["groupId"]] = {**detail, "managed": True, "status": chosen["status"],
+                            "activeRunId": registered.get("runId")}
+                    elif registered["groupId"] not in listing:
+                        listing[registered["groupId"]] = registered_group(registered)
+                value["groups"] = [row for row in listing.values()
+                    if scope == 'all' or (row.get('mode') == 'live') == (scope == 'live')]
+                value['scope'] = scope
+                # List consumers render group summaries; full order/fill and
+                # position arrays are fetched only for the selected run.
+                value['groups']=[{key:item for key,item in row.items() if key not in
+                    {'positions','orders','fills','strategies','systems','exceptions','runtimeConfig','universe','alpha','version'}}
+                    for row in value['groups']]
             elif not run_id and group_id not in GroupViews.GROUP_IDS:
                 item = next((item for item in registry if item["groupId"] == group_id), None)
                 if item is None:
@@ -464,8 +537,13 @@ class Operator:
                 value = await asyncio.to_thread(view.equity, group_id)
             else:
                 value = await asyncio.to_thread(view.detail, group_id)
+                if run_id:
+                    value.update(managed=True, activeRunId=item.get("runId"), status=run["status"])
         except KeyError:
             raise web.HTTPNotFound(text="策略组不存在") from None
+        if group_id and detail_view in {'summary','market'}:
+            for key in ('orders','fills','strategies','systems','exceptions','runtimeConfig','version','alpha'):
+                value.pop(key,None)
         return web.json_response(value)
 
     async def model_releases_route(self, request):
@@ -481,7 +559,7 @@ class Operator:
         except ValueError:
             groups = []
         for release in releases:
-            group = next((g for g in groups if g.get("kind") == "model"
+            group = next((g for g in groups if g.get("kind") in {"model", "live"}
                           and g.get("releaseId") == release["releaseId"]
                           and g.get("manifestSha256") == release["manifestSha256"]), None)
             if group is not None:
@@ -526,6 +604,13 @@ class Operator:
         for group in result.get("groups", []):
             for run in group.get("runs", []):
                 run.pop("runDir", None)
+            pending=self.database.execute("SELECT id,at,parameters,owner FROM operations WHERE action='group:start' AND status='processing' ORDER BY at DESC LIMIT 100").fetchall()
+            for identifier,at,parameters,owner in pending:
+                if json.loads(parameters).get('groupId')==group_id:
+                    group['pendingStart']={'at':at,'phase':'preparing',**({'operationId':identifier} if owner==self.sessions[self.session(request)].get('operator') else {})}
+                    group['capabilities']['start']=False
+                    group['capabilities']['reason']='启动请求正在处理'
+                    break
         return web.json_response(redact(result))
 
     async def prepare_route(self, request):
@@ -552,17 +637,26 @@ class Operator:
                 operation["arguments"] = model_preview["request"]
         if operation["kind"] == "group":
             group_preview = await self.group_runtime.prepare(operation["arguments"])
+            if (operation['name'] == 'start' and self.profiles.get()['mode'] in ('live','live_readonly')
+                    and group_preview.get('mode') != 'live'):
+                raise ValueError('此配置用于历史研究，请选择实盘策略')
             operation["arguments"] = group_preview["request"]
         if operation["kind"] == "profile" and operation["name"] in ("save", "select"):
             profile = operation["arguments"] if operation["name"] == "save" else self.profiles.get(operation["arguments"]["id"])
             verification = await verify(self.http, profile)
+        now = time.time()
         identifier = secrets.token_urlsafe(24)
         self.confirmations[identifier] = {"session": session_id, "operation": operation, "expires": now + 90, "epoch": self.profiles.epoch}
         return web.json_response({"id": identifier, "expiresAt": now + 90, "profile": self.profiles.public(), "operation": redact(operation), "newAccountVerification": verification, "groupPreview": redact(group_preview), "modelPreview": redact(model_preview)})
 
     async def execute_route(self, request):
         session_id = self.require_operator(request)
-        identifier = (await request.json()).get("id", "")
+        payload=await request.json()
+        identifier = payload.get("id", "")
+        previous=self.database.execute('SELECT status,result,session FROM operations WHERE id=?',(identifier,)).fetchone()
+        if previous:
+            if previous[2]!=session_id:raise web.HTTPForbidden(text='操作回执不属于当前会话')
+            return web.json_response({'id':identifier,'status':previous[0],'result':json.loads(previous[1]),'replayed':True})
         async with self.write_lock:
             previous = self.database.execute("SELECT status,result,session FROM operations WHERE id=?", (identifier,)).fetchone()
             if previous:
@@ -581,6 +675,24 @@ class Operator:
                  json.dumps(redact(operation["arguments"])), "processing", "null", session_id,
                  self.sessions[session_id].get("operator")))
             self.database.commit()
+            owner=self.sessions[session_id]['operator']
+            if payload.get('async') is True and operation['kind']=='group' and operation['name']=='start':
+                task=asyncio.create_task(self.finish_start(operation,identifier,owner,ticket['epoch']))
+                self.pending_starts.add(task)
+                task.add_done_callback(self.pending_starts.discard)
+                return web.json_response({'id':identifier,'status':'processing','result':{
+                    'groupId':operation['arguments']['groupId'],'receiptStatus':'processing','phase':'preparing'}},status=202)
+            return web.json_response(await self.perform_confirmed(operation,identifier,owner))
+
+    async def finish_start(self, operation, identifier, owner, epoch):
+        async with self.write_lock:
+            if epoch!=self.profiles.epoch:
+                self.database.execute("UPDATE operations SET status='error',result=? WHERE id=?",(json.dumps({'error':'API 连接已变化，请重新确认'}),identifier))
+                self.database.commit()
+                return
+            await self.perform_confirmed(operation,identifier,owner)
+
+    async def perform_confirmed(self, operation, identifier, owner):
             try:
                 if operation["kind"] == "group":
                     result = await self.group_runtime.execute(operation["arguments"], identifier)
@@ -591,7 +703,7 @@ class Operator:
                         result = await asyncio.to_thread(self.model_releases.validate, operation["arguments"]["artifactId"])
                     else:
                         result = await asyncio.to_thread(self.model_releases.execute, operation["name"], operation["arguments"],
-                            identifier, self.sessions[session_id]["operator"])
+                            identifier, owner)
                     status = "completed"
                 else:
                     result = await self.perform(operation)
@@ -600,7 +712,7 @@ class Operator:
                 result, status = {"error": str(error)}, "unknown" if isinstance(error, (TimeoutError, aiohttp.ClientError)) or "未知" in str(error) else "error"
             self.database.execute("UPDATE operations SET status=?,result=? WHERE id=?", (status, json.dumps(redact(result)), identifier))
             self.database.commit()
-            return web.json_response({"id": identifier, "status": status, "result": redact(result)})
+            return {"id": identifier, "status": status, "result": redact(result)}
 
     async def group_receipt_route(self, request):
         """Read a saved confirmation result; never submit/retry its command."""
@@ -788,7 +900,9 @@ class Operator:
         instrument = request.query.get("instrument", "BTC-USDT")
         bar = request.query.get("bar", "1m")
         mode = request.query.get("mode", "live")
-        if not re.fullmatch(r"[A-Z0-9]{1,20}-USDT(?:-SWAP)?", instrument) or bar not in ("1m", "5m", "15m", "1H", "4H", "1D") or mode not in ("live", "demo"):
+        if (not re.fullmatch(r"[A-Z0-9]{1,20}-USDT(?:-SWAP)?", instrument)
+                or bar not in ("1m", "5m", "15m", "1H", "4H", "1D")
+                or mode not in (("live",) if self.live_only else ("live", "demo"))):
             raise ValueError("不支持的品种、周期或行情环境")
         return instrument, bar, mode
 
@@ -841,6 +955,8 @@ class Operator:
 
     async def static_route(self, request):
         relative = request.match_info.get("path", "")
+        if relative == "api" or relative.startswith("api/"):
+            raise web.HTTPNotFound(text="接口不存在")
         path = (self.args.static_dir / relative).resolve()
         if not path.is_relative_to(self.args.static_dir.resolve()):
             raise web.HTTPForbidden()
@@ -887,6 +1003,9 @@ class Operator:
         app = web.Application(middlewares=[boundary], client_max_size=1_048_576)
         async def shutdown_sessions(app):
             # Close long-lived SSE/WSS promptly; already executing confirmations may finish.
+            if self.pending_starts:
+                await asyncio.gather(*self.pending_starts,return_exceptions=True)
+            self.session_store.save(self.sessions,True)
             self.sessions.clear()
             self.confirmations.clear()
         async def security_headers(request, response):
@@ -906,13 +1025,15 @@ class Operator:
                         web.post("/api/strategy-groups/{group_id}/preflight", self.group_runtime_route),
                         web.get("/api/strategy-groups/{group_id}", self.strategy_groups_route),
                         web.get("/api/strategy-groups/{group_id}/equity", self.strategy_groups_route)])
+        if not self.live_only:
+            app.router.add_get("/api/paper", self.paper_route)
         app.add_routes([web.get("/api/session", self.session_route), web.get("/api/catalog", self.catalog_route),
             web.get("/api/profiles", self.profiles_route), web.post("/api/profiles/test", self.profile_test),
-            web.get("/api/account", self.account_route), web.get("/api/paper", self.paper_route),
+            web.get("/api/account", self.account_route),
             web.post("/api/query", self.query_route), web.post("/api/prepare", self.prepare_route),
             web.post("/api/execute", self.execute_route), web.get("/api/history", self.history_route),
             web.get("/api/operations/{operation_id}", self.group_receipt_route),
-            web.get("/api/events", self.events_route), web.get("/api/market/candles", self.candles_route),
+            web.get("/api/events", self.events_route), web.get('/api/market/watchlist',self.watch_market_route), web.get("/api/market/candles", self.candles_route),
             web.get("/api/market/stream", self.stream_route), web.get("/{path:.*}", self.static_route)])
         return app
 
@@ -925,13 +1046,16 @@ if __name__ == "__main__":
     parser.add_argument("--passkey-origin", help="Exact HTTPS origin; requires an initialized state/passkeys.sqlite")
     parser.add_argument("--catalog", type=Path, default=Path(__file__).parent / "catalog")
     parser.add_argument("--static-dir", type=Path, required=True)
-    parser.add_argument("--paper-run", type=Path, required=True)
+    parser.add_argument("--paper-run", type=Path)
     parser.add_argument("--group-socket", type=Path, help="UNIX socket of the independent strategy group supervisor")
-    parser.add_argument("--paper-bridge", type=Path, required=True)
+    parser.add_argument("--paper-bridge", type=Path)
+    parser.add_argument("--live-only", action="store_true")
     parser.add_argument("--node", required=True)
     parser.add_argument("--mcp", required=True)
     parser.add_argument("--port", type=int, default=18081)
     parser.add_argument("--allowed-origins", nargs="+", default=["http://127.0.0.1:18080", "http://127.0.0.1:18081", "http://127.0.0.1:18082", "http://localhost:18081", "http://localhost:18082"])
     arguments = parser.parse_args()
+    if not arguments.live_only and (arguments.paper_run is None or arguments.paper_bridge is None):
+        parser.error("paper-run and paper-bridge are required unless --live-only is used")
     web.run_app(Operator(arguments).application(), host="127.0.0.1", port=arguments.port,
                 access_log=None, shutdown_timeout=40)

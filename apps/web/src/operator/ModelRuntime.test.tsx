@@ -6,7 +6,9 @@ describe('truthful model runtime facts', () => {
   afterEach(cleanup);
   it('states missing data plainly', () => {
     render(<ModelRuntime />);
-    expect(screen.getByText('暂无模型运行数据')).toBeInTheDocument();
+    expect(
+      screen.getByText('选择模型策略组后显示推理指标'),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/不能|不代表/)).not.toBeInTheDocument();
   });
   it('reports a single observation without drawing an interpolated history', () => {
@@ -38,8 +40,8 @@ describe('truthful model runtime facts', () => {
         }}
       />,
     );
-    expect(screen.getByText('尚无推理记录')).toBeInTheDocument();
-    expect(screen.getByText('尚未就绪')).toBeInTheDocument();
+    expect(screen.getByText('等待首次推理')).toBeInTheDocument();
+    expect(screen.getByText('特征窗口构建中')).toBeInTheDocument();
     expect(screen.queryByText('0 ms')).not.toBeInTheDocument();
     expect(screen.getByText('cpu')).toBeInTheDocument();
   });
@@ -67,7 +69,7 @@ describe('truthful model runtime facts', () => {
         }}
       />,
     );
-    expect(screen.getByText('cpu（模型尚未就绪）')).toBeInTheDocument();
+    expect(screen.getByText('cpu（预热中）')).toBeInTheDocument();
     expect(screen.getByText('等待特征窗口')).toBeInTheDocument();
     expect(screen.queryByText('0 ms')).not.toBeInTheDocument();
   });

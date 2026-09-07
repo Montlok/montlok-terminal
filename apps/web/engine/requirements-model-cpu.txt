@@ -1,0 +1,9 @@
+# Model/feature versions exercised by the real GRU and normalization probes.
+# Install torch from https://download.pytorch.org/whl/cpu on the CPU Tokyo host.
+# Use the same Python >=3.12,<3.15 as the existing compiled Nautilus runtime;
+# retain that runtime's Nautilus/msgspec rather than replacing its native build.
+torch==2.11.0
+numpy==2.2.6
+pandas==3.0.2
+certifi==2026.4.22
+psutil==7.2.2

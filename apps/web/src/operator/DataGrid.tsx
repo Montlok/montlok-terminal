@@ -12,15 +12,17 @@ export const DataGrid = memo(function DataGrid({
   rows,
   columns,
   height = 260,
+  emptyLabel = '等待数据',
 }: {
   rows: Row[];
   columns: GridColumn[];
   height?: number;
+  emptyLabel?: string;
 }) {
   if (!rows.length)
     return (
       <div className="empty-state" style={{ minHeight: height }}>
-        暂无记录
+        {emptyLabel}
       </div>
     );
   return (

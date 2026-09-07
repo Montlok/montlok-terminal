@@ -5,6 +5,7 @@ export type ExecutionDetail = {
   id: string;
   runId?: string | null;
   name?: string;
+  mode?: string | null;
   modeLabel?: string;
   observedAt?: number | null;
   sources?: Record<string, unknown>;
@@ -43,9 +44,13 @@ export function executionTime(value: unknown): number | undefined {
       ? typeof value === 'string'
         ? Date.parse(value) / 1000
         : NaN
-      : numeric >= 1e12
-        ? numeric / 1000
-        : numeric;
+      : numeric >= 1e18
+        ? numeric / 1e9
+        : numeric >= 1e15
+          ? numeric / 1e6
+          : numeric >= 1e12
+            ? numeric / 1000
+            : numeric;
   return Number.isFinite(seconds) &&
     seconds >= 946684800 &&
     seconds < 7258118400

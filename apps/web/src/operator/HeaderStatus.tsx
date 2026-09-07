@@ -5,9 +5,9 @@ import { api, type Row } from './api';
 import { ConfirmOperation } from './ConfirmOperation';
 
 export function connectionEnvironment(profile?: Row): string {
-  if (profile?.mode === 'demo') return '模拟盘';
-  if (profile?.mode === 'live_readonly') return '实盘';
-  return '未选择';
+  if (profile?.mode === 'live_readonly' || profile?.mode === 'live')
+    return '实盘';
+  return '连接配置';
 }
 
 export function connectionPermissions(profile?: Row): string {
@@ -31,9 +31,9 @@ export function applicationAccess(
   profile: Row | undefined,
   role?: string,
 ): string {
-  if (!profile) return '未选择连接';
+  if (!profile) return '操作：查看';
   if (role !== 'admin') return '应用：查看者';
-  return profile.mode === 'demo' ? '应用：可操作' : '应用：策略控制';
+  return profile.mode === 'live_readonly' ? '操作：查看' : '操作：交易';
 }
 
 export function HeaderStatus() {

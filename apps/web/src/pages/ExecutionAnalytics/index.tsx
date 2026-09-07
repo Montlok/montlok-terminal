@@ -6,6 +6,7 @@ import { api, number, type Row, timeOf } from '../../operator/api';
 import { DataGrid } from '../../operator/DataGrid';
 import { TimeSeriesChart } from '../../operator/TimeSeriesChart';
 import { usePoll } from '../../operator/usePoll';
+import { executionModeLabel } from '../StrategyGroups/groupModel';
 import {
   type Distribution,
   type ExecutionDetail,
@@ -137,8 +138,8 @@ export default function ExecutionAnalytics() {
       </div>
       <section className="execution-context" aria-label="执行分析范围">
         <strong>{detail?.name || selectedGroup}</strong>
-        <span>{detail?.modeLabel || '环境待读取'}</span>
-        <span>实例 {runId || detail?.runId || '尚未选择实例'}</span>
+        <span>{detail ? executionModeLabel(detail) : '读取执行环境'}</span>
+        <span>实例 {runId || detail?.runId || '选择运行实例'}</span>
         <span>快照 {timeOf(detail?.observedAt)} UTC+8</span>
       </section>
       {error && (
@@ -238,7 +239,7 @@ export default function ExecutionAnalytics() {
             label="品种手续费"
             rows={analysis?.feesByInstrument || []}
             unit="USDT"
-            empty="暂无可核验的 USDT 手续费记录"
+            empty="USDT 手续费记录将随成交回报更新"
           />
         </section>
         <section className="panel">
@@ -251,7 +252,9 @@ export default function ExecutionAnalytics() {
             rows={analysis?.statuses || []}
             unit="笔"
             empty={
-              analysis?.ordersTotal === 0 ? '本实例尚无委托' : '订单状态未知'
+              analysis?.ordersTotal === 0
+                ? '委托记录将随报单更新'
+                : '订单状态核对中'
             }
           />
         </section>
@@ -358,7 +361,7 @@ export default function ExecutionAnalytics() {
                 <p>{row.detail || '未采集'}</p>
               </li>
             ))}
-            {!detail?.systems?.length && <li>尚未读取到健康快照</li>}
+            {!detail?.systems?.length && <li>健康快照正在连接</li>}
           </ul>
           {(detail?.exceptions || []).slice(0, 5).map((row: Row, index) => (
             <p className="execution-exception" key={String(row.id || index)}>

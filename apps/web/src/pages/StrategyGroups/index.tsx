@@ -8,6 +8,7 @@ import { valueLabel } from '../../operator/labels';
 import { TimeSeriesChart } from '../../operator/TimeSeriesChart';
 import { usePoll } from '../../operator/usePoll';
 import {
+  executionModeLabel,
   type GroupEquity,
   matchingGroup,
   runDateTime,
@@ -16,6 +17,7 @@ import {
   type StrategyGroup,
   stateWarning,
   statusLabel,
+  strategyDisplayName,
 } from './groupModel';
 import './strategyGroups.css';
 
@@ -95,7 +97,7 @@ export default function StrategyGroups() {
             loading={!groups.length}
             options={groups.map((item) => ({
               value: item.id,
-              label: `${item.name} · ${statusLabel(item.status)}`,
+              label: `${strategyDisplayName(item)} · ${statusLabel(item.status)}`,
             }))}
           />
           <Select
@@ -111,8 +113,8 @@ export default function StrategyGroups() {
                 label: originalRun
                   ? `原始运行 · ${originalRun}`
                   : runtimeRuns.length
-                    ? `未选择 · 共 ${runtimeRuns.length} 个实例`
-                    : '尚无运行实例',
+                    ? `选择记录 · 共 ${runtimeRuns.length} 个实例`
+                    : '等待首次运行',
               },
               ...runtimeRuns
                 .filter(
@@ -140,30 +142,38 @@ export default function StrategyGroups() {
         <>
           <div className="group-run-heading">
             <div>
-              <strong>{group.name}</strong>
-              <span className="group-mode">{group.modeLabel}</span>
+              <strong>{strategyDisplayName(group)}</strong>
+              <span className="group-mode">{executionModeLabel(group)}</span>
               <span>{statusLabel(group.status)}</span>
             </div>
             <span>
               {group.runId ||
                 (runtimeRuns.length
-                  ? `尚未选择运行实例 · 共 ${runtimeRuns.length} 个`
-                  : '尚无运行实例')}
+                  ? `选择运行记录 · 共 ${runtimeRuns.length} 个`
+                  : '等待首次运行')}
             </span>
           </div>
           <section className="group-run-metadata" aria-label="信号与运行版本">
             <span>
-              信号截至 <b>{group.signalAsOf || '未发布'}</b>
+              信号截至 <b>{group.signalAsOf || '读取中'}</b>
             </span>
             <span title={group.signalVersion || undefined}>
-              信号版本 <b>{group.signalVersion?.slice(0, 12) || '未发布'}</b>
+              信号版本 <b>{group.signalVersion?.slice(0, 12) || '读取中'}</b>
             </span>
             <span>
               启动 <b>{runDateTime(group.startedAt)}</b>
             </span>
             <span>
-              {group.completedAt ? '结束' : '计划结束'}{' '}
-              <b>{runDateTime(group.completedAt ?? group.scheduledStopAt)}</b>
+              {group.completedAt
+                ? '结束'
+                : group.scheduledStopAt
+                  ? '计划结束'
+                  : '运行方式'}{' '}
+              <b>
+                {group.completedAt || group.scheduledStopAt
+                  ? runDateTime(group.completedAt ?? group.scheduledStopAt)
+                  : '持续运行'}
+              </b>
             </span>
             <span>
               已观测 <b>{runElapsed(group.elapsedSeconds)}</b>
@@ -175,7 +185,7 @@ export default function StrategyGroups() {
           {group.status === 'pending_validation' && (
             <Alert
               type="info"
-              title="组合待验证"
+              title="组合配置检查中"
               description={group.capabilities.reason}
             />
           )}
@@ -183,7 +193,7 @@ export default function StrategyGroups() {
             <Alert type="warning" title="运行快照已超过 120 秒未更新" />
           )}
           {group.status === 'unavailable' && (
-            <Alert type="warning" title="尚未读取到本组的运行数据" />
+            <Alert type="warning" title="本组运行数据正在连接" />
           )}
           {warning && (
             <Alert type={warning.type} title={warning.title} showIcon />
@@ -200,7 +210,7 @@ export default function StrategyGroups() {
           {historyUnavailable && (
             <Alert
               type="warning"
-              title="历史曲线来源不可用"
+              title="历史曲线读取异常"
               description={`${equity?.sourceIssue || '历史文件读取失败'}${equity?.points.length ? '；下方保留已读取的历史曲线' : ''}`}
               showIcon
             />
@@ -228,10 +238,10 @@ export default function StrategyGroups() {
                 <span>{equity?.sampleCount ?? 0} 条观测</span>
               </div>
               {historyUnavailable && !equity?.points.length ? (
-                <div className="group-source-empty">历史曲线来源不可用</div>
+                <div className="group-source-empty">请刷新或查看运行健康</div>
               ) : (
                 <TimeSeriesChart
-                  label={`${group.name}净值`}
+                  label={`${strategyDisplayName(group)}净值`}
                   points={equity?.points || []}
                   height={280}
                 />
@@ -240,13 +250,13 @@ export default function StrategyGroups() {
             <section className="panel">
               <div className="panel-heading">
                 <strong>最大回撤 / %</strong>
-                <span>{group.modeLabel}</span>
+                <span>{executionModeLabel(group)}</span>
               </div>
               {historyUnavailable && !equity?.drawdown.length ? (
-                <div className="group-source-empty">历史曲线来源不可用</div>
+                <div className="group-source-empty">请刷新或查看运行健康</div>
               ) : (
                 <TimeSeriesChart
-                  label={`${group.name}最大回撤`}
+                  label={`${strategyDisplayName(group)}最大回撤`}
                   points={equity?.drawdown || []}
                   color="#f05b65"
                   height={280}
@@ -453,7 +463,7 @@ export default function StrategyGroups() {
             />
           </section>
           <p className="group-source-note">
-            {group.accountId || '尚未分配账户'} · {group.modeLabel} ·{' '}
+            {group.accountId || '读取执行账户'} · {executionModeLabel(group)} ·{' '}
             {group.description}
           </p>
         </>

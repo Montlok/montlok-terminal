@@ -19,6 +19,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from managed_run_view import bound_model
+from strategy_accounting import cash_ledger, cash_snapshot
 
 
 def numeric(value):
@@ -84,6 +85,7 @@ class GroupViews:
         self.source_status = "missing"
         self.source_issue = "未读取到 equity.jsonl"
         self._discarding_line = False
+        self.accounting_ledger = None
 
     def _validate(self, group_id):
         if group_id not in ({self.group_id} if self.group_id else self.GROUP_IDS):
@@ -106,10 +108,26 @@ class GroupViews:
         managed = bool(self.group_id) or bool(sources) or bool(manifest.get("run_id"))
         if sources.get("status") is False:
             status = {}
+        if sources.get('accounting') is False:
+            status = {**status, **{key: None for key in ('nav_usdt', 'pnl_usdt', 'max_drawdown', 'fees_usdt')}}
         if sources.get("manifest") is False:
             manifest = {}
         if managed and self.group_id and (manifest.get("run_id") != self.path.name or manifest.get("group_id") != self.group_id):
             manifest, status = {}, {}
+        self.accounting_ledger = cash_ledger(manifest, view)
+        if self.accounting_ledger is not None:
+            reconstructed = cash_snapshot(self.accounting_ledger, status)
+            sources = {**sources, "accounting": reconstructed is not None,
+                       "accountingBasis": "strategy_fill_ledger"}
+            if reconstructed is None:
+                status = {**status, **{key: None for key in ("nav_usdt", "pnl_usdt", "max_drawdown", "fees_usdt")}}
+                view = {**view, "exceptions": [*view.get("exceptions", []),
+                    {"id": "cash-accounting", "severity": "WARNING", "title": "收益数据待核对",
+                     "detail": "成交记录与持仓数量尚未对应", "status": "OPEN"}]}
+            else:
+                status = {**status, **reconstructed}
+                self._read_curve()
+                status["max_drawdown"] = min((point[2] / 100 for point in self.samples), default=None)
         observed = timestamp(status.get("observed_at"))
         age = max(0, time.time() - observed) if observed is not None else None
         state = "unavailable"
@@ -228,6 +246,21 @@ class GroupViews:
         for key in ("positions", "orders", "fills", "strategies", "systems", "exceptions", "runtimeConfig"):
             rows = view.get(key)
             value[key] = rows[-500:] if isinstance(rows, list) else []
+        inventory=manifest.get('inventory') or {}
+        pairs={row['instrument']+'.OKX':row for row in inventory.get('pairs',[]) if isinstance(row,dict) and isinstance(row.get('instrument'),str)}
+        planned=manifest.get('instruments') or {}
+        if not isinstance(planned,dict):planned={key:{} for key in planned if isinstance(key,str)}
+        positions={row['instrument']:row for row in value['positions'] if isinstance(row,dict) and isinstance(row.get('instrument'),str)}
+        value['universe']=[{'instrument':symbol.removesuffix('.OKX'),'weight':numeric(pairs.get(symbol,{}).get('weight',planned.get(symbol,{}).get('weight'))),
+            'sector':pairs.get(symbol,{}).get('sector') or planned.get(symbol,{}).get('sector'),
+            'quantity':positions.get(symbol,{}).get('quantity','0'),
+            'notional':numeric(positions.get(symbol,{}).get('notional')),
+            'targetQuantity':pairs.get(symbol,{}).get('targetQuantity')}
+            for symbol in sorted(set(pairs)|set(planned)|set(positions))]
+        if inventory.get('strategy')=='sector_regime_core_60_momentum_40':
+            value['composition']={'core':.6,'momentum':.4,'description':'基础篮子 60% · 动量优选 40%',
+                'universeLabel':'股票代币 / USDT','targetAssets':sum((row.get('weight') or 0)>0 for row in value['universe'])}
+        value['allocation']=view.get('strategies',[{}])[0].get('allocation') if view.get('strategies') else None
         self.cached_at, self.cached_detail = now, value
         return value
 
@@ -314,6 +347,11 @@ class GroupViews:
                     self.offset = stream.tell()
                     try:
                         row = json.loads(line)
+                        if self.accounting_ledger is not None:
+                            corrected = cash_snapshot(self.accounting_ledger, row)
+                            if corrected is None:
+                                raise ValueError("Incomplete strategy accounting")
+                            row = {**row, **corrected}
                         at, nav = timestamp(row.get("observed_at")), numeric(row.get("nav_usdt"))
                         if at is None or nav is None or nav <= 0:
                             raise ValueError("Invalid observation")
@@ -342,6 +380,15 @@ class GroupViews:
     def equity(self, group_id):
         self._validate(group_id)
         with self.lock:
+            self._baseline()
+            try:
+                current = self.paper.snapshot()
+            except (OSError, ValueError, KeyError, TypeError):
+                current = {}
+            if isinstance(current, dict) and (current.get('sources') or {}).get('accounting') is False:
+                return {'groupId': group_id, 'runId': self.path.name, 'points': [], 'drawdown': [],
+                        'sampleCount': 0, 'partial': False, 'invalidLines': 0, 'sourceAvailable': False,
+                        'sourceStatus': 'invalid_attribution', 'sourceIssue': '历史成交已从本次运行统计排除'}
             if group_id == "enhanced" and not self.group_id:
                 return {"groupId": group_id, "runId": None, "points": [], "drawdown": [],
                         "sampleCount": 0, "partial": False, "invalidLines": 0,

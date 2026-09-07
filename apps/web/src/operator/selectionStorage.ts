@@ -6,7 +6,7 @@ export type RunSelection = {
 };
 
 export const selectionKey = (operator: string) =>
-  `operator.run-selection.v2:${encodeURIComponent(operator)}`;
+  `operator.run-selection.v3:${encodeURIComponent(operator)}`;
 
 export function readSelection(operator: string): RunSelection | undefined {
   try {
@@ -49,9 +49,14 @@ export async function validateSelection(
 ): Promise<RunSelection> {
   const listing = await api('strategy-groups');
   const groups: Row[] = listing.groups || [];
+  if (!groups.length)
+    return { selectedGroup: 'live-sector-6040', selectedRuns: {} };
   const selectedGroup = groups.some((group) => group.id === saved.selectedGroup)
     ? saved.selectedGroup
-    : groups.find((group) => group.mode === 'live')?.id ||
+    : groups.find(
+        (group) => group.id === 'live-sector-6040' && group.mode === 'live',
+      )?.id ||
+      groups.find((group) => group.mode === 'live')?.id ||
       groups.find((group) => group.id === 'baseline')?.id ||
       groups[0]?.id ||
       'baseline';

@@ -56,8 +56,8 @@ def load_manifest(path, expected_hash):
     manifest = read_json(path)
     if manifest["schemaVersion"] != 1 or manifest["family"] not in ("recent_btc_gru", "rdt4quant_multiasset"):
         raise ValueError("Unsupported model release")
-    if set(manifest["policy"]["allowedModes"]) - {"shadow", "sandbox"}:
-        raise ValueError("Model runtime supports shadow and sandbox only")
+    if set(manifest["policy"]["allowedModes"]) - {"shadow", "sandbox", "live"}:
+        raise ValueError("Unsupported model execution mode")
     if manifest["family"] == "rdt4quant_multiasset" and manifest["outputContract"].get("quantiles") != [0.1, 0.5, 0.9]:
         raise ValueError("Reviewed RDT heads are fixed q10/q50/q90; other quantile metadata is unsupported")
     runtime = manifest["runtime"]
@@ -205,7 +205,7 @@ class ModelAdapter:
         # Uploaded/packaged .py files are provenance only and never imported.
         runner_root = Path(runner_root or Path(__file__).resolve().parents[3] / "model_training/pipelines").resolve()
         self.device = self.manifest["runtime"]["device"]
-        torch.set_num_threads(1)
+        torch.set_num_threads(self.manifest["runtime"].get("threads", 1))
         c = torch.load(checked_path(root, self.manifest["model"]), map_location="cpu", weights_only=True)
         if self.manifest["family"] == "recent_btc_gru":
             contract = self.manifest["featureContract"]
@@ -221,7 +221,8 @@ class ModelAdapter:
         else:
             if contract_key not in self.manifest["domainContracts"]:
                 raise ValueError("RDT needs an explicit administrator-selected published contract key")
-            if self.device != "cuda" or not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():
+            cpu = self.manifest["runnerId"] == "rdt4quant_cpu_v2"
+            if not cpu and (self.device != "cuda" or not torch.cuda.is_available() or not torch.cuda.is_bf16_supported()):
                 raise RuntimeError("RDT requires CUDA BF16 and official Mamba3; CPU fallback is prohibited")
             for record in self.manifest["sources"]:
                 relative = Path(record["path"]).relative_to("source")
@@ -231,7 +232,17 @@ class ModelAdapter:
             base = runner_root / "rdt4quant"
             os.environ["RDT_BASE_CODE"] = str(base)
             # Full source tree was verified before any research module import.
-            self.model = import_file("montlok_release_multiasset", runner_root / "rdt4quant_fullpass/multiasset_model.py").MultiAssetRDT(c["base_config"], len(c["asset_order"]))
+            if cpu:
+                if self.device != "cpu":
+                    raise ValueError("montlok.cpp requires an explicit CPU release")
+                os.environ["MONTLOK_CPP"] = "1"
+                sys.path.insert(0, str(runner_root / "rdt4quant_cpu"))
+                # Production uses the prebuilt extension; never JIT during a run.
+                import montlok_cpp_v2
+                self.backend_info = montlok_cpp_v2.build_info()
+                self.model = import_file("montlok_release_cpu", runner_root / "rdt4quant_cpu/model_cpu.py").MultiAssetRDTCPU(c["base_config"], len(c["asset_order"]))
+            else:
+                self.model = import_file("montlok_release_multiasset", runner_root / "rdt4quant_fullpass/multiasset_model.py").MultiAssetRDT(c["base_config"], len(c["asset_order"]))
             self.model.load_state_dict(c["model"], strict=True)
         self.model.to(self.device).eval()
 
@@ -296,7 +307,7 @@ class ModelAdapter:
             if domain in seen:
                 continue
             seen.add(domain)
-            self.predict_batch([dict(releaseId=m["releaseId"], modelHash=m["model"]["sha256"], mode="shadow",
+            self.predict_batch([dict(releaseId=m["releaseId"], modelHash=m["model"]["sha256"], mode=m["policy"]["allowedModes"][0],
                 instrument=instrument, domain=domain, normalized=True, featureNames=c["names"],
                 inputs=self.np.zeros((c["sequenceBars"], len(c["names"])), dtype="float32"))])
 

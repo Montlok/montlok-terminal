@@ -99,23 +99,63 @@ class BoundaryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status, 400)
         self.assertEqual(self.calls, 0)
 
+    async def test_live_trading_connection_requires_confirmed_execute(self):
+        self.operator.profiles.save({**self.operator.profiles.get(), "mode": "live"},
+                                    {"permissions": "read_only,trade"})
+        identifier = await self.ticket()
+        self.assertEqual(self.calls, 0)
+        response = await self.client.post("/api/execute", json={"id": identifier}, headers=self.headers)
+        self.assertEqual(response.status, 200)
+        self.assertEqual(self.calls, 1)  # fake_perform only, no exchange transport
+
+    async def test_live_unverified_permissions_cannot_prepare(self):
+        self.operator.profiles.save({**self.operator.profiles.get(), "mode": "live"})
+        response = await self.client.post("/api/prepare", json=self.operation, headers=self.headers)
+        self.assertEqual(response.status, 400)
+        self.assertEqual(self.calls, 0)
+
+    async def test_live_trade_profile_supports_sell_derivatives_and_batch_cancel(self):
+        self.operator.profiles.save({**self.operator.profiles.get(), "mode": "live"},
+                                    {"permissions": "read_only,trade"})
+        for name, arguments in (
+            ("POST /api/v5/trade/order", {"instId": "BTC-USDT", "side": "sell", "tdMode": "cash", "ordType": "limit", "sz": "0.1", "px": "100000"}),
+            ("POST /api/v5/trade/batch-orders", [{"instId": "BTC-USDT-SWAP", "tdMode": "cross", "side": "buy", "ordType": "limit", "sz": "1", "px": "100000"}]),
+            ("POST /api/v5/trade/cancel-batch-orders", [{"instId": "BTC-USDT", "ordId": "test-only"}]),
+        ):
+            response = await self.client.post("/api/prepare", json={"kind": "rest", "name": name, "arguments": arguments}, headers=self.headers)
+            self.assertEqual(response.status, 200, await response.text())
+        self.assertEqual(self.calls, 0)
+
+    def test_mcp_transport_keeps_explicit_readonly_distinct_from_live_trading(self):
+        from exchange import mcp_flags
+        self.assertEqual(mcp_flags('live'), ['--live'])
+        self.assertEqual(mcp_flags('live_readonly'), ['--live', '--read-only'])
+        self.assertEqual(mcp_flags('demo'), ['--demo'])
+        with self.assertRaises(ValueError):
+            mcp_flags('typo')
+
     async def test_credentials_are_not_exposed(self):
         result = await (await self.client.get("/api/profiles")).text()
         self.assertNotIn("super-secret", result)
         self.assertNotIn('"passphrase"', result)
         self.assertNotIn(b"super-secret", self.operator.profiles.path.read_bytes())
 
-    async def test_derivative_batch_cannot_bypass_policy(self):
+    async def test_derivative_batch_is_available_without_spot_only_application_policy(self):
         operation = {"kind": "rest", "name": "POST /api/v5/trade/batch-orders", "arguments": [
             {"instId": "BTC-USDT-SWAP", "tdMode": "cross", "side": "buy", "ordType": "market", "sz": "1"}]}
         response = await self.client.post("/api/prepare", json=operation, headers=self.headers)
-        self.assertEqual(response.status, 400)
+        self.assertEqual(response.status, 200, await response.text())
         self.assertEqual(self.calls, 0)
 
-    async def test_spot_margin_cannot_bypass_policy(self):
+    async def test_spot_margin_is_available_for_selected_account(self):
         self.operation["arguments"]["tdMode"] = "cross"
         response = await self.client.post("/api/prepare", json=self.operation, headers=self.headers)
-        self.assertEqual(response.status, 400)
+        self.assertEqual(response.status, 200, await response.text())
+        self.assertEqual(self.calls, 0)
+
+    async def test_leverage_and_borrowing_are_not_hidden_by_application_policy(self):
+        for name in ('POST /api/v5/account/set-leverage', 'POST /api/v5/account/spot-manual-borrow-repay'):
+            self.assertIsNone(self.operator.blocked('rest', name, {}))
         self.assertEqual(self.calls, 0)
 
     def enable_login(self):

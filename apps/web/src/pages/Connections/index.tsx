@@ -27,7 +27,7 @@ export default function Connections() {
     form.setFieldsValue(
       profile
         ? { ...profile, apiKey: '', secret: '', passphrase: '' }
-        : { mode: 'demo', site: 'global' },
+        : { mode: 'live', site: 'global' },
     );
   }
   async function test() {
@@ -99,7 +99,8 @@ export default function Connections() {
           {
             title: '环境',
             dataIndex: 'mode',
-            render: (_, row) => (row.mode === 'demo' ? 'OKX Demo' : '实盘只读'),
+            render: (_, row) =>
+              row.mode === 'live' ? '实盘 · 交易' : '实盘 · 查看',
           },
           { title: '站点', dataIndex: 'site' },
           { title: 'API Key', dataIndex: 'keyMask' },
@@ -160,16 +161,20 @@ export default function Connections() {
           >
             <div className="schema-fields">
               <Form.Item name="id" label="连接 ID" rules={[{ required: true }]}>
-                <Input disabled={!isNew} placeholder="tokyo-demo" />
+                <Input disabled={!isNew} placeholder="okx-global" />
               </Form.Item>
               <Form.Item name="name" label="名称" rules={[{ required: true }]}>
                 <Input placeholder="名称" />
               </Form.Item>
-              <Form.Item name="mode" label="环境" rules={[{ required: true }]}>
+              <Form.Item
+                name="mode"
+                label="交易环境与手动权限"
+                rules={[{ required: true }]}
+              >
                 <Select
                   options={[
-                    { label: '模拟盘', value: 'demo' },
-                    { label: '实盘 · 只读', value: 'live_readonly' },
+                    { label: '实盘 · 交易', value: 'live' },
+                    { label: '实盘 · 查看', value: 'live_readonly' },
                   ]}
                 />
               </Form.Item>

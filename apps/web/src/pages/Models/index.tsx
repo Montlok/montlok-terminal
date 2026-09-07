@@ -1,6 +1,6 @@
 import { ReloadOutlined } from '@ant-design/icons';
 import { Link, useModel } from '@umijs/max';
-import { Alert, Button, Descriptions, Select, Table } from 'antd';
+import { Alert, Button, Descriptions, Select, Space, Table } from 'antd';
 import { useCallback, useRef, useState } from 'react';
 import { api, type Row } from '../../operator/api';
 import { ConfirmOperation } from '../../operator/ConfirmOperation';
@@ -25,7 +25,8 @@ const STATUS: Record<string, string> = {
 export default function Models() {
   const { initialState } = useModel('@@initialState');
   const admin = initialState?.currentUser?.access === 'admin';
-  const { selectedGroup, selectedRuns } = useModel('operator');
+  const { selectedGroup, selectedRuns, setSelectedGroup } =
+    useModel('operator');
   const [releases, setReleases] = useState<Row[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [artifactId, setArtifactId] = useState(
@@ -100,18 +101,18 @@ export default function Models() {
     ['error', 'failed'].includes(receipt?.status) ||
     receipt?.result?.validation?.ok === false;
   const validateReason = !admin
-    ? '当前账户为只读'
+    ? '需要操作员权限'
     : busy
       ? '请求处理中'
       : !artifact
-        ? '请先选择已登记的模型制品'
+        ? '选择已登记的模型制品'
         : '';
   const publishReason = !admin
-    ? '当前账户为只读'
+    ? '需要操作员权限'
     : busy
       ? '请求处理中'
       : !release
-        ? '请先选择校验通过的版本'
+        ? '选择校验通过的版本'
         : release.status !== 'validated' ||
             release.validation?.ok !== true ||
             !release.artifactId ||
@@ -224,7 +225,7 @@ export default function Models() {
         dataSource={releases}
         pagination={{ pageSize: 10, showSizeChanger: false }}
         scroll={{ x: 850 }}
-        locale={{ emptyText: '尚无已校验模型版本；已上传文件请先执行校验' }}
+        locale={{ emptyText: '上传并校验模型后，版本将显示在这里' }}
         columns={[
           { title: '模型版本', dataIndex: 'modelVersion' },
           { title: '运行器', dataIndex: 'runnerId' },
@@ -243,7 +244,7 @@ export default function Models() {
             title: '清单摘要',
             dataIndex: 'manifestSha256',
             render: (value: string) => (
-              <span title={value}>{value?.slice(0, 12) || '未提供'}</span>
+              <span title={value}>{value?.slice(0, 12) || '读取中'}</span>
             ),
           },
           {
@@ -309,14 +310,14 @@ export default function Models() {
                   release.policy?.allowedModes?.every((mode: string) =>
                     mode.includes('shadow'),
                   )
-                    ? '影子运行'
+                    ? '研究评估'
                     : '按发布配置运行',
               },
               { key: 'id', label: '模型发布编号', children: release.releaseId },
               {
                 key: 'device',
                 label: '配置设备',
-                children: release.runtime?.device || '未配置',
+                children: release.runtime?.device || '等待发布信息',
               },
               {
                 key: 'features',
@@ -324,14 +325,14 @@ export default function Models() {
                 children: domains.length
                   ? '按数据域与品种固定，见下表'
                   : (release.featureContract?.names || []).join('、') ||
-                    '未提供',
+                    '等待发布信息',
               },
               {
                 key: 'window',
                 label: '特征窗口',
                 children: domains.length
                   ? `${domains.length} 个分域输入约定，见下表`
-                  : `${release.featureContract?.sequenceBars ?? '未提供'} 根 · ${release.featureContract?.barSeconds ?? '未提供'} 秒 / 根`,
+                  : `${release.featureContract?.sequenceBars ?? '读取中'} 根 · ${release.featureContract?.barSeconds ?? '读取中'} 秒 / 根`,
               },
               {
                 key: 'markets',
@@ -340,7 +341,7 @@ export default function Models() {
                   ? `${domains.length} 个分域品种（见下表）`
                   : (release.featureContract?.requiredMarkets || []).join(
                       '、',
-                    ) || '未提供',
+                    ) || '等待发布信息',
               },
               {
                 key: 'modes',
@@ -349,12 +350,14 @@ export default function Models() {
                   (release.policy?.allowedModes || [])
                     .map((mode: string) =>
                       mode === 'nautilus_sandbox' || mode === 'sandbox'
-                        ? 'Nautilus 本地模拟'
-                        : mode === 'shadow'
-                          ? '影子运行'
-                          : mode,
+                        ? '研究回放'
+                        : mode === 'live'
+                          ? '实盘'
+                          : mode === 'shadow'
+                            ? '研究评估'
+                            : mode,
                     )
-                    .join('、') || '未提供',
+                    .join('、') || '等待发布信息',
               },
               {
                 key: 'validation',
@@ -364,7 +367,7 @@ export default function Models() {
                     ? '文件与配置校验通过'
                     : release.validation?.ok === false
                       ? '未通过'
-                      : '未提供',
+                      : '等待校验',
               },
             ]}
           />
@@ -381,7 +384,8 @@ export default function Models() {
                 {
                   title: '输入特征（顺序固定）',
                   dataIndex: 'names',
-                  render: (names: string[]) => names?.join('、') || '未提供',
+                  render: (names: string[]) =>
+                    names?.join('、') || '等待发布信息',
                 },
                 { title: '窗口 / 根', dataIndex: 'sequenceBars' },
                 { title: '周期 / 秒', dataIndex: 'barSeconds' },
@@ -407,7 +411,16 @@ export default function Models() {
               {JSON.stringify(release, null, 2)}
             </pre>
           </details>
-          <Link to="/strategies/groups/overview">查看策略组与运行实例</Link>
+          <Space>
+            <Button
+              type="primary"
+              disabled={!release.groupId || release.deployReady !== true}
+              onClick={() => setSelectedGroup(release.groupId)}
+            >
+              选择此模型
+            </Button>
+            <Link to="/strategies/groups/overview">查看策略组与运行实例</Link>
+          </Space>
         </section>
       )}
       <section

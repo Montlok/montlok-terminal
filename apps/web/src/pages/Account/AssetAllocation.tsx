@@ -86,7 +86,7 @@ export const AssetAllocation = memo(function AssetAllocation({
           </div>
         </div>
       ) : (
-        <div className="empty-state">暂无资产估值</div>
+        <div className="empty-state">资产估值将随账户数据更新</div>
       )}
       {(allocation.negative < 0 || allocation.missing > 0) && (
         <div className="allocation-note">
@@ -94,7 +94,7 @@ export const AssetAllocation = memo(function AssetAllocation({
             <span>负权益 {number(allocation.negative)} USD</span>
           )}
           {allocation.missing > 0 && (
-            <span>{allocation.missing} 项资产尚无 USD 估值</span>
+            <span>{allocation.missing} 项资产正在补充 USD 估值</span>
           )}
         </div>
       )}

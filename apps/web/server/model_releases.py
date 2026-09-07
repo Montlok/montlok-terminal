@@ -21,7 +21,8 @@ from pathlib import Path
 
 from artifacts import ArtifactError, ArtifactStore
 
-RUNNERS = {"gru_v1": "recent_btc_gru", "rdt4quant_v1": "rdt4quant_multiasset"}
+RUNNERS = {"gru_v1": "recent_btc_gru", "rdt4quant_v1": "rdt4quant_multiasset",
+           "rdt4quant_cpu_v2": "rdt4quant_multiasset"}
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$")
 HASH = re.compile(r"^[a-f0-9]{64}$")
 OPERATION = re.compile(r"^[A-Za-z0-9_-]{8,96}$")
@@ -234,7 +235,7 @@ def validate_manifest(manifest):
     if isinstance(unit, dict) and (not isinstance(horizons, dict) or set(unit) != set(horizons)
                                   or any(not isinstance(v, str) or not v for v in unit.values())):
         raise ModelReleaseError("horizonUnit 与 horizons domain 不一致")
-    if runner == "rdt4quant_v1":
+    if runner in {"rdt4quant_v1", "rdt4quant_cpu_v2"}:
         if not isinstance(horizons, dict) or not isinstance(unit, dict):
             raise ModelReleaseError("RDT horizons / horizonUnit 必须是按 domain 绑定的对象")
         for contract in manifest["domainContracts"].values():
@@ -256,18 +257,24 @@ def validate_manifest(manifest):
                 or output.get("selectedHorizonUnit") != unit):
             raise ModelReleaseError("GRU selectedHorizon 与输出 contract 不一致")
     runtime = manifest.get("runtime")
-    if not isinstance(runtime, dict) or set(runtime) - {"device", "maxBatchSize", "maxQueueSize", "timeoutMs", "maxInputAgeMs"}:
+    if not isinstance(runtime, dict) or set(runtime) - {"device", "threads", "maxBatchSize", "maxQueueSize", "timeoutMs", "maxInputAgeMs"}:
         raise ModelReleaseError("runtime 不允许 executable / import / 环境变量覆盖")
     if not isinstance(runtime.get("device"), str) or runtime["device"] not in {"cpu", "cuda"} or runner == "rdt4quant_v1" and runtime["device"] != "cuda":
         raise ModelReleaseError("运行设备不受支持；RDT 必须使用 CUDA")
+    if runner == "rdt4quant_cpu_v2" and runtime["device"] != "cpu":
+        raise ModelReleaseError("montlok.cpp 运行器使用 CPU")
+    if "threads" in runtime:
+        integer(runtime["threads"], "threads", 1, 64)
     for name, lo, hi in (("maxBatchSize", 1, 64), ("maxQueueSize", 1, 256), ("timeoutMs", 1, 300000), ("maxInputAgeMs", 1, 172800000)):
         integer(runtime.get(name), name, lo, hi)
     policy = manifest.get("policy")
     if not isinstance(policy, dict) or set(policy) - {"allowedModes", "thresholdBps", "maxTargetFraction"}:
         raise ModelReleaseError("运行 policy 不正确")
     modes = policy.get("allowedModes")
-    if not isinstance(modes, list) or not modes or any(not isinstance(m, str) or m not in {"shadow", "sandbox"} for m in modes) or len(modes) != len(set(modes)):
-        raise ModelReleaseError("模型发布仅支持显式 shadow / sandbox 模式")
+    if not isinstance(modes, list) or not modes or any(not isinstance(m, str) or m not in {"shadow", "sandbox", "live"} for m in modes) or len(modes) != len(set(modes)):
+        raise ModelReleaseError("模型发布须明确运行模式")
+    if "live" in modes and runner != "rdt4quant_cpu_v2":
+        raise ModelReleaseError("该运行器尚未配置原生实盘执行")
     number(policy.get("thresholdBps"), "thresholdBps", 0, 10000)
     number(policy.get("maxTargetFraction"), "maxTargetFraction", 0, 1)
     return manifest

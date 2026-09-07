@@ -100,7 +100,7 @@ class ModelGuardClient:
         self.manifest_path = str(Path(manifest).resolve())
         self.manifest = load_manifest(manifest, manifest_sha256)
         self.contract_key = contract_key
-        if self.manifest["runnerId"] == "rdt4quant_v1" and contract_key not in self.manifest["domainContracts"]:
+        if self.manifest["family"] == "rdt4quant_multiasset" and contract_key not in self.manifest["domainContracts"]:
             raise ValueError("RDT client needs the host-selected published contract")
         self.guard = JsonProcess([str(Path(guard_binary).resolve())])
         command = [python, str(Path(__file__).with_name("model_inference_worker.py")),

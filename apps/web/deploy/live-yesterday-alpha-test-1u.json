@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "executionCheck": true,
   "account": {
     "uid": "882269162176042453",
     "mainUid": "871770733410976190",
@@ -9,7 +10,7 @@
     "ip": "64.83.36.66"
   },
   "instruments": [
-    "XRKLB-USDT"
+    "BTC-USDT"
   ],
   "capitalUtilization": 0.995,
   "maxQuoteExposureUsdt": "1",

@@ -6,6 +6,7 @@ import {
   runRecordCount,
   stateWarning,
   statusLabel,
+  strategyDisplayName,
 } from './groupModel';
 
 describe('strategy-group identity', () => {
@@ -18,10 +19,10 @@ describe('strategy-group identity', () => {
   });
 
   it('distinguishes pending artifacts, missing data, and completed runs', () => {
-    expect(statusLabel('pending_validation')).toBe('待验证');
-    expect(statusLabel('unavailable')).toBe('无运行数据');
+    expect(statusLabel('pending_validation')).toBe('配置检查中');
+    expect(statusLabel('unavailable')).toBe('数据连接中');
     expect(statusLabel('completed')).toBe('已结束');
-    expect(statusLabel('made-up')).toBe('未知状态');
+    expect(statusLabel('made-up')).toBe('状态核对中');
     expect(statusLabel('halted')).toBe('已暂停');
     expect(statusLabel('stopped')).toBe('已停止');
     expect(stateWarning('halted')?.type).toBe('info');
@@ -31,6 +32,11 @@ describe('strategy-group identity', () => {
     expect(stateWarning('reducing')).toBeDefined();
     expect(stateWarning('unknown')).toBeDefined();
     expect(stateWarning('stopped')).toBeUndefined();
+  });
+  it('shows the strategy identity once when the registry name includes its environment', () => {
+    expect(strategyDisplayName('四板块 60/40 · 实盘')).toBe('四板块 60/40');
+    expect(strategyDisplayName('四板块 60/40 · OKX 实盘')).toBe('四板块 60/40');
+    expect(strategyDisplayName('实盘库存做市')).toBe('实盘库存做市');
   });
   it('formats observed run times in UTC+8 without inventing missing timestamps', () => {
     expect(runDateTime(Date.parse('2026-09-05T23:00:00Z') / 1000)).toBe(

@@ -129,7 +129,7 @@ describe('model publication workspace', () => {
       screen.queryByText('请检查目标节点运行环境'),
     ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '发布此版本' })).toBeDisabled();
-    expect(screen.getAllByText('影子运行').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('研究评估').length).toBeGreaterThan(0);
     expect(
       screen.queryByText(/不代表|不等于|不会自动|不下单|不启动/),
     ).not.toBeInTheDocument();
@@ -230,7 +230,7 @@ describe('model publication workspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: '版本详情' }));
     expect(
       screen.getByRole('button', { name: '校验模型' }),
-    ).toHaveAccessibleDescription('当前账户为只读');
+    ).toHaveAccessibleDescription('需要操作员权限');
     expect(screen.getByRole('button', { name: '发布此版本' })).toBeDisabled();
   });
 });

@@ -14,6 +14,30 @@ describe('operator-scoped navigation restore', () => {
     localStorage.clear();
     vi.clearAllMocks();
   });
+  it('migrates an old sandbox selection to the published live Alpha without starting it', async () => {
+    api.mockResolvedValue({
+      groups: [
+        { id: 'live-hft-inventory', mode: 'live' },
+        { id: 'live-sector-6040', mode: 'live' },
+      ],
+    });
+    expect(
+      await validateSelection({
+        selectedGroup: 'baseline',
+        selectedRuns: { baseline: 'old-paper' },
+      }),
+    ).toEqual({ selectedGroup: 'live-sector-6040', selectedRuns: {} });
+    expect(api).toHaveBeenCalledExactlyOnceWith('strategy-groups');
+  });
+  it('retains the live default when the live registry is temporarily unavailable', async () => {
+    api.mockResolvedValue({ groups: [] });
+    expect(
+      await validateSelection({
+        selectedGroup: 'baseline',
+        selectedRuns: { baseline: 'old' },
+      }),
+    ).toEqual({ selectedGroup: 'live-sector-6040', selectedRuns: {} });
+  });
   it('isolates operator identities and persists navigation only', () => {
     saveSelection('alice', {
       selectedGroup: 'baseline',

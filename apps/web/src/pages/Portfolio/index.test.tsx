@@ -159,8 +159,8 @@ describe('portfolio workspace', () => {
   it('does not invent portfolio metrics or positions for an unpublished group', async () => {
     mocks.selected = 'enhanced';
     render(<Portfolio />);
-    expect(await screen.findByText('组合尚未发布')).toBeInTheDocument();
-    expect(screen.getAllByText('持仓数据未同步')).toHaveLength(2);
+    expect(await screen.findByText('组合配置检查中')).toBeInTheDocument();
+    expect(screen.getAllByText('持仓数据正在对齐')).toHaveLength(2);
     expect(screen.queryByText('450')).not.toBeInTheDocument();
     expect(mocks.charts).toHaveBeenCalledWith('组合净值', []);
   });

@@ -19,6 +19,7 @@ import signal
 import sqlite3
 import stat
 import subprocess
+import sys
 import time
 import uuid
 from contextlib import closing
@@ -29,10 +30,11 @@ import psutil
 from model_releases import file_records, released_file, validate_manifest
 
 MAX_MESSAGE = 128 * 1024
+MAX_RESPONSE = 2 * 1024 * 1024
 IDENTIFIER = re.compile(r"^[a-z][a-z0-9_-]{0,47}$")
 OPERATION_ID = re.compile(r"^[A-Za-z0-9_-]{8,96}$")
 MARKET_DATA = {"native_ws": "okx_public_live_websocket_l2", "public_rest_l2": "okx_public_live_rest_l2_snapshots"}
-ACTIONS = frozenset({"start", "stop", "halt", "reduce", "resume"})
+ACTIONS = frozenset({"start", "stop", "halt", "reduce", "resume", "cancel", "flatten"})
 ACTIVE = frozenset({"starting", "running", "halted", "reducing", "stopping", "unresponsive", "error", "recovering", "engine_stopped"})
 
 
@@ -63,6 +65,33 @@ def money(value):
         return format(result, ".2f")
     except InvalidOperation:
         raise ValueError("预算格式不正确") from None
+
+
+def duration_policy(spec):
+    """Versioned so an old worker is never sent an unlimited-run request."""
+    continuous = spec.get("kind") == "live" and spec.get("durationPolicyVersion") == 1
+    return {"continuous": continuous and spec.get("maxDurationSeconds") is None,
+            "maxSeconds": spec.get("maxDurationSeconds", 86400),
+            "defaultSeconds": 0 if continuous and spec.get("maxDurationSeconds") is None else 3600}
+
+
+from execution_options import contract
+
+
+def execution_policy(spec):
+    from execution_options import settings, describe
+    configured=settings(spec)
+    if configured:return describe(configured)
+    policies = {
+        "initial_allocation": ("初始调仓", "按已发布信号配置目标仓位，完成后跟踪持仓与收益。"),
+        "inventory_quotes": ("连续报价", "根据行情和库存更新委托。"),
+        "model_signal": ("模型信号执行", "根据模型输出更新目标仓位和委托。"),
+    }
+    kind = spec.get("executionPolicy")
+    if kind not in policies:
+        return None
+    label, description = policies[kind]
+    return {"kind": kind, "label": label, "description": description}
 
 
 def trusted_file(path: Path, strict=True):
@@ -104,9 +133,13 @@ class LaunchRegistry:
         self.digest = hashlib.sha256(encode(self.document).encode()).hexdigest()
         if self.document.get("version") != 1:
             raise ValueError("不支持的运行注册版本")
-        self.python = trusted_file(Path(self.document["pythonPath"]), strict)
-        self.worker = trusted_file(Path(self.document["workerPath"]), strict)
-        self.worker_hash = hashlib.sha256(self.worker.read_bytes()).hexdigest()
+        sandbox_registered = any(spec.get("kind") not in {"live", "model"} for spec in self.document.get("groups", []))
+        self.python = self.worker = None
+        self.worker_hash = None
+        if sandbox_registered:
+            self.python = trusted_file(Path(self.document["pythonPath"]), strict)
+            self.worker = trusted_file(Path(self.document["workerPath"]), strict)
+            self.worker_hash = hashlib.sha256(self.worker.read_bytes()).hexdigest()
         self.groups = {}
         self.model_runtime = None
         self.model_groups = set()
@@ -136,9 +169,19 @@ class LaunchRegistry:
                 for key, path_key in (("workerSha256", "workerPath"), ("configSha256", "configPath")):
                     if spec.get(key) != file_hash(Path(spec[path_key])):
                         raise ValueError("实盘运行程序或配置 hash 不一致")
-                duration = spec.get("maxDurationSeconds", 86400)
-                if type(duration) is not int or not 60 <= duration <= 86400:
-                    raise ValueError("实盘运行时长上限必须在 60 至 86400 秒之间")
+                if "signalsPath" in spec:
+                    signal_path = trusted_file(Path(spec.get("signalsPath", "")), strict)
+                    if file_hash(signal_path) != spec.get("signalsSha256"):
+                        raise ValueError("策略信号版本不一致")
+                version = spec.get("durationPolicyVersion", 0)
+                if type(version) is not int or version not in (0, 1):
+                    raise ValueError("运行时长协议版本不正确")
+                duration = spec.get("maxDurationSeconds", None if version == 1 else 86400)
+                if duration is None:
+                    if version != 1:
+                        raise ValueError("运行程序尚未发布持续运行能力")
+                elif type(duration) is not int or not 1 <= duration <= 9007199254740991:
+                    raise ValueError("运行时长上限必须为正整数秒数")
                 self.groups[group_id] = {**spec, "marketTransport": "native_ws",
                     "defaultBudgetUsdt": None, "maxBudgetUsdt": None, "maxDurationSeconds": duration}
                 continue
@@ -166,7 +209,7 @@ class LaunchRegistry:
     def configure_models(self, values):
         fields = {"storePath", "workerPath", "pythonPath", "guardBinary", "runnerRoot", "settingsPath",
                   "settingsSha256", "runtimePath", "mode", "maxBudgetUsdt", "maxDurationSeconds"}
-        if not isinstance(values, dict) or not fields.issubset(values) or set(values) - fields - {"contractKey", "maxConcurrentRuns"} or values.get("mode") != "shadow":
+        if not isinstance(values, dict) or not fields.issubset(values) or set(values) - fields - {"contractKey", "maxConcurrentRuns", "liveExecution", "runnerRoots"} or values.get("mode") != "shadow":
             raise ValueError("modelRuntime 仅允许固定 root 配置和 shadow 模式")
         config = copy.deepcopy(values)
         slots = config.get("maxConcurrentRuns", 2)
@@ -177,12 +220,22 @@ class LaunchRegistry:
         if contracts is not None:
             if isinstance(contracts, str):
                 contracts = {"rdt4quant_v1": contracts}
-            if (not isinstance(contracts, dict) or set(contracts) - {"gru_v1", "rdt4quant_v1"}
+            if (not isinstance(contracts, dict) or set(contracts) - {"gru_v1", "rdt4quant_v1", "rdt4quant_cpu_v2"}
                     or any(not isinstance(v, str) or len(v) > 128 or ":" not in v for v in contracts.values())):
                 raise ValueError("modelRuntime.contractKey 必须按 runnerId 明确选择 domain/品种")
             if contracts.get("gru_v1", "crypto:BTC-USDT") != "crypto:BTC-USDT":
                 raise ValueError("GRU 固定选择 BTC-USDT")
             config["contractKey"] = contracts
+        for root in config.get("runnerRoots", {}).values():
+            trusted_directory(Path(root), self.strict)
+        if config.get("liveExecution"):
+            live = config["liveExecution"]
+            for key in ("workerPath", "configPath"):
+                trusted_file(Path(live[key]), self.strict)
+            trusted_directory(Path(live["operatorServerPath"]), self.strict)
+            for checksum, filename in (("workerSha256", "workerPath"), ("configSha256", "configPath")):
+                if live[checksum] != file_hash(Path(live[filename])):
+                    raise ValueError("模型实盘执行版本不一致")
         for key in ("workerPath", "pythonPath", "guardBinary", "settingsPath"):
             path = trusted_file(Path(config[key]), self.strict)
             self.model_program_hashes[str(path)] = file_hash(path)
@@ -282,7 +335,7 @@ print(json.dumps(result))
                 if group_id in discovered or group_id in self.groups and group_id not in self.model_groups:
                     raise ValueError("模型派生策略组 ID 冲突")
                 config = self.model_runtime
-                contract_key = "crypto:BTC-USDT" if manifest["runnerId"] == "gru_v1" else (config.get("contractKey") or {}).get("rdt4quant_v1")
+                contract_key = "crypto:BTC-USDT" if manifest["runnerId"] == "gru_v1" else (config.get("contractKey") or {}).get(manifest["runnerId"])
                 domain, instrument = contract_key.split(":", 1) if contract_key else (None, None)
                 discovered[group_id] = {**config, "id": group_id, "kind": "model", "name": f"{manifest['runnerId']} · {manifest['modelVersion']}",
                     "enabled": row["id"] == row["active_id"], "reason": "该版本不是当前发布版本；已有运行不受影响",
@@ -292,6 +345,13 @@ print(json.dumps(result))
                     "contractKey": contract_key, "domain": domain, "modelInstrument": instrument,
                     "executionInstrumentId": "BTC-USDT.OKX" if contract_key == "crypto:BTC-USDT" else "XNVDA-USDT.OKX" if contract_key == "token_hour:XNVDA" else None,
                     "releaseManifest": str(Path(config["storePath"]) / "releases" / checksum / "manifest.json")}
+                if (config.get("liveExecution") and "live" in manifest["policy"]["allowedModes"]
+                        and manifest["runnerId"] == "rdt4quant_cpu_v2"):
+                    discovered[group_id].update(config["liveExecution"])
+                    discovered[group_id].update(kind="live", environment="live", mode="live", modelMode="live",
+                        runnerRoot=config.get("runnerRoots", {}).get(manifest["runnerId"], config["runnerRoot"]),
+                        defaultBudgetUsdt=None, maxBudgetUsdt=None,
+                        name=f"RDT4quant · {manifest['modelVersion']}")
         except (sqlite3.Error, ValueError, KeyError, TypeError):
             self.model_catalog_reason = "模型发布索引校验失败"
             return
@@ -341,6 +401,8 @@ print(json.dumps(result))
             return [spec["pythonPath"], spec["workerPath"], "--registry", str(self.path), "--request", str(request_path),
                     "--release-manifest", spec["releaseManifest"], "--manifest-sha256", spec["manifestSha256"],
                     "--guard-binary", spec["guardBinary"], "--runner-root", spec["runnerRoot"]]
+        if self.python is None or self.worker is None:
+            raise ValueError("生产运行服务未配置模拟运行器")
         return [str(self.python), str(self.worker), "--registry", str(self.path), "--request", str(request_path)]
 
     def spec(self, group_id):
@@ -352,18 +414,28 @@ print(json.dumps(result))
     def validate_inputs(self, group_id):
         spec = self.spec(group_id)
         if spec.get("kind") == "live":
+            if spec.get("enabled") is not True:
+                raise ValueError(spec.get("reason") or "该模型版本未激活")
             if hashlib.sha256(encode(object_file(self.path)).encode()).hexdigest() != self.digest:
                 raise ValueError("运行注册已变化，请重新加载运行服务")
             for checksum, filename in (("workerSha256", "workerPath"), ("configSha256", "configPath")):
                 path = trusted_file(Path(spec[filename]), self.strict)
                 if file_hash(path) != spec[checksum]:
                     raise ValueError("实盘运行程序或配置已变化")
+            if spec.get("signalsPath") and file_hash(trusted_file(Path(spec["signalsPath"]), self.strict)) != spec.get("signalsSha256"):
+                raise ValueError("策略信号版本已变化")
+            if spec.get("modelHash"):
+                for filename, checksum in self.model_program_hashes.items():
+                    if file_hash(trusted_file(Path(filename), self.strict)) != checksum:
+                        raise ValueError("模型运行程序已变化，请重新加载运行服务")
+                if file_hash(released_file(Path(spec["releaseManifest"]).parent, "manifest.json")) != spec["manifestSha256"]:
+                    raise ValueError("模型发布文件已变化")
             return spec
         if spec.get("kind") == "model":
             return self.validate_model_inputs(spec)
         if spec.get("enabled") is not True:
             raise ValueError(spec.get("reason") or "策略组运行配置未启用")
-        if hashlib.sha256(self.worker.read_bytes()).hexdigest() != self.worker_hash:
+        if self.worker is None or hashlib.sha256(self.worker.read_bytes()).hexdigest() != self.worker_hash:
             raise ValueError("运行程序已变化，请重新加载运行服务")
         if hashlib.sha256(encode(object_file(self.path)).encode()).hexdigest() != self.digest:
             raise ValueError("运行注册已变化，请重新加载运行服务")
@@ -400,10 +472,12 @@ print(json.dumps(result))
             raise ValueError("每个品种需要已发布的正整数单笔名义上限")
         return spec
 
-    def live_preview(self, spec):
+    def live_preview(self, spec, execution_settings=None):
         command = [spec["pythonPath"], spec["workerPath"], "--registry", str(self.path),
                    "--group-id", spec["id"], "--preview"]
-        result = subprocess.run(command, capture_output=True, text=True, timeout=30, check=False,
+        if execution_settings is not None:
+            command.extend(['--execution-settings',encode(execution_settings)])
+        result = subprocess.run(command, capture_output=True, text=True, timeout=45, check=False,
             env={"PATH": "/usr/local/bin:/usr/bin:/bin", "LANG": "C.UTF-8", "TZ": "UTC",
                  "PYTHONDONTWRITEBYTECODE": "1", "OKX_API_KEY": "", "OKX_API_SECRET": "",
                  "OKX_API_PASSPHRASE": ""})
@@ -476,10 +550,12 @@ async def socket_call(path: Path, request: dict, timeout=5.0):
         raise ValueError("请求过大")
     writer = None
     try:
-        reader, writer = await asyncio.wait_for(asyncio.open_unix_connection(str(path), limit=MAX_MESSAGE), timeout)
+        reader, writer = await asyncio.wait_for(asyncio.open_unix_connection(str(path), limit=MAX_RESPONSE), timeout)
         writer.write(encoded)
         await asyncio.wait_for(writer.drain(), timeout)
         raw = await asyncio.wait_for(reader.readline(), timeout)
+        if len(raw) > MAX_RESPONSE:
+            raise ValueError("运行状态响应过大")
         if not raw.endswith(b"\n") or len(raw) > MAX_MESSAGE:
             raise ValueError("运行服务响应不完整")
         result = json.loads(raw)
@@ -499,12 +575,21 @@ class GroupRuntimeClient:
     def __init__(self, socket_path: Path | None, timeout=5.0):
         self.path = socket_path
         self.timeout = timeout
+        self.status_cache = {}
+        self.status_pending = {}
+        self.status_epoch = 0
+
+    def invalidate_status(self):
+        self.status_cache.clear()
+        self.status_pending.clear()
+        self.status_epoch += 1
 
     async def request(self, command, **fields):
         if self.path is None:
             raise ValueError("策略组运行服务尚未配置")
         try:
-            result = await socket_call(self.path, {"command": command, **fields}, self.timeout)
+            timeout = max(self.timeout, 60.0) if command in {"prepare", "execute"} else self.timeout
+            result = await socket_call(self.path, {"command": command, **fields}, timeout)
         except (OSError, TimeoutError, ValueError):
             if command == "execute":
                 raise TimeoutError("运行操作结果未知，请核对实例状态") from None
@@ -514,13 +599,32 @@ class GroupRuntimeClient:
         return result["result"]
 
     async def status(self, group_id=None):
-        return await self.request("status", **({"groupId": group_id} if group_id else {}))
+        from execution_options import contract
+        epoch=self.status_epoch
+        cached=self.status_cache.get(group_id)
+        if cached and time.monotonic()-cached[0]<.5:
+            return copy.deepcopy(cached[1])
+        task=self.status_pending.get(group_id)
+        if task is None:
+            task=asyncio.create_task(self.request('status',**({'groupId':group_id} if group_id else {})))
+            self.status_pending[group_id]=task
+        try:
+            result=await asyncio.shield(task)
+            if epoch==self.status_epoch:self.status_cache[group_id]=(time.monotonic(),copy.deepcopy(result))
+            return copy.deepcopy(result)
+        finally:
+            if task.done() and self.status_pending.get(group_id) is task:
+                self.status_pending.pop(group_id,None)
 
     async def prepare(self, request):
         return await self.request("prepare", request=request)
 
     async def execute(self, request, operation_id):
-        return await self.request("execute", request=request, operationId=operation_id)
+        self.invalidate_status()
+        try:
+            return await self.request("execute", request=request, operationId=operation_id)
+        finally:
+            self.invalidate_status()
 
     async def receipt(self, operation_id):
         return await self.request("receipt", operationId=operation_id)
@@ -554,6 +658,28 @@ class GroupSupervisor:
         self.processes = {}
         self.tasks = set()
         self.server = None
+
+    async def reload_registry(self):
+        """Replace reviewed launch metadata without restarting the supervisor process."""
+        async with self.lock:
+            active = []
+            for group_id in self.registry.groups:
+                for row in self.rows(group_id):
+                    if row["state"] in ACTIVE and self.owned_process(row) is not None:
+                        active.append(row["id"])
+            if active:
+                raise ValueError(f"存在正在运行的策略实例：{','.join(active)}")
+
+            candidate = await asyncio.to_thread(
+                LaunchRegistry,
+                self.registry.path,
+                strict=self.registry.strict,
+                capability_probe=self.registry.capability_probe,
+            )
+            previous = self.registry.digest
+            self.registry = candidate
+            return {"previousRegistryVersion": previous, "registryVersion": candidate.digest,
+                    "groups": list(candidate.groups)}
 
     def owned_process(self, row):
         if not row["pid"] or not row["process_created"]:
@@ -601,7 +727,7 @@ class GroupSupervisor:
                     if (engine.get("ok") and engine.get("pid") == row["pid"]
                             and engine.get("environment") == expected_environment):
                         connected = engine.get("connected", {})
-                        state = ({"ACTIVE": "running", "HALTED": "halted", "REDUCING": "reducing",
+                        state = ({"STARTING": "starting", "ACTIVE": "running", "HALTED": "halted", "REDUCING": "reducing",
                                   "ERROR": "error", "FAULTED": "error", "FAILED": "error",
                                   "STOPPED": "engine_stopped", "RECOVERING": "recovering"}
                                  .get(engine.get("tradingState"), "unresponsive"))
@@ -625,7 +751,7 @@ class GroupSupervisor:
                     else:
                         state = "unresponsive"
                 except (OSError, TimeoutError, ValueError):
-                    if result.get("modelHash") and time.time() >= row["created"] + row["duration"]:
+                    if result.get("modelHash") and row["duration"] > 0 and time.time() >= row["created"] + row["duration"]:
                         state = "stopping"
                         result["automaticShutdown"] = True
                     else:
@@ -677,13 +803,27 @@ class GroupSupervisor:
                             "halt": bool(control_ready and active["status"] != "halted"),
                             "reduce": bool(control_ready and active["status"] != "reducing"),
                             "resume": bool(control_ready and active["status"] in {"halted", "reducing"}),
+                            "cancel": False, "flatten": False,
                             "reason": reason or ("该策略组已有运行实例" if active else None)}
             if spec.get("kind") == "live":
-                capabilities.update(halt=False, reduce=False, resume=False)
+                engine = (active or {}).get('engine') or {}
+                native_control = engine.get('controlVersion') == 1
+                capabilities.update(cancel=bool(control_ready and native_control),
+                    flatten=bool(control_ready and native_control and (engine.get('flatten') or {}).get('phase') not in {'cancelling','reducing'}))
+                for action in ('halt','reduce','resume'):
+                    capabilities[action] = bool(capabilities[action] and native_control)
+                if engine.get('resumeAllowed') is False:
+                    capabilities['resume'] = False
+                    capabilities['resumeReason'] = '库存已由平仓操作更新，请停止后重新启动策略'
             if spec.get("kind") == "model" and model_capacity and not model_capacity["available"]:
                 capabilities["start"] = False
                 capabilities["reason"] = capabilities["reason"] or f"模型运行槽位已满（{model_capacity['used']}/{model_capacity['limit']}）"
-            actions = [action for action in ("start", "halt", "reduce", "resume", "stop") if capabilities[action]]
+            actions = [action for action in ("start", "halt", "reduce", "resume", "cancel", "flatten", "stop") if capabilities[action]]
+            summary_keys = ("runId", "groupId", "mode", "environment", "ready", "status", "durationSeconds",
+                            "startedAt", "pid", "runDir", "profileId", "releaseId", "runnerId", "modelHash",
+                            "error", "deadlineReached", "stopRequested")
+            reported_runs = [run if group_id and active and run.get("runId") == active.get("runId") else
+                             {key: run.get(key) for key in summary_keys} for run in runs]
             output.append({"groupId": name, "name": spec.get("name", name),
                            "mode": "live" if spec.get("kind") == "live" else spec.get("modelMode", "nautilus_sandbox"),
                            "dashboardVisible": spec.get("dashboardVisible", True),
@@ -691,11 +831,17 @@ class GroupSupervisor:
                            "marketTransport": spec["marketTransport"], "marketData": MARKET_DATA[spec["marketTransport"]],
                            "runId": active["runId"] if active else None, "supportedActions": actions,
                            "defaultBudgetUsdt": spec["defaultBudgetUsdt"], "maxBudgetUsdt": spec["maxBudgetUsdt"],
-                           "maxDurationSeconds": spec["maxDurationSeconds"], "runs": runs,
+                           "maxDurationSeconds": spec["maxDurationSeconds"], "runs": reported_runs,
+                           "durationPolicy": duration_policy(spec), "executionPolicy": execution_policy(spec),
+                           "executionOptions": contract(spec),
                            "capabilities": capabilities,
                            **({"kind": "live", "profileId": spec["profileId"], "ordersEnabled": True,
                                "capitalMode": spec.get("capitalMode", "account_inventory"),
                                "exposureCapUsdt": spec.get("exposureCapUsdt")} if spec.get("kind") == "live" else {}),
+                           **({"releaseId": spec["releaseId"], "runnerId": spec["runnerId"],
+                               "modelHash": spec["modelHash"], "manifestSha256": spec["manifestSha256"],
+                               "device": spec["modelManifest"]["runtime"]["device"], "warmupRequired": True}
+                              if spec.get("kind") == "live" and spec.get("modelHash") else {}),
                            **({"kind": "model", "releaseId": spec["releaseId"], "runnerId": spec["runnerId"],
                                "manifestSha256": spec["manifestSha256"], "modelHash": spec["modelHash"],
                                "device": spec["modelManifest"]["runtime"]["device"], "nodeCapabilities": self.registry.node_capabilities,
@@ -706,7 +852,7 @@ class GroupSupervisor:
                 **({"modelRuntimeReason": self.registry.model_catalog_reason} if self.registry.model_runtime else {})}
 
     async def prepare(self, request):
-        if not isinstance(request, dict) or set(request) - {"groupId", "action", "runId", "budgetUsdt", "durationSeconds", "registryVersion", "inventoryHash"}:
+        if not isinstance(request, dict) or set(request) - {"groupId", "action", "runId", "budgetUsdt", "durationSeconds", "registryVersion", "inventoryHash", "instruments", "executionSettings"}:
             raise ValueError("策略组请求字段不正确")
         group_id, action = request.get("groupId"), request.get("action")
         spec = self.registry.spec(group_id)
@@ -716,23 +862,52 @@ class GroupSupervisor:
             raise ValueError("策略版本已更新，请重新检查配置")
         normalized = {"groupId": group_id, "action": action, "registryVersion": self.registry.digest}
         live = None
-        if spec.get("kind") == "live" and action not in {"start", "stop"}:
-            raise ValueError("此实盘策略组支持启动和停止")
+        run_settings = None
+        if spec.get("kind") == "live" and action not in {"start", "stop"} and spec.get('controlVersion') != 1:
+            raise ValueError("此版本支持启动和停止；其他控制需更新运行程序")
+        if action in {'cancel','flatten'} and spec.get('kind') != 'live':
+            raise ValueError('此控制用于实盘运行')
+        if 'instruments' in request and action != 'flatten':
+            raise ValueError('只有平仓操作可指定品种范围')
         if action == "start":
+            from execution_options import settings
+            run_settings=settings(spec,request.get('executionSettings'))
+            if run_settings is not None:normalized['executionSettings']=run_settings
             if spec.get("kind") == "model":
                 await asyncio.to_thread(self.registry.validate_model_inputs, spec)
                 self.require_model_capacity()
             else:
                 self.registry.validate_inputs(group_id)
+                if spec.get("modelHash"):
+                    self.require_model_capacity()
             if request.get("runId"):
                 raise ValueError("新实例不能指定旧运行编号")
             for row in self.rows(group_id):
                 if (await self.run_status(row))["status"] in ACTIVE:
                     raise ValueError("该策略组已有运行实例")
-            duration = request.get("durationSeconds", spec["maxDurationSeconds"])
-            if type(duration) is not int or not 60 <= duration <= spec["maxDurationSeconds"]:
-                raise ValueError("运行时长超出策略组范围")
-            live = self.registry.live_preview(spec) if spec.get("kind") == "live" else None
+            if spec.get('kind') == 'live':
+                for other_id,other in self.registry.groups.items():
+                    if other_id == group_id or other.get('kind') != 'live' or other.get('profileId') != spec['profileId']:
+                        continue
+                    for row in self.rows(other_id):
+                        if (await self.run_status(row))['status'] in ACTIVE:
+                            raise ValueError(f"账户资金正在由 {other.get('name',other_id)} 使用；请使用独立账户，或先结束该运行")
+            policy = duration_policy(spec)
+            duration = request.get("durationSeconds", policy["defaultSeconds"] if policy["continuous"] else spec["maxDurationSeconds"])
+            if (type(duration) is not int or not 0 <= duration <= 9007199254740991
+                    or (duration == 0 and not policy["continuous"])
+                    or (duration > 0 and policy["maxSeconds"] is not None and duration > policy["maxSeconds"])
+                    or (spec.get("kind") != "live" and duration < 60)):
+                raise ValueError("运行时长与已发布的运行方式不一致")
+            if spec.get("kind") == "live":
+                for other in self.db.execute("SELECT * FROM runs"):
+                    other_spec = self.registry.groups.get(other["group_id"], {})
+                    if (other["state"] in ACTIVE and other_spec.get("kind") == "live"
+                            and other_spec.get("profileId") == spec.get("profileId")
+                            and self.owned_process(other) is not None):
+                        raise ValueError(f"执行账户正在运行 {other_spec.get('name', other['group_id'])}")
+            live = (await asyncio.to_thread(self.registry.live_preview, spec, run_settings) if run_settings is not None else
+                    await asyncio.to_thread(self.registry.live_preview, spec)) if spec.get("kind") == "live" else None
             if live:
                 if request.get("inventoryHash", live["inventoryHash"]) != live["inventoryHash"]:
                     raise ValueError("账户余额或委托已变化，请重新检查配置")
@@ -743,7 +918,7 @@ class GroupSupervisor:
                     raise ValueError("预算超过策略组已发布上限")
                 normalized.update(budgetUsdt=budget, durationSeconds=duration)
         else:
-            if "budgetUsdt" in request or "durationSeconds" in request:
+            if "budgetUsdt" in request or "durationSeconds" in request or 'executionSettings' in request:
                 raise ValueError("运行中不能改变实例预算或时长")
             row = self.row(request.get("runId"), group_id)
             run = await self.run_status(row)
@@ -751,11 +926,30 @@ class GroupSupervisor:
                 raise ValueError("实例已结束或进程身份不匹配")
             if action == "resume" and run["status"] not in {"halted", "reducing"}:
                 raise ValueError("仅可恢复已暂停或减仓中的实例")
+            engine = run.get('engine') or {}
+            if spec.get('kind') == 'live' and action != 'stop' and engine.get('controlVersion') != 1:
+                raise ValueError('当前运行尚未提供该控制能力')
+            if action == 'resume' and engine.get('resumeAllowed') is False:
+                raise ValueError('平仓后的库存已变化，请停止后重新启动策略')
+            if action == 'flatten':
+                known = {item['instrument'] for item in (engine.get('inventory') or {}).get('pairs',[])}
+                symbols = request.get('instruments')
+                if not isinstance(symbols,list) or not symbols or len(symbols)>128 or any(not isinstance(s,str) or s not in known for s in symbols):
+                    raise ValueError('请选择本次运行中的交易品种')
+                if (engine.get('flatten') or {}).get('phase') in {'cancelling','reducing'}:
+                    raise ValueError('当前平仓请求尚未结束')
+                normalized['instruments'] = sorted(set(symbols))
             normalized["runId"] = row["id"]
         return {"request": normalized, "mode": "live" if spec.get("kind") == "live" else spec.get("modelMode", "nautilus_sandbox"), "groupName": spec.get("name", group_id),
+                "executionPolicy": __import__('execution_options').describe(run_settings) or execution_policy(spec), "durationPolicy": duration_policy(spec),
+                "executionSettings": run_settings,
                 "marketTransport": spec["marketTransport"], "marketData": MARKET_DATA[spec["marketTransport"]],
                 "effect": "使用账户库存启动实盘策略" if action == "start" and spec.get("kind") == "live" else
-                          "新建独立虚拟资金实例" if action == "start" else "操作所选运行实例",
+                          "新建独立虚拟资金实例" if action == "start" else
+                          "暂停本策略组并撤销本组全部活动委托，按 10 bps 限价偏移卖出所选品种的本组分配库存；保留未成交余额" if action == 'flatten' else
+                          "暂停本策略组并撤销本组全部活动委托，保留持仓" if action in {'halt','cancel'} else
+                          "只接受减少库存的委托；双边做市报价暂停" if action == 'reduce' else
+                          "停止策略进程并撤销本组活动委托，保留持仓" if action == 'stop' else "恢复所选策略的信号执行",
                 "signalVersion": spec.get("signalsSha256"), "strategyVersion": spec.get("strategySha256"),
                 **({"liveInventory": live, "ordersEnabled": True, "profileId": spec["profileId"],
                     "exposureCapUsdt": spec.get("exposureCapUsdt"),
@@ -849,7 +1043,8 @@ class GroupSupervisor:
         if receipt_status != "completed" or not engine.get("ok"):
             return {**result, "status": "failed" if receipt_status == "failed" else "unknown",
                     "error": engine.get("error") or "引擎未确认操作"}
-        state = {"halt": "halted", "reduce": "reducing", "resume": "running"}[request["action"]]
+        state = {"HALTED":"halted", "REDUCING":"reducing", "ACTIVE":"running"}.get(engine.get('tradingState')) or {
+            "halt": "halted", "reduce": "reducing", "resume": "running", 'cancel':'halted', 'flatten':'reducing'}[request["action"]]
         # Receipt reconciliation must not overwrite a later control/run state.
         return {**result, "status": state}
 
@@ -872,6 +1067,10 @@ class GroupSupervisor:
                     {"mode": "shadow", "modelHash": spec["modelHash"], "manifestSha256": spec["manifestSha256"],
                      "releaseId": spec["releaseId"], "runnerId": spec["runnerId"], "ordersEnabled": False}
                     if spec.get("kind") == "model" else {})
+        if spec.get("kind") == "live" and spec.get("modelHash"):
+            metadata.update(modelHash=spec["modelHash"], manifestSha256=spec["manifestSha256"],
+                            releaseId=spec["releaseId"], runnerId=spec["runnerId"], ordersEnabled=False)
+        if request.get('executionSettings'):metadata['executionSettings']=request['executionSettings']
         with self.db:
             self.db.execute("INSERT INTO runs(id,group_id,state,budget,duration,created,result) VALUES(?,?,?,?,?,?,?)",
                             (run_id, request["groupId"], "starting", request.get("budgetUsdt", "0.00"),
@@ -931,7 +1130,7 @@ class GroupSupervisor:
             state = "failed"
         elif valid_final and stopped and (reports or stopped_before_ready):
             state = "stopped"
-        elif valid_final and reports and final.get("deadline_reached") is True:
+        elif valid_final and reports and (final.get("deadline_reached") is True or final.get("validation_complete") is True):
             state = "completed"
         else:
             state = "interrupted"
@@ -971,6 +1170,7 @@ class GroupSupervisor:
         try:
             engine = await socket_call(self.path / row["id"] / "control.sock",
                 {"command": action, "operationId": operation_id or uuid.uuid4().hex,
+                 'runId':row['id'], **({'instruments':request['instruments']} if action=='flatten' else {}),
                  "operator": "montlok", "reason": "confirmed group action"}, 3)
         except (ValueError, OSError, TimeoutError) as error:
             raise TimeoutError("控制回复未确认，操作可能已生效") from error
@@ -1037,8 +1237,25 @@ async def main(args):
     supervisor = GroupSupervisor(LaunchRegistry(args.registry), args.state_dir)
     await supervisor.start(args.socket)
     stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    reload_tasks = set()
+
+    async def reload_and_report():
+        try:
+            result = await supervisor.reload_registry()
+            print(encode({"event": "registry_reloaded", **result}), flush=True)
+        except Exception as error:
+            print(encode({"event": "registry_reload_failed", "error": str(error)}),
+                  file=sys.stderr, flush=True)
+
+    def schedule_reload():
+        task = loop.create_task(reload_and_report())
+        reload_tasks.add(task)
+        task.add_done_callback(reload_tasks.discard)
+
     for signum in (signal.SIGINT, signal.SIGTERM):
-        asyncio.get_running_loop().add_signal_handler(signum, stop.set)
+        loop.add_signal_handler(signum, stop.set)
+    loop.add_signal_handler(signal.SIGHUP, schedule_reload)
     await stop.wait()
     supervisor.server.close()
     await supervisor.server.wait_closed()
@@ -1050,6 +1267,8 @@ async def main(args):
                 await supervisor.control({"groupId": group_id, "runId": row["id"], "action": "stop"})
     if supervisor.tasks:
         await asyncio.wait(supervisor.tasks, timeout=40)
+    if reload_tasks:
+        await asyncio.wait(reload_tasks, timeout=5)
     args.socket.unlink(missing_ok=True)
 
 

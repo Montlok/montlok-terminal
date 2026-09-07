@@ -38,7 +38,7 @@ export default function DepthChart({
     latest.current = profile;
     if (canvas.current) paint(canvas.current, profile);
   }, [profile]);
-  if (!hasLevels) return <div className="empty-state">暂无盘口</div>;
+  if (!hasLevels) return <div className="empty-state">等待订单簿快照</div>;
   return (
     <canvas
       ref={canvas}

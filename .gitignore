@@ -1,0 +1,36 @@
+# Build and dependency output
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.umi/
+**/.umi-production/
+**/.umi-test/
+**/.turbopack/
+**/.wrangler/
+
+# Python runtime output
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Rust and CMake output
+target/
+cmake-build-*/
+CMakeUserPresets.json
+
+# Local editor and operating-system state
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Local credentials and runtime state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+runtime/
+var/

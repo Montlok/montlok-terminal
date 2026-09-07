@@ -81,7 +81,7 @@ describe('execution analytics page', () => {
     expect(screen.getByText('已读取成交')).toBeInTheDocument();
     expect(screen.getByText('运行报表手续费 / USDT')).toBeInTheDocument();
     expect(
-      screen.getByText('暂无可核验的 USDT 手续费记录'),
+      screen.getByText('USDT 手续费记录将随成交回报更新'),
     ).toBeInTheDocument();
   });
   beforeEach(() => {
@@ -118,7 +118,7 @@ describe('execution analytics page', () => {
     render(<ExecutionAnalytics />);
     await screen.findByText('缺失数据组');
     expect(screen.getByText('数据来源未确认')).toBeInTheDocument();
-    expect(screen.getByText('订单状态未知')).toBeInTheDocument();
+    expect(screen.getByText('订单状态核对中')).toBeInTheDocument();
     expect(screen.getByText('委托总数').nextElementSibling).toHaveTextContent(
       '未知',
     );
