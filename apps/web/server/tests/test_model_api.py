@@ -135,8 +135,15 @@ class ModelAPITests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("expectedActiveReleaseId", arguments)
         self.assertEqual(self.operator.model_releases.list(), [])
         replies = await asyncio.gather(*[self.execute(ticket) for _ in range(4)])
-        self.assertTrue(all(item["status"] == "completed" for item in replies))
-        self.assertTrue(all(item["result"]["started"] is False for item in replies))
+        # Concurrent retries can observe the durable processing receipt before
+        # the first request finishes. Query the result; never replay the write.
+        self.assertTrue(all(item["status"] in {"processing", "completed"} for item in replies), replies)
+        self.assertTrue(any(item["status"] == "completed" for item in replies), replies)
+        receipt_response=await self.client.get(f"/api/operations/{ticket['id']}")
+        self.assertEqual(receipt_response.status,200)
+        receipt=await receipt_response.json()
+        self.assertEqual(receipt["status"],"completed",receipt)
+        self.assertFalse(receipt["result"]["started"])
         self.assertEqual(len(self.operator.model_releases.list()), 1)
         self.assertEqual(self.operator.database.execute("SELECT COUNT(*) FROM operations").fetchone()[0], 1)
         self.assert_no_runtime_action()

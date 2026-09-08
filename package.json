@@ -9,6 +9,13 @@
     "@umijs/plugins": { "@ant-design/pro-components": "3.1.14-2" }
   },
   "license": "AGPL-3.0-or-later",
+  "optionalDependencies": {
+    "domparser-linux-x64-gnu": "0.0.7",
+    "domparser-linux-arm64-gnu": "0.0.7",
+    "domparser-darwin-arm64": "0.0.7",
+    "domparser-darwin-x64": "0.0.7",
+    "domparser-win32-x64-msvc": "0.0.7"
+  },
   "workspaces": [
     "apps/web",
     "packages/sdk-ts"
