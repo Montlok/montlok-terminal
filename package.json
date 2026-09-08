@@ -4,6 +4,7 @@
   "private": true,
   "devDependencies": { "react": "19.2.7", "react-dom": "19.2.7", "@types/react":"19.2.17", "@types/react-dom":"19.2.3", "typescript": "5.9.3" },
   "overrides": {
+    "immer@>=7.0.0 <9.0.6": "9.0.21",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "@umijs/plugins": { "@ant-design/pro-components": "3.1.14-2" }
