@@ -92,6 +92,15 @@ def main():
             for width, height in [(1440, 900), (2560, 1440)]:
                 page.set_viewport_size({'width': width, 'height': height})
                 page.screenshot(path=str(output / f'workspace-{width}.png'), full_page=True)
+            page.goto(f'http://127.0.0.1:{server.server_port}/workspace/execution/overview')
+            page.get_by_role('button', name='分组与透视', exact=True).click(timeout=20000)
+            try:
+                page.locator('perspective-viewer').wait_for(state='visible',timeout=30000)
+            except Exception:
+                page.screenshot(path=str(output/'perspective-failure.png'),full_page=True)
+                print(json.dumps({'page_errors':errors,'alerts':page.get_by_role('alert').all_text_contents()},ensure_ascii=False))
+                raise
+            page.screenshot(path=str(output / 'perspective-detail.png'),full_page=True)
             assert not errors, errors
             print(json.dumps({'screenshots': str(output), 'page_errors': errors, 'mutation_requests': writes, 'viewport_checks': 3}))
             browser.close()

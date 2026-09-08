@@ -1,0 +1,35 @@
+name: Rust runtime candidate
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux-x64:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler pkg-config libssl-dev
+      - run: rustup toolchain install 1.94.0 --profile minimal
+      - run: cargo test --workspace --locked
+      - run: cargo build --release --workspace --locked
+      - name: Create production artifact
+        run: |
+          mkdir -p build/runtime/bin build/runtime/licenses
+          cp target/release/montlok-gateway target/release/montlok-projector target/release/montlok-nautilus-adapter build/runtime/bin/
+          cp LICENSE THIRD_PARTY_NOTICES.md build/runtime/licenses/
+          cp -R deploy build/runtime/configuration
+          tar -C build/runtime -czf build/montlok-runtime-linux-x64.tar.gz .
+      - uses: actions/attest-build-provenance@v4.2.2
+        with:
+          subject-path: build/montlok-runtime-linux-x64.tar.gz
+      - uses: actions/upload-artifact@v4.6.2
+        with:
+          name: montlok-runtime-linux-x64-candidate
+          path: build/montlok-runtime-linux-x64.tar.gz
+          if-no-files-found: error

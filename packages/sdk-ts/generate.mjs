@@ -8,7 +8,7 @@ const output=resolve(here,'src/generated');
 mkdirSync(output,{recursive:true});
 const plugin=resolve(root,'node_modules/.bin/protoc-gen-ts_proto');
 const args=[`--plugin=protoc-gen-ts_proto=${plugin}`,`--ts_proto_out=${output}`,
-  '--ts_proto_opt=forceLong=bigint,esModuleInterop=true,oneof=unions,outputServices=false,useOptionals=messages',
+  '--ts_proto_opt=forceLong=bigint,esModuleInterop=true,oneof=unions,outputServices=false,useOptionals=messages,annotateFilesWithVersion=false',
   `--proto_path=${resolve(here,'../contracts/proto')}`,
   resolve(here,'../contracts/proto/montlok/v2/terminal.proto')];
 let result=spawnSync('protoc',args,{stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);

@@ -80,7 +80,11 @@ target_link_libraries(montlok-terminal-native PRIVATE
 
 if(Arrow_FOUND)
   target_compile_definitions(montlok-terminal-native PRIVATE MONTLOK_HAS_ARROW=1)
-  target_link_libraries(montlok-terminal-native PRIVATE Arrow::arrow_shared)
+  if(TARGET Arrow::arrow_shared)
+    target_link_libraries(montlok-terminal-native PRIVATE Arrow::arrow_shared)
+  else()
+    target_link_libraries(montlok-terminal-native PRIVATE Arrow::arrow_static)
+  endif()
 endif()
 
 if(APPLE)

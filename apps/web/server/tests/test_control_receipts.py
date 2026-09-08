@@ -14,7 +14,7 @@ spec.loader.exec_module(control)
 
 class DurableControlTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="control-receipts-", dir="/private/tmp")
+        self.temporary = tempfile.TemporaryDirectory(prefix="control-receipts-", dir="/tmp")
         self.path = Path(self.temporary.name) / "control.sock"
         self.calls = 0
         self.state = "ACTIVE"

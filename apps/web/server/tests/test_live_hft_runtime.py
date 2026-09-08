@@ -23,7 +23,7 @@ PREVIEW = {
 
 class LiveHFTRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="live-hft-runtime-", dir="/private/tmp")
+        self.temporary = tempfile.TemporaryDirectory(prefix="live-hft-runtime-", dir="/tmp")
         self.root = Path(self.temporary.name)
         self.worker = self.root / "live-worker.py"
         self.worker.write_text("import json,sys\nprint(json.dumps(" + repr(PREVIEW) + "))\n")

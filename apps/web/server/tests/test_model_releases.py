@@ -21,7 +21,7 @@ def checksum(data):
 
 class ModelReleaseTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="model-releases-", dir="/private/tmp")
+        self.temporary = tempfile.TemporaryDirectory(prefix="model-releases-", dir="/tmp")
         self.root = Path(self.temporary.name)
         self.artifacts = ArtifactStore(self.root / "artifacts")
         self.store = ModelReleaseStore(self.root / "published", self.artifacts)

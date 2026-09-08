@@ -8,13 +8,11 @@ const loadModule=(url:string):Promise<unknown>=>import(/* webpackIgnore: true */
 function engine():Promise<Client>{
   runtime??=(async()=>{
     const base='/vendor/perspective-5.3.1/';
-    const [clientModule,viewerModule]=await Promise.all([loadModule(base+'perspective.js'),loadModule(base+'perspective-viewer.js')]);
+    const [clientModule]=await Promise.all([loadModule(base+'cdn/perspective.js'),loadModule(base+'cdn/perspective-viewer.js')]);
     const perspective=(clientModule as typeof import('@perspective-dev/client')).default;
-    const viewer=viewerModule as typeof import('@perspective-dev/viewer');
-    perspective.init_client(fetch(base+'perspective-js.wasm'));
-    perspective.init_server(()=>fetch(base+'perspective-server.wasm'));
-    await viewer.init_client(fetch(base+'perspective-viewer.wasm'));
-    await loadModule(base+'perspective-viewer-datagrid.js');
+    perspective.init_client(await fetch(base+'wasm/perspective-js.wasm').then(response=>response.arrayBuffer()));
+    perspective.init_server(()=>fetch(base+'wasm/perspective-server.wasm'));
+    await loadModule(base+'cdn/perspective-viewer-datagrid.js');
     return perspective.worker();
   })().catch(error=>{runtime=undefined;throw error;});
   return runtime;
