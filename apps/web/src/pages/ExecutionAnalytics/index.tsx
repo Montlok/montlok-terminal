@@ -1,7 +1,7 @@
 import { ReloadOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
 import { Alert, Button } from 'antd';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { lazy,Suspense,useCallback, useMemo, useRef, useState } from 'react';
 import { api, number, type Row, timeOf } from '../../operator/api';
 import { DataGrid } from '../../operator/DataGrid';
 import { TimeSeriesChart } from '../../operator/TimeSeriesChart';
@@ -14,6 +14,8 @@ import {
   finite,
 } from './executionModel';
 import './executionAnalytics.css';
+const PerspectiveGrid=lazy(()=>import('../../operator/PerspectiveGrid'));
+const FILL_SCHEMA={'成交时间':'string','品种':'string','方向':'string','数量':'string','价格':'string','手续费':'string','费用币种':'string'} as const;
 
 function DistributionChart({
   rows,
@@ -54,6 +56,7 @@ function DistributionChart({
 }
 
 export default function ExecutionAnalytics() {
+  const [pivot,setPivot]=useState(false);
   const { selectedGroup, selectedRuns } = useModel('operator');
   const runId = selectedRuns?.[selectedGroup] || '';
   const selection = `${selectedGroup}/${runId}`;
@@ -318,11 +321,15 @@ export default function ExecutionAnalytics() {
         <section className="panel">
           <div className="panel-heading">
             <strong>成交明细</strong>
+            <Button type="text" onClick={()=>setPivot(!pivot)}>{pivot?'明细表格':'分组与透视'}</Button>
             <span>
               {analysis ? `${analysis.fills.length} 条已读取` : '等待数据'}
             </span>
           </div>
-          <DataGrid
+          {pivot?<Suspense fallback={<div className="workspace-loading">加载明细表格</div>}>
+            <PerspectiveGrid rows={(analysis?.fills||[]).map(fill=>({'成交时间':timeOf(fill.time),'品种':String(fill.instrument??''),'方向':String(fill.side??''),
+              '数量':fill.quantity==null?null:String(fill.quantity),'价格':fill.price==null?null:String(fill.price),'手续费':fill.fee==null?null:String(fill.fee),'费用币种':fill.feeCurrency==null?null:String(fill.feeCurrency)}))} schema={FILL_SCHEMA} height={360}/>
+          </Suspense>:<DataGrid
             rows={analysis?.fills || []}
             height={260}
             columns={[
@@ -344,7 +351,7 @@ export default function ExecutionAnalytics() {
                 width: 90,
               },
             ]}
-          />
+          />}
         </section>
         <section className="panel">
           <div className="panel-heading">

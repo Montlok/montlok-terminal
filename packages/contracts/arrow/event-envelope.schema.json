@@ -1,0 +1,25 @@
+{
+  "name": "montlok.v2.EventEnvelope",
+  "fields": [
+    { "name": "schema_version", "nullable": false, "type": { "name": "int", "bitWidth": 32, "isSigned": false } },
+    { "name": "stream", "nullable": false, "type": { "name": "utf8" } },
+    { "name": "stream_seq", "nullable": false, "type": { "name": "int", "bitWidth": 64, "isSigned": false } },
+    { "name": "snapshot_seq", "nullable": false, "type": { "name": "int", "bitWidth": 64, "isSigned": false } },
+    { "name": "event_id", "nullable": false, "type": { "name": "fixedsizebinary", "byteWidth": 16 } },
+    { "name": "event_type", "nullable": false, "type": { "name": "utf8" } },
+    { "name": "occurred_at_ns", "nullable": false, "type": { "name": "timestamp", "unit": "NANOSECOND", "timezone": "UTC" } },
+    { "name": "received_at_ns", "nullable": false, "type": { "name": "timestamp", "unit": "NANOSECOND", "timezone": "UTC" } },
+    { "name": "account_id", "nullable": true, "type": { "name": "utf8" } },
+    { "name": "strategy_group_id", "nullable": true, "type": { "name": "utf8" } },
+    { "name": "run_id", "nullable": true, "type": { "name": "utf8" } },
+    { "name": "instrument_id", "nullable": true, "type": { "name": "utf8" } },
+    { "name": "correlation_id", "nullable": true, "type": { "name": "fixedsizebinary", "byteWidth": 16 } },
+    { "name": "causation_id", "nullable": true, "type": { "name": "fixedsizebinary", "byteWidth": 16 } },
+    { "name": "source", "nullable": false, "type": { "name": "utf8" } },
+    { "name": "payload_protobuf", "nullable": false, "type": { "name": "binary" } }
+  ],
+  "metadata": {
+    "schema_version": "2",
+    "payload_contract": "montlok.v2.EventEnvelope"
+  }
+}

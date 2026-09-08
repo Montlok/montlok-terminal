@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "id": "live-operations",
+  "labelZh": "实盘运行",
+  "labelEn": "Live Operations",
+  "contextBindings": ["account_id", "strategy_group_id", "run_id", "instrument_id", "model_release_id", "signal_version", "time_from_ns", "time_to_ns"],
+  "panels": [
+    { "id": "live.context", "titleZh": "运行上下文", "titleEn": "Run context", "capability": "live.context", "dataset": "run_summary", "fields": ["account.id", "run.state", "run.id", "model.release_id", "signal.version", "node.id"], "conflateMs": 0, "minWidth": 420, "minHeight": 120 },
+    { "id": "live.market", "titleZh": "行情与仓位", "titleEn": "Market and position", "capability": "live.market", "dataset": "market_position", "fields": ["market.bid", "market.ask", "market.last", "position.actual_quantity", "position.target_quantity", "position.actual_weight", "position.target_weight"], "conflateMs": 50, "minWidth": 720, "minHeight": 360 },
+    { "id": "live.metrics", "titleZh": "收益与执行", "titleEn": "PnL and execution", "capability": "live.metrics", "dataset": "live_metrics", "fields": ["portfolio.nav", "portfolio.pnl.total", "portfolio.drawdown", "portfolio.exposure", "order.working_count", "execution.submit_rate", "execution.cancel_rate", "execution.fill_count", "latency.p50", "latency.p95"], "conflateMs": 50, "minWidth": 460, "minHeight": 240 },
+    { "id": "live.universe", "titleZh": "策略标的", "titleEn": "Strategy universe", "capability": "live.universe", "dataset": "strategy_universe", "fields": ["instrument.id", "instrument.sector", "position.target_weight", "position.actual_weight", "position.deviation", "position.quantity", "portfolio.pnl.instrument"], "conflateMs": 100, "minWidth": 520, "minHeight": 280 },
+    { "id": "live.blotter", "titleZh": "事件与订单", "titleEn": "Event and order blotter", "capability": "live.blotter", "dataset": "event_blotter", "fields": ["event.occurred_at", "event.type", "event.stream_seq", "order.client_order_id", "route.venue_order_id", "fill.trade_id", "risk.outcome", "correlation.id"], "conflateMs": 0, "minWidth": 820, "minHeight": 260 },
+    { "id": "live.controls", "titleZh": "策略控制", "titleEn": "Strategy controls", "capability": "live.controls", "dataset": "operation_receipts", "fields": ["operation.id", "operation.action", "operation.status", "operation.updated_at"], "conflateMs": 0, "minWidth": 340, "minHeight": 360, "lockContext": ["account_id", "run_id"] }
+  ]
+}

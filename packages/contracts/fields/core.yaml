@@ -1,0 +1,109 @@
+schemaVersion: 2
+fields:
+  - id: account.id
+    label_zh: 账户
+    label_en: Account
+    data_type: string
+    source: gateway.catalog
+    description: Server-side account identifier; never contains an exchange secret.
+    freshness_sla_ms: 60000
+    sensitive: false
+    calculation_version: identity-v1
+  - id: run.state
+    label_zh: 运行状态
+    label_en: Run state
+    data_type: enum
+    enum_values: [PREPARING, RUNNING, PAUSED, REDUCING, STOPPING, STOPPED, FAILED]
+    source: nautilus.run_state
+    description: Last contiguous state reported for the selected run.
+    freshness_sla_ms: 2000
+    sensitive: false
+    calculation_version: run-state-v2
+    drilldown_template: /operations/live?run_id={run_id}
+  - id: portfolio.nav
+    label_zh: 净值
+    label_en: Net asset value
+    data_type: decimal
+    unit: USDT
+    precision: 6
+    source: projector.pnl
+    description: Authoritative server-side marked account value at valuation time.
+    freshness_sla_ms: 1000
+    sensitive: true
+    calculation_version: nav-v2
+    drilldown_template: /portfolio/risk?run_id={run_id}
+  - id: portfolio.pnl.total
+    label_zh: 累计收益
+    label_en: Total PnL
+    data_type: decimal
+    unit: USDT
+    precision: 6
+    source: projector.pnl
+    description: Realized plus unrealized PnL net of reported fees.
+    freshness_sla_ms: 1000
+    sensitive: true
+    calculation_version: pnl-v2
+    drilldown_template: /portfolio/risk?run_id={run_id}&view=attribution
+  - id: portfolio.drawdown
+    label_zh: 最大回撤
+    label_en: Maximum drawdown
+    data_type: decimal
+    unit: percent
+    precision: 4
+    source: projector.pnl
+    description: Peak-to-trough drawdown over the selected run and time range.
+    freshness_sla_ms: 1000
+    sensitive: true
+    calculation_version: drawdown-v2
+  - id: order.client_order_id
+    label_zh: 客户端订单号
+    label_en: Client order ID
+    data_type: string
+    source: nautilus.order
+    description: Stable identifier that joins strategy intent to venue routes.
+    freshness_sla_ms: 100
+    sensitive: false
+    calculation_version: identity-v1
+    drilldown_template: /execution/investigation?client_order_id={value}
+  - id: route.venue_order_id
+    label_zh: 交易所订单号
+    label_en: Venue order ID
+    data_type: string
+    source: okx.private_stream
+    description: Order identifier acknowledged by OKX.
+    freshness_sla_ms: 500
+    sensitive: false
+    calculation_version: identity-v1
+    drilldown_template: /execution/investigation?venue_order_id={value}
+  - id: fill.trade_id
+    label_zh: 成交号
+    label_en: Trade ID
+    data_type: string
+    source: okx.private_stream
+    description: Venue trade identifier for one fill.
+    freshness_sla_ms: 500
+    sensitive: false
+    calculation_version: identity-v1
+    drilldown_template: /execution/investigation?trade_id={value}
+  - id: latency.total
+    label_zh: 端到端耗时
+    label_en: End-to-end latency
+    data_type: duration_ns
+    unit: ns
+    precision: 0
+    source: projector.correlation
+    description: Signal occurrence through fill receipt for one correlation chain.
+    freshness_sla_ms: 1000
+    sensitive: false
+    calculation_version: latency-v2
+  - id: stream.sequence_loss
+    label_zh: 事件缺口
+    label_en: Sequence loss
+    data_type: uint64
+    unit: events
+    precision: 0
+    source: gateway.stream
+    description: Unrecovered critical-event sequence gaps; quote conflation is reported separately.
+    freshness_sla_ms: 1000
+    sensitive: false
+    calculation_version: stream-v2

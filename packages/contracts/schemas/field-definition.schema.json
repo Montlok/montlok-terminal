@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tokyo.montlok.com/schemas/v2/field-definition.json",
+  "title": "Montlok FieldDefinition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "label_zh", "label_en", "data_type", "source", "description", "freshness_sla_ms", "sensitive", "calculation_version"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_.]*$" },
+    "label_zh": { "type": "string", "minLength": 1 },
+    "label_en": { "type": "string", "minLength": 1 },
+    "data_type": { "enum": ["string", "bool", "int64", "uint64", "decimal", "timestamp_ns", "duration_ns", "enum", "json"] },
+    "unit": { "type": "string" },
+    "precision": { "type": "integer", "minimum": 0, "maximum": 18 },
+    "enum_values": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "source": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "freshness_sla_ms": { "type": "integer", "minimum": 0 },
+    "sensitive": { "type": "boolean" },
+    "calculation_version": { "type": "string", "minLength": 1 },
+    "drilldown_template": { "type": "string" }
+  }
+}

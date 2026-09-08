@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "id": "research-release",
+  "labelZh": "研究与发布",
+  "labelEn": "Research and Release",
+  "contextBindings": ["strategy_group_id", "model_release_id", "signal_version", "time_from_ns", "time_to_ns"],
+  "panels": [
+    { "id": "research.catalog", "titleZh": "研究对象", "titleEn": "Research objects", "capability": "research.catalog", "dataset": "research_catalog", "fields": ["artifact.id", "artifact.kind", "artifact.version", "artifact.hash", "artifact.created_at"], "conflateMs": 0, "minWidth": 360, "minHeight": 500 },
+    { "id": "research.evidence", "titleZh": "评估证据", "titleEn": "Evaluation evidence", "capability": "research.evidence", "dataset": "model_evaluations", "fields": ["model.release_id", "dataset.version", "evaluation.train_range", "evaluation.holdout_range", "evaluation.leakage_check", "portfolio.pnl.total", "portfolio.drawdown", "evaluation.sharpe", "evaluation.turnover", "evaluation.trade_count", "inference.p95"], "conflateMs": 0, "minWidth": 740, "minHeight": 360 },
+    { "id": "research.lineage", "titleZh": "血缘与版本", "titleEn": "Lineage and versions", "capability": "research.lineage", "dataset": "artifact_lineage", "fields": ["artifact.id", "artifact.parent_id", "dataset.version", "factor.version", "alpha.version", "model.release_id", "strategy.group_id"], "conflateMs": 0, "minWidth": 620, "minHeight": 320 },
+    { "id": "research.release", "titleZh": "发布阶段", "titleEn": "Release stages", "capability": "research.release", "dataset": "release_receipts", "fields": ["release.stage", "release.status", "artifact.hash", "node.id", "operation.id", "operation.status"], "conflateMs": 0, "minWidth": 480, "minHeight": 300, "lockContext": ["model_release_id"] }
+  ]
+}

@@ -1,0 +1,482 @@
+openapi: 3.1.0
+info:
+  title: Montlok Terminal API
+  version: 2.0.0
+  license:
+    name: AGPL-3.0-or-later
+    identifier: AGPL-3.0-or-later
+servers:
+  - url: https://tokyo.montlok.com
+security:
+  - sessionCookie: []
+  - deviceBearer: []
+paths:
+  /api/v2/device/authorizations:
+    post:
+      operationId: createDeviceAuthorization
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeviceAuthorizationRequest' }
+      responses:
+        '201':
+          description: Pending browser authorization
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceAuthorization' }
+  /api/v2/device/tokens:
+    post:
+      operationId: exchangeDeviceAuthorization
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeviceTokenRequest' }
+      responses:
+        '200':
+          description: Device tokens
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceTokens' }
+        '202': { description: Authorization is still pending }
+  /api/v2/device/tokens/refresh:
+    post:
+      operationId: refreshDeviceToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshTokenRequest' }
+      responses:
+        '200':
+          description: Rotated device tokens
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceTokens' }
+  /api/v2/devices:
+    get:
+      operationId: listDevices
+      responses:
+        '200':
+          description: Authorized devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Device' }
+  /api/v2/devices/{device_id}:
+    delete:
+      operationId: revokeDevice
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '204': { description: Device revoked }
+  /api/v2/catalog:
+    get:
+      operationId: getCatalog
+      responses:
+        '200':
+          description: Accounts, instruments, runs, models, and datasets visible to this principal
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Catalog' }
+  /api/v2/fields:
+    get:
+      operationId: getFields
+      responses:
+        '200':
+          description: Field dictionary
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/FieldDefinition' }
+  /api/v2/bootstrap:
+    get:
+      operationId: bootstrapTerminal
+      responses:
+        '200':
+          description: Principal, catalog watermarks, workspaces, and stream endpoint
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Bootstrap' }
+  /api/v2/runs/{run_id}/snapshot:
+    get:
+      operationId: getRunSnapshot
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Coherent run snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunSnapshot' }
+            application/vnd.apache.arrow.stream:
+              schema: { type: string, contentMediaType: application/vnd.apache.arrow.stream }
+  /api/v2/events:
+    get:
+      operationId: getEvents
+      parameters:
+        - { name: stream, in: query, required: true, schema: { type: string } }
+        - { name: after_seq, in: query, required: false, schema: { type: integer, format: int64, minimum: 0 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 2048, default: 500 } }
+      responses:
+        '200':
+          description: Ordered events for replay or investigation
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EventEnvelope' }
+  /api/v2/query:
+    post:
+      operationId: queryDataset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StructuredQuery' }
+      responses:
+        '200':
+          description: Detail query result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QueryResult' }
+            application/vnd.apache.arrow.stream:
+              schema: { type: string, contentMediaType: application/vnd.apache.arrow.stream }
+  /api/v2/workspaces:
+    get:
+      operationId: listWorkspaces
+      responses:
+        '200':
+          description: Logical workspaces and device overrides
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Workspace' }
+  /api/v2/workspaces/{workspace_id}:
+    put:
+      operationId: saveWorkspace
+      parameters:
+        - { name: workspace_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Workspace' }
+      responses:
+        '200':
+          description: Saved logical workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+  /api/v2/stream:
+    get:
+      operationId: connectStream
+      description: Upgrade to the Protobuf WebSocket stream defined by terminal.proto.
+      responses:
+        '101': { description: WebSocket protocol switch }
+  /api/v2/operations/prepare:
+    post:
+      operationId: prepareOperation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PrepareOperationRequest' }
+      responses:
+        '201':
+          description: Expiring confirmation document
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PreparedOperation' }
+  /api/v2/operations/{operation_id}/execute:
+    post:
+      operationId: executeOperation
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExecuteOperationRequest' }
+      responses:
+        '200':
+          description: Final or queryable operation receipt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationReceipt' }
+        '202':
+          description: The outcome is still queryable; the client must not replay execute.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationReceipt' }
+  /api/v2/operations/{operation_id}:
+    get:
+      operationId: getOperation
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          description: Current operation receipt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationReceipt' }
+  /api/v2/artifacts:
+    get:
+      operationId: listArtifacts
+      responses:
+        '200': { description: Immutable artifacts }
+    post:
+      operationId: registerArtifact
+      responses:
+        '201': { description: Artifact registered }
+  /api/v2/model-releases:
+    get:
+      operationId: listModelReleases
+      responses:
+        '200': { description: Model releases }
+    post:
+      operationId: publishModelRelease
+      responses:
+        '201': { description: Immutable model release created }
+  /api/v2/strategy-groups:
+    get:
+      operationId: listStrategyGroups
+      responses:
+        '200': { description: Strategy groups }
+  /api/v2/strategy-groups/{group_id}:
+    get:
+      operationId: getStrategyGroup
+      parameters:
+        - { name: group_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Strategy group definition and live runs }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: montlok_session
+    deviceBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: short-lived device token
+  parameters:
+    DeviceId: { name: device_id, in: path, required: true, schema: { type: string, format: uuid } }
+    RunId: { name: run_id, in: path, required: true, schema: { type: string } }
+    OperationId: { name: operation_id, in: path, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    TerminalContext:
+      type: object
+      additionalProperties: false
+      properties:
+        account_id: { type: string }
+        strategy_group_id: { type: string }
+        run_id: { type: string }
+        instrument_id: { type: string }
+        model_release_id: { type: string }
+        signal_version: { type: string }
+        time_from_ns: { type: integer, format: int64 }
+        time_to_ns: { type: integer, format: int64 }
+    FieldDefinition:
+      type: object
+      additionalProperties: false
+      required: [id, label_zh, label_en, data_type, source, description, freshness_sla_ms, sensitive, calculation_version]
+      properties:
+        id: { type: string }
+        label_zh: { type: string }
+        label_en: { type: string }
+        data_type: { type: string }
+        unit: { type: string }
+        precision: { type: integer }
+        enum_values: { type: array, items: { type: string } }
+        source: { type: string }
+        description: { type: string }
+        freshness_sla_ms: { type: integer }
+        sensitive: { type: boolean }
+        calculation_version: { type: string }
+        drilldown_template: { type: string }
+    EventEnvelope:
+      type: object
+      additionalProperties: false
+      required: [schema_version, stream, stream_seq, event_id, event_type, occurred_at_ns, received_at_ns, source, payload]
+      properties:
+        schema_version: { type: integer, const: 2 }
+        stream: { type: string }
+        stream_seq: { type: string, pattern: '^[0-9]+$' }
+        snapshot_seq: { type: string, pattern: '^[0-9]+$' }
+        event_id: { type: string, format: uuid }
+        event_type: { type: string }
+        occurred_at_ns: { type: string, pattern: '^-?[0-9]+$' }
+        received_at_ns: { type: string, pattern: '^-?[0-9]+$' }
+        account_id: { type: string }
+        strategy_group_id: { type: string }
+        run_id: { type: string }
+        instrument_id: { type: string }
+        correlation_id: { type: string, format: uuid }
+        causation_id: { type: string, format: uuid }
+        source: { type: string }
+        payload: { type: object, additionalProperties: true }
+    DeviceAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required: [device_name, public_key]
+      properties:
+        device_name: { type: string, minLength: 1, maxLength: 120 }
+        public_key: { type: string, contentEncoding: base64 }
+        platform: { enum: [macos, windows, linux] }
+    DeviceAuthorization:
+      type: object
+      required: [authorization_id, user_code, verification_uri, expires_in, interval]
+      properties:
+        authorization_id: { type: string, format: uuid }
+        user_code: { type: string }
+        verification_uri: { type: string, format: uri }
+        expires_in: { type: integer }
+        interval: { type: integer }
+    DeviceTokenRequest:
+      type: object
+      required: [authorization_id, signature, timestamp]
+      properties:
+        authorization_id: { type: string, format: uuid }
+        signature: { type: string, contentEncoding: base64 }
+        timestamp: { type: integer, format: int64 }
+    RefreshTokenRequest:
+      type: object
+      required: [device_id, refresh_token, nonce, signature, timestamp]
+      properties:
+        device_id: { type: string, format: uuid }
+        refresh_token: { type: string }
+        nonce: { type: string }
+        signature: { type: string, contentEncoding: base64 }
+        timestamp: { type: integer, format: int64 }
+    DeviceTokens:
+      type: object
+      required: [device_id, access_token, expires_in, refresh_token, refresh_expires_in]
+      properties:
+        device_id: { type: string, format: uuid }
+        access_token: { type: string }
+        expires_in: { type: integer, const: 300 }
+        refresh_token: { type: string }
+        refresh_expires_in: { type: integer, const: 2592000 }
+    Device:
+      type: object
+      required: [device_id, device_name, platform, created_at, last_seen_at]
+      properties:
+        device_id: { type: string, format: uuid }
+        device_name: { type: string }
+        platform: { type: string }
+        created_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+    Catalog:
+      type: object
+      required: [accounts, strategy_groups, runs, instruments, model_releases, datasets]
+      properties:
+        accounts: { type: array, items: { type: object } }
+        strategy_groups: { type: array, items: { type: object } }
+        runs: { type: array, items: { type: object } }
+        instruments: { type: array, items: { type: object } }
+        model_releases: { type: array, items: { type: object } }
+        datasets: { type: array, items: { type: object } }
+    Bootstrap:
+      type: object
+      required: [protocol_version, principal, catalog, workspaces, stream_url, watermarks]
+      properties:
+        protocol_version: { type: integer, const: 2 }
+        principal: { type: object }
+        catalog: { $ref: '#/components/schemas/Catalog' }
+        workspaces: { type: array, items: { $ref: '#/components/schemas/Workspace' } }
+        stream_url: { type: string, format: uri }
+        watermarks: { type: object, additionalProperties: { type: integer, format: int64 } }
+    RunSnapshot:
+      type: object
+      required: [snapshot_seq, source_event_seq, context, data]
+      properties:
+        snapshot_seq: { type: integer, format: int64 }
+        source_event_seq: { type: integer, format: int64 }
+        context: { $ref: '#/components/schemas/TerminalContext' }
+        data: { type: object }
+    QueryFilter:
+      type: object
+      additionalProperties: false
+      required: [field, op, value]
+      properties:
+        field: { type: string }
+        op: { enum: [eq, ne, gt, gte, lt, lte, in, contains, is_null] }
+        value: {}
+    StructuredQuery:
+      type: object
+      additionalProperties: false
+      required: [dataset, fields]
+      properties:
+        dataset: { type: string }
+        fields: { type: array, minItems: 1, maxItems: 128, items: { type: string } }
+        filters: { type: array, maxItems: 64, items: { $ref: '#/components/schemas/QueryFilter' } }
+        groupBy: { type: array, maxItems: 16, items: { type: string } }
+        aggregates: { type: array, maxItems: 32, items: { type: object } }
+        sort: { type: array, maxItems: 16, items: { type: object } }
+        timeRange: { $ref: '#/components/schemas/TerminalContext' }
+        cursor: { type: string }
+        limit: { type: integer, minimum: 1, maximum: 100000, default: 1000 }
+    QueryResult:
+      type: object
+      required: [schema, rows, source_event_seq]
+      properties:
+        schema: { type: array, items: { $ref: '#/components/schemas/FieldDefinition' } }
+        rows: { type: array, items: { type: object } }
+        next_cursor: { type: string }
+        source_event_seq: { type: integer, format: int64 }
+        elapsed_ms: { type: number }
+    Workspace:
+      type: object
+      required: [schemaVersion, id, panels]
+      properties:
+        schemaVersion: { type: integer, const: 2 }
+        id: { type: string }
+        labelZh: { type: string }
+        labelEn: { type: string }
+        contextBindings: { type: array, items: { type: string } }
+        panels: { type: array, items: { type: object } }
+    PrepareOperationRequest:
+      type: object
+      additionalProperties: false
+      required: [action, context, parameters]
+      properties:
+        action: { type: string }
+        context: { $ref: '#/components/schemas/TerminalContext' }
+        parameters: { type: object }
+        client_request_id: { type: string, format: uuid }
+    PreparedOperation:
+      type: object
+      required: [operation_id, action, context, parameters, summary, expires_at, confirmation_hash]
+      properties:
+        operation_id: { type: string, format: uuid }
+        action: { type: string }
+        context: { $ref: '#/components/schemas/TerminalContext' }
+        parameters: { type: object }
+        summary: { type: string }
+        expires_at: { type: string, format: date-time }
+        confirmation_hash: { type: string }
+    ExecuteOperationRequest:
+      type: object
+      additionalProperties: false
+      required: [confirmation_hash]
+      properties:
+        confirmation_hash: { type: string }
+    OperationReceipt:
+      type: object
+      required: [operation_id, action, status, updated_at]
+      properties:
+        operation_id: { type: string, format: uuid }
+        action: { type: string }
+        status: { enum: [PREPARED, PROCESSING, SUCCEEDED, REJECTED, FAILED, UNKNOWN_BUT_QUERYABLE, EXPIRED] }
+        context: { $ref: '#/components/schemas/TerminalContext' }
+        updated_at: { type: string, format: date-time }
+        result: { type: object }
+        reason: { type: string }

@@ -208,7 +208,7 @@ export const MarketDock = memo(function MarketDock({
         </span>
         <span>
           {universe.length} 个标的 ·{' '}
-          {universe.filter((row) => Math.abs(Number(row.quantity)) > 0).length}{' '}
+          {strategy?.sources?.positions===false?'—':universe.filter((row) => Math.abs(Number(row.quantity)) > 0).length}{' '}
           项持仓
         </span>
         <span>成交 {strategy?.fillsTotal ?? '—'} 笔</span>
@@ -230,6 +230,7 @@ export const MarketDock = memo(function MarketDock({
             universe={universe}
             scopeKey={selectedGroup}
             groupName={strategyDisplayName(strategy)}
+            positionsAvailable={strategy?.sources?.positions!==false}
           />
         </div>
         <section className="chart-panel panel">
@@ -312,6 +313,7 @@ export const MarketDock = memo(function MarketDock({
           universe={universe}
           scopeKey={selectedGroup}
           groupName={strategyDisplayName(strategy)}
+          positionsAvailable={strategy?.sources?.positions!==false}
         />
       </Drawer>
       <Modal

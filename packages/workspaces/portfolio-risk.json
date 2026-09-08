@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "id": "portfolio-risk",
+  "labelZh": "组合与风险",
+  "labelEn": "Portfolio and Risk",
+  "contextBindings": ["account_id", "strategy_group_id", "run_id", "time_from_ns", "time_to_ns"],
+  "panels": [
+    { "id": "portfolio.summary", "titleZh": "组合指标", "titleEn": "Portfolio metrics", "capability": "portfolio.summary", "dataset": "portfolio_metrics", "fields": ["portfolio.nav", "portfolio.pnl.realized", "portfolio.pnl.unrealized", "portfolio.pnl.total", "portfolio.fees", "execution.slippage", "portfolio.drawdown", "portfolio.turnover", "portfolio.capacity"], "conflateMs": 100, "minWidth": 620, "minHeight": 240 },
+    { "id": "portfolio.attribution", "titleZh": "收益归因", "titleEn": "PnL attribution", "capability": "portfolio.attribution", "dataset": "pnl_attribution", "fields": ["instrument.id", "instrument.sector", "alpha.id", "model.release_id", "portfolio.pnl.realized", "portfolio.pnl.unrealized", "portfolio.fees"], "conflateMs": 100, "minWidth": 680, "minHeight": 380 },
+    { "id": "portfolio.exposure", "titleZh": "权重与敞口", "titleEn": "Weights and exposure", "capability": "portfolio.exposure", "dataset": "position_exposure", "fields": ["instrument.id", "position.target_weight", "position.actual_weight", "position.deviation", "portfolio.exposure.net", "portfolio.exposure.gross", "portfolio.concentration"], "conflateMs": 100, "minWidth": 620, "minHeight": 340 },
+    { "id": "portfolio.risk", "titleZh": "风险规则", "titleEn": "Risk rules", "capability": "portfolio.risk", "dataset": "risk_rules", "fields": ["risk.rule_id", "risk.limit", "risk.actual", "risk.unit", "risk.outcome", "risk.message", "event.stream_seq"], "conflateMs": 0, "minWidth": 520, "minHeight": 320 }
+  ]
+}

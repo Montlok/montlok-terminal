@@ -35,4 +35,8 @@ describe('strategy market scope', () => {
   it('does not invent a default asset before strategy data arrives', () => {
     expect(primaryStrategyInstrument(strategyInstruments())).toBe('');
   });
+  it('keeps an unreported position distinct from a confirmed zero quantity',()=>{
+    const rows=strategyInstruments({universe:[{instrument:'XTSLA-USDT',weight:.1}],sources:{positions:false}});
+    expect(rows[0].quantity).toBe('');
+  });
 });

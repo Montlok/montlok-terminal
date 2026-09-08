@@ -1,0 +1,71 @@
+name: Native candidates
+on:
+  workflow_dispatch:
+  push:
+    paths: ['apps/native/**', 'packages/contracts/proto/**', 'CMakeLists.txt', 'CMakePresets.json', '.github/workflows/native.yml']
+permissions:
+  contents: read
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            qt_host: mac
+            qt_arch: clang_64
+            triplet: arm64-osx
+            label: macos-arm64
+          - os: windows-2022
+            qt_host: windows
+            qt_arch: win64_msvc2022_64
+            triplet: x64-windows
+            label: windows-x64
+          - os: ubuntu-24.04
+            qt_host: linux
+            qt_arch: gcc_64
+            triplet: x64-linux
+            label: linux-x64
+    runs-on: ${{ matrix.os }}
+    env:
+      VCPKG_COMMIT: '04a9d8e5212d01ee1dd9478eadd9caade4f8b0d4'
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: '6.8.3'
+          host: ${{ matrix.qt_host }}
+          target: desktop
+          arch: ${{ matrix.qt_arch }}
+          modules: qtcharts qtwebsockets
+          cache: true
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build pkg-config libsecret-1-dev libdbus-1-dev libxkbcommon-x11-0 libxcb-cursor0
+      - name: Download pinned dependency registry
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$RUNNER_TEMP/vcpkg"
+          git -C "$RUNNER_TEMP/vcpkg" checkout "$VCPKG_COMMIT"
+      - if: runner.os != 'Windows'
+        shell: bash
+        run: "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh"
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: '& "$env:RUNNER_TEMP/vcpkg/bootstrap-vcpkg.bat"'
+      - name: Configure
+        shell: bash
+        run: >-
+          cmake -S . -B build/native
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE="$RUNNER_TEMP/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_MANIFEST_DIR="$GITHUB_WORKSPACE/apps/native"
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+          -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR"
+      - run: cmake --build build/native --config Release -j 3
+      - name: Install candidate
+        run: cmake --install build/native --prefix build/candidate --config Release
+      - uses: actions/upload-artifact@v4.6.2
+        with:
+          name: montlok-native-${{ matrix.label }}-candidate
+          path: build/candidate
+          if-no-files-found: error

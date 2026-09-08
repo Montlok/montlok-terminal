@@ -12,7 +12,7 @@ const surfaces = [
   '../pages/Connections/index.tsx',
   '../pages/Engine/index.tsx',
   '../pages/ExecutionAnalytics/index.tsx',
-  '../pages/Models/index.tsx',
+  '../pages/ModelReleases/index.tsx',
   '../pages/Portfolio/index.tsx',
   '../pages/ResearchHistory/index.tsx',
   '../pages/StrategyGroups/index.tsx',

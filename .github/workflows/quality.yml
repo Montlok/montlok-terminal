@@ -1,0 +1,51 @@
+name: Quality
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: '22.20.0'
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: npm ci
+      - run: node packages/contracts/validate.mjs
+      - run: npm --workspace @montlok/sdk run generate
+      - run: git diff --exit-code -- packages/sdk-ts/src/generated
+      - run: npm --workspace @montlok/web run tsc
+      - run: npm --workspace @montlok/web test
+      - run: npm --workspace @montlok/web run build
+  rust:
+    runs-on: ubuntu-24.04
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler pkg-config libssl-dev
+      - run: rustup toolchain install 1.94.0 --profile minimal --component clippy,rustfmt
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+  legacy-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: '3.12'
+      - run: pip install -r apps/web/server/requirements.txt pytest
+      - run: python -m pytest -q tests
+        working-directory: apps/web/server
+      - run: python -m unittest test_alpha_execution test_live_alpha_worker test_live_controls test_live_hft_worker test_live_model_worker
+        working-directory: apps/web/engine
+        env:
+          PYTHONPATH: '.:../server'

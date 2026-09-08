@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "id": "market-data",
+  "labelZh": "行情与数据",
+  "labelEn": "Market and Data",
+  "contextBindings": ["instrument_id", "time_from_ns", "time_to_ns"],
+  "panels": [
+    { "id": "market.universe", "titleZh": "市场目录", "titleEn": "Market catalog", "capability": "market.universe", "dataset": "instruments", "fields": ["instrument.id", "instrument.product", "instrument.base", "instrument.quote", "instrument.status", "instrument.tick_size", "instrument.lot_size"], "conflateMs": 1000, "minWidth": 420, "minHeight": 500 },
+    { "id": "market.chart", "titleZh": "价格与成交", "titleEn": "Price and trades", "capability": "market.chart", "dataset": "market_bars", "fields": ["market.time", "market.open", "market.high", "market.low", "market.close", "market.volume"], "conflateMs": 50, "minWidth": 720, "minHeight": 420 },
+    { "id": "market.microstructure", "titleZh": "订单簿与微观结构", "titleEn": "Book and microstructure", "capability": "market.microstructure", "dataset": "market_microstructure", "fields": ["market.bid", "market.ask", "market.spread_bps", "market.depth", "market.volatility", "market.volume"], "conflateMs": 50, "minWidth": 600, "minHeight": 360 },
+    { "id": "market.quality", "titleZh": "数据质量", "titleEn": "Data quality", "capability": "market.quality", "dataset": "data_quality", "fields": ["data.source", "data.last_update", "data.latency", "data.sequence", "data.gap_count", "stream.conflated_count", "stream.sequence_loss"], "conflateMs": 250, "minWidth": 500, "minHeight": 280 }
+  ]
+}

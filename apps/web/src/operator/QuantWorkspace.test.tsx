@@ -38,8 +38,15 @@ beforeEach(() => {
   routing.path = '/trade/spot/terminal';
   localStorage.clear();
   vi.clearAllMocks();
+  vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockReturnValue(new DOMRect(0,0,1600,900));
+  vi.stubGlobal('ResizeObserver',class {
+    constructor(private callback:ResizeObserverCallback){}
+    observe(target:Element){queueMicrotask(()=>this.callback([{target,contentRect:new DOMRect(0,0,1600,900),borderBoxSize:[{inlineSize:1600,blockSize:900}],contentBoxSize:[{inlineSize:1600,blockSize:900}],devicePixelContentBoxSize:[]}],this as unknown as ResizeObserver));}
+    unobserve(){}
+    disconnect(){}
+  });
 });
-afterEach(cleanup);
+afterEach(()=>{cleanup();vi.restoreAllMocks();vi.unstubAllGlobals();});
 
 describe('persistent quant workspace', () => {
   it('keeps the same market instance and selection when lower routes change', async () => {
@@ -106,20 +113,20 @@ describe('persistent quant workspace', () => {
       JSON.parse(localStorage.getItem(WORKSPACE_TABS_KEY) || '[]'),
     ).not.toContain('/strategies/bots/grid');
   });
-  it('renders one divider and one active lower page while retaining an independent inspector', async () => {
+  it('renders the active page and an independently docked inspector', async () => {
     const { container } = render(
       <QuantWorkspace>
         <p>one active page</p>
       </QuantWorkspace>,
     );
     await screen.findByLabelText('persistent instrument');
-    expect(container.querySelectorAll('.ant-splitter-panel')).toHaveLength(2);
-    expect(container.querySelectorAll('.ant-splitter-bar')).toHaveLength(1);
+    expect(container.querySelector('.flexlayout__layout')).toBeInTheDocument();
+    expect(container.querySelectorAll('.flexlayout__tabset')).toHaveLength(3);
     expect(
       container.querySelector('.workspace-route-content'),
     ).toContainElement(screen.getByText('one active page'));
     expect(container.querySelector('.workspace-editor')).toBeInTheDocument();
-    expect(screen.getByLabelText('策略控制')).toContainElement(
+    expect(screen.getByRole('complementary',{name:'策略控制'})).toContainElement(
       screen.getByText('independent strategy inspector'),
     );
   });

@@ -2,6 +2,7 @@ import { navigation } from '../src/operator/navigation';
 
 export default [
   { path: '/login', component: './OperatorLogin', layout: false },
+  { path: '/device', component: './DeviceAuthorization', layout: false },
   { path: '/', redirect: '/workspace/portfolio/overview' },
   ...navigation.map((section) => ({
     path: section.path,

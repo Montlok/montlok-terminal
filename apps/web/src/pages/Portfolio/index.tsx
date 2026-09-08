@@ -91,6 +91,7 @@ export default function Portfolio() {
         group?.positions || [],
         !!group?.runId &&
           group.sources?.view !== false &&
+          group.sources?.positions !== false &&
           group.health.detailAvailable !== false,
       ),
     [group],

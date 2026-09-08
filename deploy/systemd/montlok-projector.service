@@ -1,0 +1,26 @@
+[Unit]
+Description=Montlok Terminal Rust event projector
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=montlok
+Group=montlok
+EnvironmentFile=/etc/montlok-terminal/projector.env
+ExecStart=/opt/montlok-terminal/current/bin/montlok-projector
+WorkingDirectory=/var/lib/montlok-terminal
+Restart=on-failure
+RestartSec=1
+TimeoutStopSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/montlok-terminal
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

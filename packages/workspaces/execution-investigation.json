@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "id": "execution-investigation",
+  "labelZh": "执行调查",
+  "labelEn": "Execution Investigation",
+  "contextBindings": ["account_id", "strategy_group_id", "run_id", "instrument_id", "time_from_ns", "time_to_ns"],
+  "panels": [
+    { "id": "execution.orders", "titleZh": "订单与成交", "titleEn": "Orders and fills", "capability": "execution.orders", "dataset": "order_routes_fills", "fields": ["event.occurred_at", "order.client_order_id", "route.venue_order_id", "fill.trade_id", "order.side", "order.quantity", "order.price", "order.state"], "conflateMs": 0, "minWidth": 720, "minHeight": 300 },
+    { "id": "execution.timeline", "titleZh": "生命周期", "titleEn": "Lifecycle", "capability": "execution.timeline", "dataset": "correlation_timeline", "fields": ["event.occurred_at", "event.received_at", "event.type", "event.stream_seq", "latency.stage", "latency.total", "correlation.id", "causation.id"], "conflateMs": 0, "minWidth": 680, "minHeight": 320 },
+    { "id": "execution.market", "titleZh": "成交时行情", "titleEn": "Market at execution", "capability": "execution.market", "dataset": "execution_market", "fields": ["market.bid", "market.ask", "market.last", "order.price", "fill.price", "execution.slippage_bps"], "conflateMs": 50, "minWidth": 620, "minHeight": 320 },
+    { "id": "execution.detail", "titleZh": "原始字段", "titleEn": "Raw fields", "capability": "execution.detail", "dataset": "event_detail", "fields": ["event.source", "event.stream_seq", "event.payload", "correlation.id", "causation.id"], "conflateMs": 0, "minWidth": 420, "minHeight": 320 }
+  ]
+}

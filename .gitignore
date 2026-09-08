@@ -34,3 +34,4 @@ CMakeUserPresets.json
 *.p12
 runtime/
 var/
+apps/web/public/vendor/

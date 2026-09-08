@@ -83,12 +83,12 @@ const WatchTableRow = memo(function WatchTableRow({
       <td>
         <strong>{row.symbol.replace('-', '/')}</strong>
         {position && (
-          <small className="watch-position" title={`持仓 ${position.quantity}`}>
+          <small className="watch-position" title={position.quantity?`持仓 ${position.quantity}`:'持仓待同步'}>
             {Math.abs(Number(position.quantity)) > 0
               ? `持仓 ${position.quantity}`
               : position.weight
                 ? `目标 ${number(position.weight * 100, 2)}%`
-                : '未持有'}
+                : position.quantity===''?'持仓待同步':'未持有'}
           </small>
         )}
       </td>
@@ -123,12 +123,14 @@ export function Watchlist({
   universe,
   scopeKey,
   groupName,
+  positionsAvailable=true,
 }: {
   selected: string;
   onSelect: (symbol: string) => void;
   universe?: StrategyInstrument[];
   scopeKey?: string;
   groupName?: string;
+  positionsAvailable?: boolean;
 }) {
   const [customSymbols, setSymbols] = useState(loadWatchlist);
   const [scope, setScope] = useState(universe ? 'strategy' : 'custom');
@@ -242,7 +244,7 @@ export function Watchlist({
               { key: 'strategy', label: `标的 ${universe.length}` },
               {
                 key: 'positions',
-                label: `持仓 ${watchedStrategySymbols(universe, 'positions').length}`,
+                label: `持仓 ${positionsAvailable?watchedStrategySymbols(universe, 'positions').length:'—'}`,
               },
               { key: 'custom', label: '自选' },
             ]}
@@ -301,7 +303,7 @@ export function Watchlist({
           {scope === 'custom'
             ? '在上方添加自选品种'
             : scope === 'positions'
-              ? '持仓记录将随成交更新'
+              ? positionsAvailable?'持仓记录将随成交更新':'持仓待同步'
               : '读取策略标的'}
         </div>
       )}

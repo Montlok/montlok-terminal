@@ -13,11 +13,13 @@ export const DataGrid = memo(function DataGrid({
   columns,
   height = 260,
   emptyLabel = '等待数据',
+  onSelectRow,
 }: {
   rows: Row[];
   columns: GridColumn[];
   height?: number;
   emptyLabel?: string;
+  onSelectRow?: (row:Row)=>void;
 }) {
   if (!rows.length)
     return (
@@ -34,6 +36,10 @@ export const DataGrid = memo(function DataGrid({
         enableColumnResizing
         columnWidths={columns.map((column) => column.width || 150)}
         numFrozenColumns={1}
+        onSelection={onSelectRow?(regions)=>{
+          const index=regions[0]?.rows?.[0];
+          if(index!==undefined&&rows[index])onSelectRow(rows[index]);
+        }:undefined}
       >
         {columns.map((column) => (
           <Column

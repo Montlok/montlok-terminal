@@ -1,0 +1,9 @@
+.device-authorization{min-height:100dvh;display:grid;place-items:center;background:#0b0f14;color:#e8edf3;padding:24px;font-family:Inter,"PingFang SC",sans-serif;}
+.device-authorization section{width:min(480px,100%);padding:32px;border:1px solid #222d39;background:#10161d;}
+.device-brand{font-size:11px;letter-spacing:2px;color:#70a9ff;}
+.device-authorization h1{font-size:26px;margin:24px 0 12px;}
+.device-authorization p{line-height:1.7;color:#9aa7b5;}
+.device-authorization dl{display:grid;grid-template-columns:112px 1fr;gap:18px 12px;margin:28px 0;}
+.device-authorization dt{color:#9aa7b5;}.device-authorization dd{margin:0;overflow-wrap:anywhere;}
+.device-code{font-size:23px;letter-spacing:3px;font-variant-numeric:tabular-nums;}.device-fingerprint{font-size:11px;font-family:monospace;}
+.device-authorization p[role="alert"]{color:#f05b65;}

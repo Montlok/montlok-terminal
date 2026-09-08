@@ -1,158 +1,72 @@
 import { history, useLocation } from '@umijs/max';
-import { Button, Splitter, Tabs } from 'antd';
+import { Button, Tabs } from 'antd';
+import { Actions, Layout, type Model, type TabNode } from 'flexlayout-react';
 import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react';
 import {
-  closeWorkspaceTab,
-  loadWorkspaceTabs,
-  openWorkspaceTab,
-  PINNED_WORKSPACE_TABS,
-  resizedWorkspaceSplit,
-  WORKSPACE_SPLIT_KEY,
-  WORKSPACE_TABS_KEY,
-  workspaceSplit,
-  workspaceTabLabel,
+  closeWorkspaceTab, loadWorkspaceTabs, openWorkspaceTab,
+  PINNED_WORKSPACE_TABS, WORKSPACE_TABS_KEY, workspaceTabLabel,
 } from './quantWorkspaceModel';
-import './workspace.css';
+import { DOCKING_LAYOUT_KEY, loadDockingModel } from './dockingModel';
 import { StrategyRunPanel } from './StrategyRunPanel';
+import 'flexlayout-react/style/dark.css';
+import './workspace.css';
+import './terminalDocking.css';
 
-const MarketDock = lazy(() =>
-  import('./MarketDock').then((module) => ({ default: module.MarketDock })),
-);
-
+const MarketDock = lazy(() => import('./MarketDock').then((module) => ({ default: module.MarketDock })));
+const EventBlotter=lazy(()=>import('./EventBlotter'));
 function saved(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
+  try { return window.localStorage.getItem(key); } catch { return null; }
 }
-
 function save(key: string, value: string) {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // Layout preferences are optional when browser storage is unavailable.
-  }
+  try { window.localStorage.setItem(key, value); } catch { /* Optional layout preference. */ }
 }
 
-/** The market remains mounted; only the lower routed workspace changes. */
+/** Docking changes observation and geometry only; writes belong to StrategyRunPanel. */
 export function QuantWorkspace({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const [paths, setPaths] = useState(() =>
-    openWorkspaceTab(loadWorkspaceTabs(saved(WORKSPACE_TABS_KEY)), pathname),
-  );
-  const [split, setSplit] = useState(() =>
-    workspaceSplit(saved(WORKSPACE_SPLIT_KEY)),
-  );
-  const [compact, setCompact] = useState(() => {
-    const preference = saved('montlok.workspace.market.compact.v2');
-    return preference === null
-      ? pathname.startsWith('/settings/') || pathname.startsWith('/assets/')
-      : preference === 'true';
+  const [paths, setPaths] = useState(() => openWorkspaceTab(loadWorkspaceTabs(saved(WORKSPACE_TABS_KEY)), pathname));
+  const [model] = useState(() => loadDockingModel(saved(DOCKING_LAYOUT_KEY)));
+  const [compact, setCompact] = useState(() => saved('montlok.workspace.market.compact.v2') === 'true');
+  const toggleMarket = () => setCompact((previous) => {
+    save('montlok.workspace.market.compact.v2', String(!previous));
+    return !previous;
   });
-  const toggleMarket = () =>
-    setCompact((previous) => {
-      save('montlok.workspace.market.compact.v2', String(!previous));
-      return !previous;
-    });
   const visiblePaths = openWorkspaceTab(paths, pathname);
-  const [inspectorOpen, setInspectorOpen] = useState(
-    () => saved('montlok.workspace.controls.v1') !== 'false',
-  );
-  useEffect(() => save('montlok.workspace.controls.v1', String(inspectorOpen)), [inspectorOpen]);
-
-  useEffect(() => {
-    setPaths((current) => openWorkspaceTab(current, pathname));
-  }, [pathname]);
+  useEffect(() => setPaths((current) => openWorkspaceTab(current, pathname)), [pathname]);
   useEffect(() => save(WORKSPACE_TABS_KEY, JSON.stringify(paths)), [paths]);
 
-  return (
-    <div
-      className={`quant-workspace quant-workspace-focus ${inspectorOpen ? 'inspector-open' : ''}`}
-    >
-      <div className="workspace-main">
-        <Splitter
-          orientation="vertical"
-          className="quant-workspace-splitter"
-          onResize={(sizes) => {
-            if (compact) return;
-            const next = resizedWorkspaceSplit(sizes);
-            if (next !== undefined) setSplit(next);
-          }}
-          onResizeEnd={(sizes) => {
-            if (compact) return;
-            const next = resizedWorkspaceSplit(sizes);
-            if (next === undefined) return;
-            setSplit(next);
-            save(WORKSPACE_SPLIT_KEY, String(next));
-          }}
-          onDraggerDoubleClick={() => {
-            setSplit(58);
-            save(WORKSPACE_SPLIT_KEY, '58');
-          }}
-        >
-          <Splitter.Panel
-            size={compact ? 56 : `${split}%`}
-            min={compact ? 56 : '28%'}
-            max={compact ? 56 : '65%'}
-            resizable={!compact}
-          >
-            <Suspense
-              fallback={<div className="workspace-loading">加载行情</div>}
-            >
-              <MarketDock compact={compact} onToggle={toggleMarket} />
-            </Suspense>
-          </Splitter.Panel>
-          <Splitter.Panel min="35%">
-            <section className="workspace-editor" aria-label="功能工作区">
-              <Tabs
-                className="workspace-route-tabs"
-                type="editable-card"
-                size="small"
-                hideAdd
-                tabBarExtraContent={
-                  <Button
-                    className="workspace-inspector-toggle"
-                    type={inspectorOpen ? 'default' : 'primary'}
-                    aria-expanded={inspectorOpen}
-                    aria-controls="workspace-strategy-controls"
-                    onClick={() => setInspectorOpen(!inspectorOpen)}
-                  >
-                    策略控制
-                  </Button>
-                }
-                activeKey={pathname}
-                onChange={(path) => history.push(path)}
-                onEdit={(key, action) => {
-                  if (action !== 'remove' || typeof key !== 'string') return;
-                  const next = closeWorkspaceTab(visiblePaths, key, pathname);
-                  setPaths(next.paths);
-                  if (next.active !== pathname) history.push(next.active);
-                }}
-                items={visiblePaths.map((path) => ({
-                  key: path,
-                  label: workspaceTabLabel(path),
-                  closable: !PINNED_WORKSPACE_TABS.includes(path),
-                }))}
-              />
-              <div className="workspace-route-content">{children}</div>
-            </section>
-          </Splitter.Panel>
-        </Splitter>
-      </div>
-      <aside id="workspace-strategy-controls" className="workspace-inspector" aria-label="策略控制">
-        <div className="panel-heading">
-          <strong>策略控制</strong>
-          <Button
-            className="workspace-inspector-toggle"
-            type="text"
-            onClick={() => setInspectorOpen(false)}
-          >
-            收起
-          </Button>
-        </div>
-        <StrategyRunPanel />
-      </aside>
-    </div>
-  );
+  const factory = (node: TabNode) => {
+    switch (node.getComponent()) {
+      case 'events':
+        return <Suspense fallback={<div className="workspace-loading">加载运行事件</div>}><EventBlotter/></Suspense>;
+      case 'market':
+        return <div className="workspace-main"><Suspense fallback={<div className="workspace-loading">加载行情</div>}>
+          <MarketDock compact={compact} onToggle={toggleMarket} />
+        </Suspense></div>;
+      case 'controls':
+        return <aside id="workspace-strategy-controls" className="workspace-inspector" aria-label="策略控制"><StrategyRunPanel /></aside>;
+      case 'workspace':
+        return <section className="workspace-editor" aria-label="功能工作区">
+          <Tabs className="workspace-route-tabs" type="editable-card" size="small" hideAdd
+            tabBarExtraContent={<Button onClick={() => model.doAction(Actions.selectTab('controls'))}>策略控制</Button>}
+            activeKey={pathname} onChange={(path) => history.push(path)}
+            onEdit={(key, action) => {
+              if (action !== 'remove' || typeof key !== 'string') return;
+              const next = closeWorkspaceTab(visiblePaths, key, pathname);
+              setPaths(next.paths);
+              if (next.active !== pathname) history.push(next.active);
+            }}
+            items={visiblePaths.map((path) => ({ key: path, label: workspaceTabLabel(path), closable: !PINNED_WORKSPACE_TABS.includes(path) }))}
+          />
+          <div className="workspace-route-content">{children}</div>
+        </section>;
+      default: return null;
+    }
+  };
+
+  return <div className="quant-workspace terminal-docking" aria-label="可停靠终端工作区">
+    <Layout model={model} factory={factory} realtimeResize={false} popoutURL="/popout.html"
+      onModelChange={(next: Model) => save(DOCKING_LAYOUT_KEY, JSON.stringify(next.toJson()))}
+    />
+  </div>;
 }

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "id": "operations-security",
+  "labelZh": "运维与安全",
+  "labelEn": "Operations and Security",
+  "contextBindings": ["account_id", "strategy_group_id", "run_id", "time_from_ns", "time_to_ns"],
+  "panels": [
+    { "id": "operations.services", "titleZh": "服务状态", "titleEn": "Service health", "capability": "operations.services", "dataset": "service_health", "fields": ["service.name", "service.status", "service.version", "service.uptime", "service.last_heartbeat", "service.queue_depth"], "conflateMs": 250, "minWidth": 560, "minHeight": 300 },
+    { "id": "operations.resources", "titleZh": "资源与延迟", "titleEn": "Resources and latency", "capability": "operations.resources", "dataset": "resource_metrics", "fields": ["node.cpu", "node.memory", "node.disk", "node.network_rtt", "gateway.p99", "projector.p99", "stream.client_count"], "conflateMs": 1000, "minWidth": 620, "minHeight": 320 },
+    { "id": "operations.alerts", "titleZh": "告警与调查", "titleEn": "Alerts and investigation", "capability": "operations.alerts", "dataset": "alerts", "fields": ["alert.severity", "alert.code", "alert.summary", "alert.detail", "event.occurred_at", "event.source", "correlation.id"], "conflateMs": 0, "minWidth": 720, "minHeight": 320 },
+    { "id": "operations.audit", "titleZh": "设备与操作审计", "titleEn": "Device and operation audit", "capability": "operations.audit", "dataset": "security_audit", "fields": ["device.id", "device.name", "device.last_seen", "operation.id", "operation.action", "operation.status", "principal.id"], "conflateMs": 0, "minWidth": 620, "minHeight": 320 }
+  ]
+}

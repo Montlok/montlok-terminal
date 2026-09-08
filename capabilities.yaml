@@ -1,0 +1,184 @@
+schemaVersion: 1
+capabilities:
+  - id: live.context
+    permission: viewer
+    webPanel: LiveContextPanel
+    qtPanel: LiveContextDock
+    contracts: ["GET /api/v2/bootstrap","RUN_STATE_CHANGED"]
+    states: [loading, live, stale, unavailable]
+    tests: [WEB-LIVE-001, QT-LIVE-001, CONTRACT-CONTEXT-001]
+  - id: live.market
+    permission: viewer
+    webPanel: MarketDock
+    qtPanel: MarketDock
+    contracts: ["MARKET_QUOTE","ORDER_BOOK_UPDATED","POSITION_UPDATED"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-MARKET-001, QT-MARKET-001, STREAM-CONFLATE-001]
+  - id: live.metrics
+    permission: viewer
+    webPanel: LiveMetricsPanel
+    qtPanel: MetricsDock
+    contracts: ["PNL_UPDATED","GET /api/v2/runs/{run_id}/snapshot"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-PNL-001, QT-PNL-001, CONTRACT-DECIMAL-001]
+  - id: live.universe
+    permission: viewer
+    webPanel: StrategyUniversePanel
+    qtPanel: UniverseDock
+    contracts: ["TARGET_POSITION_CHANGED","POSITION_UPDATED"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-UNIVERSE-001, QT-UNIVERSE-001]
+  - id: live.blotter
+    permission: viewer
+    webPanel: EventBlotterPanel
+    qtPanel: BlotterDock
+    contracts: ["GET /api/v2/events","EVENT"]
+    states: [loading, live, replaying, stale, empty, unavailable]
+    tests: [WEB-BLOTTER-001, QT-BLOTTER-001, STREAM-RECOVERY-001]
+  - id: live.controls
+    permission: operator
+    webPanel: StrategyRunPanel
+    qtPanel: StrategyControlDock
+    contracts: ["POST /api/v2/operations/prepare","POST /api/v2/operations/{operation_id}/execute","GET /api/v2/operations/{operation_id}"]
+    states: [ready, preparing, awaiting_confirmation, processing, succeeded, rejected, failed, unknown_but_queryable]
+    tests: [WEB-CONTROL-001, QT-CONTROL-001, OPERATION-IDEMPOTENCY-001]
+  - id: execution.orders
+    permission: viewer
+    webPanel: ExecutionOrdersPanel
+    qtPanel: ExecutionOrdersDock
+    contracts: ["ORDER_SUBMITTED","ORDER_ACCEPTED","ORDER_REJECTED","ROUTE_UPDATED","FILL_RECEIVED"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-EXEC-001, QT-EXEC-001, CONTRACT-ORDER-ROUTE-FILL-001]
+  - id: execution.timeline
+    permission: viewer
+    webPanel: CorrelationTimelinePanel
+    qtPanel: CorrelationTimelineDock
+    contracts: ["GET /api/v2/events","POST /api/v2/query"]
+    states: [loading, ready, partial, empty, unavailable]
+    tests: [WEB-TIMELINE-001, QT-TIMELINE-001, CORRELATION-001]
+  - id: research.catalog
+    permission: viewer
+    webPanel: ResearchCatalogPanel
+    qtPanel: ResearchCatalogDock
+    contracts: ["GET/POST /api/v2/artifacts","GET/POST /api/v2/model-releases"]
+    states: [loading, ready, empty, unavailable]
+    tests: [WEB-RESEARCH-001, QT-RESEARCH-001]
+  - id: research.release
+    permission: operator
+    webPanel: ReleasePipelinePanel
+    qtPanel: ReleasePipelineDock
+    contracts: ["GET/POST /api/v2/artifacts","GET/POST /api/v2/model-releases","OPERATION_RECEIPT_UPDATED"]
+    states: [draft, validated, published, loading_on_node, active, failed]
+    tests: [WEB-RELEASE-001, QT-RELEASE-001, RELEASE-IMMUTABLE-001]
+  - id: portfolio.attribution
+    permission: viewer
+    webPanel: PortfolioAttributionPanel
+    qtPanel: PortfolioAttributionDock
+    contracts: ["POST /api/v2/query","PNL_UPDATED"]
+    states: [loading, ready, partial, empty, unavailable]
+    tests: [WEB-ATTRIBUTION-001, QT-ATTRIBUTION-001]
+  - id: portfolio.risk
+    permission: viewer
+    webPanel: RiskRulesPanel
+    qtPanel: RiskRulesDock
+    contracts: ["RISK_DECISION","POST /api/v2/query"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-RISK-001, QT-RISK-001]
+  - id: market.quality
+    permission: viewer
+    webPanel: DataQualityPanel
+    qtPanel: DataQualityDock
+    contracts: ["HEARTBEAT","SEQUENCE_GAP","POST /api/v2/query"]
+    states: [loading, live, stale, degraded, unavailable]
+    tests: [WEB-QUALITY-001, QT-QUALITY-001, STREAM-LOSS-001]
+  - id: operations.services
+    permission: viewer
+    webPanel: ServiceHealthPanel
+    qtPanel: ServiceHealthDock
+    contracts: ["GET /api/v2/bootstrap","ALERT_RAISED","ALERT_CLEARED"]
+    states: [loading, healthy, degraded, unavailable]
+    tests: [WEB-OPS-001, QT-OPS-001]
+  - id: operations.audit
+    permission: admin
+    webPanel: SecurityAuditPanel
+    qtPanel: SecurityAuditDock
+    contracts: ["GET /api/v2/devices","DELETE /api/v2/devices/{device_id}","GET /api/v2/events"]
+    states: [loading, ready, empty, unavailable]
+    tests: [WEB-AUDIT-001, QT-AUDIT-001, DEVICE-REVOKE-001]
+  - id: execution.market
+    permission: viewer
+    webPanel: ExecutionMarketPanel
+    qtPanel: ExecutionMarketDock
+    contracts: ["POST /api/v2/query", "MARKET_QUOTE", "FILL_RECEIVED"]
+    states: [loading, ready, partial, empty, unavailable]
+    tests: [WEB-EXEC-MARKET-001, QT-EXEC-MARKET-001]
+  - id: execution.detail
+    permission: viewer
+    webPanel: RecordDetails
+    qtPanel: RecordDetailsDock
+    contracts: ["GET /api/v2/events"]
+    states: [loading, ready, empty, unavailable]
+    tests: [WEB-DETAIL-001, QT-DETAIL-001]
+  - id: market.universe
+    permission: viewer
+    webPanel: MarketUniversePanel
+    qtPanel: MarketUniverseDock
+    contracts: ["GET /api/v2/catalog"]
+    states: [loading, ready, empty, unavailable]
+    tests: [WEB-INSTRUMENTS-001, QT-INSTRUMENTS-001]
+  - id: market.chart
+    permission: viewer
+    webPanel: MarketDock
+    qtPanel: MarketChartDock
+    contracts: ["POST /api/v2/query", "MARKET_QUOTE"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-CHART-001, QT-CHART-001]
+  - id: market.microstructure
+    permission: viewer
+    webPanel: DepthChart
+    qtPanel: DepthChartDock
+    contracts: ["ORDER_BOOK_UPDATED", "MARKET_QUOTE"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-DEPTH-001, QT-DEPTH-001]
+  - id: operations.resources
+    permission: viewer
+    webPanel: ResourceMetricsPanel
+    qtPanel: ResourceMetricsDock
+    contracts: ["POST /api/v2/query"]
+    states: [loading, ready, stale, unavailable]
+    tests: [WEB-RESOURCES-001, QT-RESOURCES-001]
+  - id: operations.alerts
+    permission: viewer
+    webPanel: AlertTimelinePanel
+    qtPanel: AlertTimelineDock
+    contracts: ["ALERT_RAISED", "ALERT_CLEARED"]
+    states: [loading, ready, empty, unavailable]
+    tests: [WEB-ALERTS-001, QT-ALERTS-001]
+  - id: portfolio.summary
+    permission: viewer
+    webPanel: Portfolio
+    qtPanel: PortfolioSummaryDock
+    contracts: ["PNL_UPDATED", "POST /api/v2/query"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-PORTFOLIO-001, QT-PORTFOLIO-001]
+  - id: portfolio.exposure
+    permission: viewer
+    webPanel: PortfolioBars
+    qtPanel: ExposureDock
+    contracts: ["POSITION_UPDATED", "TARGET_POSITION_CHANGED"]
+    states: [loading, live, stale, empty, unavailable]
+    tests: [WEB-EXPOSURE-001, QT-EXPOSURE-001]
+  - id: research.evidence
+    permission: viewer
+    webPanel: ModelReleases
+    qtPanel: ResearchEvidenceDock
+    contracts: ["GET /api/v2/model-releases", "GET /api/v2/artifacts"]
+    states: [loading, ready, partial, empty, unavailable]
+    tests: [WEB-EVIDENCE-001, QT-EVIDENCE-001]
+  - id: research.lineage
+    permission: viewer
+    webPanel: ArtifactLineagePanel
+    qtPanel: ArtifactLineageDock
+    contracts: ["GET /api/v2/model-releases", "GET /api/v2/artifacts"]
+    states: [loading, ready, partial, empty, unavailable]
+    tests: [WEB-LINEAGE-001, QT-LINEAGE-001]

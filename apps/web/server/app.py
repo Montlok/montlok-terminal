@@ -105,6 +105,11 @@ class Operator:
         return web.json_response(await self.watch_market.read(parse_symbols(request.query.get('instruments',''))))
 
     def session(self, request, write=False):
+        bridge_identity = request.get('gateway_identity')
+        if bridge_identity:
+            session_id = bridge_identity['id']
+            self.sessions[session_id] = bridge_identity
+            return session_id
         public = request.headers.get("X-Operator-Public") == "1"
         session_id = request.cookies.get("__Host-operator_session" if public else "operator_session")
         entry = self.sessions.get(session_id)
@@ -990,6 +995,16 @@ class Operator:
             if request.headers.get("X-Operator-Public") == "1" and (not self.auth or request.headers.get("X-Forwarded-Proto") != "https"):
                 raise web.HTTPServiceUnavailable(text="HTTPS 登录入口尚未就绪")
             try:
+                if request.headers.get('X-Montlok-Bridge-Signature'):
+                    verifier = getattr(self, '_gateway_identity', None)
+                    if verifier is None:
+                        secret = getattr(self.args, 'gateway_secret_file', None)
+                        if not secret or not self.args.auth_file:
+                            raise web.HTTPUnauthorized(text='原生终端连接尚未配置')
+                        from gateway_identity import GatewayIdentity
+                        verifier = self._gateway_identity = GatewayIdentity(secret, self.args.auth_file)
+                    request['gateway_identity'] = verifier.verify(request.method, request.raw_path, request.headers,
+                                                                  await request.read(), request.remote)
                 response = await handler(request)
                 if request.path.startswith("/api/"):
                     response.headers["Cache-Control"] = "no-store"
@@ -1048,6 +1063,7 @@ if __name__ == "__main__":
     parser.add_argument("--static-dir", type=Path, required=True)
     parser.add_argument("--paper-run", type=Path)
     parser.add_argument("--group-socket", type=Path, help="UNIX socket of the independent strategy group supervisor")
+    parser.add_argument("--gateway-secret-file", type=Path, help="Private local connection key shared with the Rust gateway")
     parser.add_argument("--paper-bridge", type=Path)
     parser.add_argument("--live-only", action="store_true")
     parser.add_argument("--node", required=True)

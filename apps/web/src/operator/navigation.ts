@@ -135,7 +135,7 @@ export const navigation: NavigationSection[] = [
       ]),
       group('/strategies/resources', '策略资源', [
         ['artifacts', '模型与因子', './Artifacts'],
-        ['models', '模型发布', './Models'],
+        ['models', '模型发布', './ModelReleases'],
       ]),
       group('/strategies/research', '历史', [
         ['history', '运行历史', './ResearchHistory'],

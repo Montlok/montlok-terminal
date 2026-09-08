@@ -30,7 +30,7 @@ export function strategyInstruments(strategy?: Row): StrategyInstrument[] {
     result.set(id, {
       ...row,
       instrument: id,
-      quantity: String(row.quantity ?? '0'),
+      quantity: String(row.quantity ?? ''),
       weight: finite(row.weight),
       notional: finite(row.notional),
     });
@@ -41,7 +41,7 @@ export function strategyInstruments(strategy?: Row): StrategyInstrument[] {
     result.set(id, {
       ...result.get(id),
       instrument: id,
-      quantity: String(row.quantity ?? '0'),
+      quantity: String(row.quantity ?? ''),
       notional: finite(row.notional),
       sector: row.sector || result.get(id)?.sector,
     });
@@ -49,7 +49,7 @@ export function strategyInstruments(strategy?: Row): StrategyInstrument[] {
   for (const row of strategy?.orders || []) {
     const id = symbol(row.instrument);
     if (id && !result.has(id))
-      result.set(id, { instrument: id, quantity: '0' });
+      result.set(id, { instrument: id, quantity: '' });
   }
   return [...result.values()].sort(
     (a, b) =>

@@ -1,0 +1,343 @@
+syntax = "proto3";
+
+package montlok.v2;
+
+message DecimalValue {
+  string value = 1;
+}
+
+message TerminalContext {
+  string account_id = 1;
+  string strategy_group_id = 2;
+  string run_id = 3;
+  string instrument_id = 4;
+  string model_release_id = 5;
+  string signal_version = 6;
+  int64 time_from_ns = 7;
+  int64 time_to_ns = 8;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  RUN_STATE_CHANGED = 1;
+  MARKET_QUOTE = 2;
+  ORDER_BOOK_UPDATED = 3;
+  MODEL_INFERENCE_COMPLETED = 4;
+  SIGNAL_GENERATED = 5;
+  TARGET_POSITION_CHANGED = 6;
+  RISK_DECISION = 7;
+  ORDER_SUBMITTED = 8;
+  ORDER_ACCEPTED = 9;
+  ORDER_REJECTED = 10;
+  ORDER_CANCEL_REQUESTED = 11;
+  ORDER_CANCELED = 12;
+  ROUTE_UPDATED = 13;
+  FILL_RECEIVED = 14;
+  POSITION_UPDATED = 15;
+  PNL_UPDATED = 16;
+  ALERT_RAISED = 17;
+  ALERT_CLEARED = 18;
+  OPERATION_RECEIPT_UPDATED = 19;
+}
+
+enum RunState {
+  RUN_STATE_UNSPECIFIED = 0;
+  RUN_PREPARING = 1;
+  RUN_RUNNING = 2;
+  RUN_PAUSED = 3;
+  RUN_REDUCING = 4;
+  RUN_STOPPING = 5;
+  RUN_STOPPED = 6;
+  RUN_FAILED = 7;
+}
+
+enum Side {
+  SIDE_UNSPECIFIED = 0;
+  BUY = 1;
+  SELL = 2;
+}
+
+enum OrderState {
+  ORDER_STATE_UNSPECIFIED = 0;
+  ORDER_PENDING_SUBMIT = 1;
+  ORDER_ACCEPTED_BY_VENUE = 2;
+  ORDER_PARTIALLY_FILLED = 3;
+  ORDER_FILLED = 4;
+  ORDER_PENDING_CANCEL = 5;
+  ORDER_CANCELED_BY_VENUE = 6;
+  ORDER_REJECTED_BY_VENUE = 7;
+  ORDER_EXPIRED = 8;
+}
+
+enum RiskOutcome {
+  RISK_OUTCOME_UNSPECIFIED = 0;
+  RISK_ACCEPTED = 1;
+  RISK_CLIPPED = 2;
+  RISK_REJECTED = 3;
+}
+
+message RunStateChanged {
+  RunState previous = 1;
+  RunState current = 2;
+  string reason = 3;
+  string node_id = 4;
+}
+
+message MarketQuote {
+  DecimalValue bid_price = 1;
+  DecimalValue bid_size = 2;
+  DecimalValue ask_price = 3;
+  DecimalValue ask_size = 4;
+  DecimalValue last_price = 5;
+  int64 venue_time_ns = 6;
+}
+
+message BookLevel {
+  DecimalValue price = 1;
+  DecimalValue size = 2;
+  uint32 count = 3;
+}
+
+message OrderBookUpdated {
+  repeated BookLevel bids = 1;
+  repeated BookLevel asks = 2;
+  uint64 venue_sequence = 3;
+  int64 venue_time_ns = 4;
+}
+
+message ModelInferenceCompleted {
+  string model_inference_id = 1;
+  string model_release_id = 2;
+  string model_hash = 3;
+  string feature_version = 4;
+  DecimalValue prediction = 5;
+  uint64 latency_ns = 6;
+  int64 input_as_of_ns = 7;
+}
+
+message SignalGenerated {
+  string signal_id = 1;
+  string model_inference_id = 2;
+  string signal_version = 3;
+  DecimalValue value = 4;
+  DecimalValue confidence = 5;
+}
+
+message TargetPositionChanged {
+  string decision_id = 1;
+  string signal_id = 2;
+  DecimalValue target_quantity = 3;
+  DecimalValue target_weight = 4;
+  DecimalValue previous_quantity = 5;
+}
+
+message RiskDecision {
+  string risk_decision_id = 1;
+  string decision_id = 2;
+  RiskOutcome outcome = 3;
+  string rule_id = 4;
+  string message = 5;
+  DecimalValue requested_quantity = 6;
+  DecimalValue approved_quantity = 7;
+}
+
+message OrderEvent {
+  string operation_id = 1;
+  string risk_decision_id = 2;
+  string client_order_id = 3;
+  string venue_order_id = 4;
+  Side side = 5;
+  string order_type = 6;
+  DecimalValue quantity = 7;
+  DecimalValue price = 8;
+  OrderState state = 9;
+  string reject_code = 10;
+  string reject_reason = 11;
+}
+
+message RouteUpdated {
+  string route_id = 1;
+  string client_order_id = 2;
+  string venue_order_id = 3;
+  string venue = 4;
+  OrderState state = 5;
+  uint64 venue_sequence = 6;
+}
+
+message FillReceived {
+  string trade_id = 1;
+  string route_id = 2;
+  string venue_order_id = 3;
+  Side side = 4;
+  DecimalValue quantity = 5;
+  DecimalValue price = 6;
+  DecimalValue fee = 7;
+  string fee_currency = 8;
+  string liquidity = 9;
+  int64 venue_time_ns = 10;
+}
+
+message PositionUpdated {
+  string position_event_id = 1;
+  string trade_id = 2;
+  DecimalValue quantity = 3;
+  DecimalValue average_price = 4;
+  DecimalValue market_value = 5;
+  DecimalValue target_quantity = 6;
+  DecimalValue target_weight = 7;
+  DecimalValue actual_weight = 8;
+}
+
+message PnlUpdated {
+  string pnl_event_id = 1;
+  string position_event_id = 2;
+  DecimalValue nav = 3;
+  DecimalValue realized_pnl = 4;
+  DecimalValue unrealized_pnl = 5;
+  DecimalValue fees = 6;
+  DecimalValue drawdown_percent = 7;
+  int64 valuation_at_ns = 8;
+  string market_source = 9;
+  string accounting_basis = 10;
+  string calculation_version = 11;
+  uint64 source_event_seq = 12;
+}
+
+message AlertChanged {
+  string alert_id = 1;
+  string severity = 2;
+  string code = 3;
+  string summary = 4;
+  string detail = 5;
+  bool active = 6;
+}
+
+message OperationReceiptUpdated {
+  string operation_id = 1;
+  string status = 2;
+  string action = 3;
+  string reason = 4;
+  int64 expires_at_ns = 5;
+}
+
+message EventEnvelope {
+  uint32 schema_version = 1;
+  string stream = 2;
+  uint64 stream_seq = 3;
+  uint64 snapshot_seq = 4;
+  string event_id = 5;
+  EventType event_type = 6;
+  int64 occurred_at_ns = 7;
+  int64 received_at_ns = 8;
+  string account_id = 9;
+  string strategy_group_id = 10;
+  string run_id = 11;
+  string instrument_id = 12;
+  string correlation_id = 13;
+  string causation_id = 14;
+  string source = 15;
+  // Lossless original source fields retained for execution investigation.
+  bytes source_payload_json = 16;
+  oneof payload {
+    RunStateChanged run_state_changed = 30;
+    MarketQuote market_quote = 31;
+    OrderBookUpdated order_book_updated = 32;
+    ModelInferenceCompleted model_inference_completed = 33;
+    SignalGenerated signal_generated = 34;
+    TargetPositionChanged target_position_changed = 35;
+    RiskDecision risk_decision = 36;
+    OrderEvent order_event = 37;
+    RouteUpdated route_updated = 38;
+    FillReceived fill_received = 39;
+    PositionUpdated position_updated = 40;
+    PnlUpdated pnl_updated = 41;
+    AlertChanged alert_changed = 42;
+    OperationReceiptUpdated operation_receipt_updated = 43;
+  }
+}
+
+message ResumePosition {
+  string stream = 1;
+  uint64 last_stream_seq = 2;
+}
+
+message ClientHello {
+  uint32 protocol_version = 1;
+  string device_id = 2;
+  repeated ResumePosition resume_positions = 3;
+}
+
+message Subscribe {
+  string request_id = 1;
+  repeated string topics = 2;
+  TerminalContext context = 3;
+  repeated string fields = 4;
+  uint32 conflate_ms = 5;
+}
+
+message Unsubscribe {
+  string subscription_id = 1;
+}
+
+message RequestSnapshot {
+  string subscription_id = 1;
+}
+
+message ClientMessage {
+  oneof message {
+    ClientHello hello = 1;
+    Subscribe subscribe = 2;
+    Unsubscribe unsubscribe = 3;
+    RequestSnapshot request_snapshot = 4;
+  }
+}
+
+message SnapshotBegin {
+  string subscription_id = 1;
+  uint64 snapshot_seq = 2;
+  bytes arrow_schema = 3;
+  repeated ResumePosition watermarks = 4;
+}
+
+message SnapshotBatch {
+  string subscription_id = 1;
+  bytes arrow_ipc = 2;
+  uint32 row_count = 3;
+}
+
+message SnapshotEnd {
+  string subscription_id = 1;
+  uint64 snapshot_seq = 2;
+  uint64 last_stream_seq = 3;
+  repeated ResumePosition watermarks = 4;
+}
+
+message Heartbeat {
+  int64 server_time_ns = 1;
+  map<string, uint64> last_stream_seq = 2;
+}
+
+message SequenceGap {
+  string stream = 1;
+  uint64 expected = 2;
+  uint64 received = 3;
+  bool replay_available = 4;
+}
+
+message StreamError {
+  string code = 1;
+  bool retryable = 2;
+  string detail = 3;
+}
+
+message ServerMessage {
+  oneof message {
+    SnapshotBegin snapshot_begin = 1;
+    SnapshotBatch snapshot_batch = 2;
+    SnapshotEnd snapshot_end = 3;
+    EventEnvelope event = 4;
+    Heartbeat heartbeat = 5;
+    SequenceGap sequence_gap = 6;
+    StreamError error = 7;
+  }
+}
