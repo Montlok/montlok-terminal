@@ -12,6 +12,7 @@ public:
     QVariant headerData(int section,Qt::Orientation orientation,int role)const override;
     void append(const QList<QJsonObject> &events);
     void replace(const QList<QJsonObject> &events);
+    QJsonObject eventAt(int row)const{return row>=0&&row<m_events.size()?m_events.at(row):QJsonObject{};}
 private:
     QList<QJsonObject> m_events;
 };

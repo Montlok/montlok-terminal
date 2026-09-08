@@ -9,10 +9,16 @@ import {
 
 describe('observed portfolio analytics', () => {
   it('opens the portfolio route by default and keeps the separate exchange terminal available', () => {
-    expect(routes.find((route) => route.path === '/')).toMatchObject({
+    expect(
+      routes
+        .find((route) => route.path === '/')
+        ?.routes?.find((route) => route.path === '/'),
+    ).toMatchObject({
       redirect: '/workspace/portfolio/overview',
     });
-    const workspace = routes.find((route) => route.path === '/workspace');
+    const workspace = routes
+      .find((route) => route.path === '/')
+      ?.routes?.find((route) => route.path === '/workspace');
     expect(JSON.stringify(workspace)).toContain('"component":"./Portfolio"');
     expect(JSON.stringify(routes)).toContain('/trade/spot/terminal');
   });

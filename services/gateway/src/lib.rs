@@ -85,6 +85,7 @@ mod journal;
 pub struct EventHub {
     pub metrics: Arc<telemetry::Metrics>,
     journal: Arc<Mutex<journal::Journal>>,
+    read_path: Option<PathBuf>,
     tx: broadcast::Sender<v2::EventEnvelope>,
 }
 
@@ -99,13 +100,16 @@ impl EventHub {
         Self::with_journal(journal::Journal::memory().expect("in-memory replay journal"))
     }
     pub fn open(path: &Path) -> Result<Self> {
-        Ok(Self::with_journal(journal::Journal::open(path)?))
+        let mut hub = Self::with_journal(journal::Journal::open(path)?);
+        hub.read_path = Some(path.to_owned());
+        Ok(hub)
     }
     fn with_journal(journal: journal::Journal) -> Self {
         let (tx, _) = broadcast::channel(8_192);
         Self {
             metrics: Arc::new(telemetry::Metrics::default()),
             journal: Arc::new(Mutex::new(journal)),
+            read_path: None,
             tx,
         }
     }
@@ -197,6 +201,26 @@ impl EventHub {
     pub fn subscribe(&self) -> broadcast::Receiver<v2::EventEnvelope> {
         self.tx.subscribe()
     }
+    pub async fn related(
+        &self,
+        id: String,
+        limit: usize,
+    ) -> Result<Option<(Vec<v2::EventEnvelope>, bool)>, ApiError> {
+        let journal = self.journal.clone();
+        let read_path = self.read_path.clone();
+        tokio::task::spawn_blocking(move || {
+            if let Some(path) = read_path {
+                return journal::Journal::related_readonly(&path, &id, limit);
+            }
+            journal
+                .lock()
+                .map_err(|_| anyhow::anyhow!("event journal lock poisoned"))?
+                .related(&id, limit)
+        })
+        .await
+        .map_err(|e| ApiError::Internal(e.into()))?
+        .map_err(ApiError::Internal)
+    }
 }
 
 #[derive(Clone)]
@@ -244,6 +268,7 @@ pub fn router(state: GatewayState) -> Router {
         .route("/api/v2/bootstrap", get(bootstrap))
         .route("/api/v2/runs/{run_id}/snapshot", get(run_snapshot))
         .route("/api/v2/events", get(events))
+        .route("/api/v2/events/{event_id}/related", get(related_events))
         .route("/api/v2/query", post(query))
         .route("/api/v2/workspaces", get(workspaces))
         .route("/api/v2/workspaces/{workspace_id}", put(save_workspace))
@@ -431,6 +456,29 @@ struct EventQuery {
 
 fn default_event_limit() -> usize {
     500
+}
+
+#[derive(Deserialize)]
+struct RelatedQuery {
+    #[serde(default = "default_event_limit")]
+    limit: usize,
+}
+
+async fn related_events(
+    State(state): State<GatewayState>,
+    AxumPath(id): AxumPath<String>,
+    Query(query): Query<RelatedQuery>,
+) -> Result<Json<Value>, ApiError> {
+    use base64::Engine;
+    if id.len() > 128 || query.limit == 0 || query.limit > 2048 {
+        return Err(ApiError::BadRequest("事件编号或查询范围无效".into()));
+    }
+    let Some((events, truncated)) = state.events.related(id, query.limit).await? else {
+        return Err(ApiError::NotFound("所选事件尚未进入历史索引".into()));
+    };
+    Ok(Json(
+        json!({"encoding":"protobuf-base64", "events":events.iter().map(|event|base64::engine::general_purpose::STANDARD.encode(event.encode_to_vec())).collect::<Vec<_>>(),"truncated":truncated}),
+    ))
 }
 
 async fn events(

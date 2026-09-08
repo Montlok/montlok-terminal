@@ -12,7 +12,11 @@ import {
   chartCrosshairFormatter,
   chartTickFormatter,
 } from './chartTime';
-import { orderedPoints, type TimePoint } from './resultChartModel';
+import {
+  appendedPoints,
+  orderedPoints,
+  type TimePoint,
+} from './resultChartModel';
 import './resultCharts.css';
 
 export const TimeSeriesChart = memo(function TimeSeriesChart({
@@ -30,6 +34,7 @@ export const TimeSeriesChart = memo(function TimeSeriesChart({
   const chart = useRef<IChartApi | undefined>(undefined);
   const series = useRef<ISeriesApi<'Line'> | undefined>(undefined);
   const previous = useRef<{ first?: number; last?: number }>({});
+  const priorPoints = useRef<TimePoint[]>([]);
   const data = useMemo(() => orderedPoints(points), [points]);
   useEffect(() => {
     if (!container.current) return;
@@ -66,6 +71,7 @@ export const TimeSeriesChart = memo(function TimeSeriesChart({
       priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
     });
     previous.current = {};
+    priorPoints.current = [];
     return () => {
       instance.remove();
       chart.current = undefined;
@@ -74,9 +80,15 @@ export const TimeSeriesChart = memo(function TimeSeriesChart({
   }, [color]);
   useEffect(() => {
     series.current?.applyOptions({ pointMarkersVisible: data.length <= 40 });
-    series.current?.setData(
-      data.map((point) => ({ ...point, time: point.time as UTCTimestamp })),
-    );
+    const updates = appendedPoints(priorPoints.current, data);
+    if (updates)
+      for (const point of updates)
+        series.current?.update({ ...point, time: point.time as UTCTimestamp });
+    else
+      series.current?.setData(
+        data.map((point) => ({ ...point, time: point.time as UTCTimestamp })),
+      );
+    priorPoints.current = data;
     const first = data[0]?.time;
     const last = data.at(-1)?.time;
     if (

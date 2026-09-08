@@ -1,0 +1,148 @@
+.terminal-shell {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+  background: #0e1419;
+  color: #e6e8eb;
+}
+.terminal-shell.terminal-nav-collapsed {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+.terminal-shell-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-bottom: 1px solid #28333d;
+  background: #10161b;
+  padding: 0 12px;
+  gap: 20px;
+}
+.terminal-brand {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.4px;
+  color: #e6eaf0 !important;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.terminal-shell-header > nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  height: 100%;
+  align-items: stretch;
+}
+.terminal-shell-header > nav > a {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 2px solid transparent;
+  color: #94a3b1;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.terminal-shell-header > nav > a[aria-current] {
+  color: #e3eaf2;
+  background: #182b3d;
+  border-bottom-color: #4498f7;
+}
+.terminal-shell-header .header-status {
+  margin-left: auto;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.terminal-shell-header .header-account-select {
+  width: 180px;
+}
+.terminal-shell-header .environment {
+  color: #aab8c6;
+}
+.terminal-navigation {
+  min-height: 0;
+  overflow: auto;
+  border-right: 1px solid #28333d;
+  background: #10161b;
+}
+.terminal-nav-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 34px;
+  padding: 0 8px;
+  border-bottom: 1px solid #222d37;
+  font-size: 12px;
+}
+.terminal-navigation details {
+  border-bottom: 1px solid #202a33;
+  padding: 5px 0;
+  font-size: 12px;
+}
+.terminal-navigation summary {
+  padding: 7px 12px;
+  cursor: pointer;
+  color: #aab6c3;
+}
+.terminal-navigation nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.terminal-navigation nav a {
+  display: block;
+  padding: 8px 12px 8px 25px;
+  font-size: 12px;
+  color: #95a4b3;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.terminal-navigation nav a[aria-current] {
+  color: #dbe9ff;
+  background: #163354;
+  border-left-color: #4498f7;
+}
+.terminal-navigation nav a:hover {
+  background: #1b2936;
+}
+.terminal-shell > .operator-root:has(> .quant-workspace) {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.terminal-shell a:focus-visible,
+.terminal-shell summary:focus-visible {
+  outline: 1px solid #4498f7;
+  outline-offset: -2px;
+}
+@media (max-width: 1450px) {
+  .terminal-shell-header {
+    gap: 12px;
+  }
+  .terminal-shell-header > nav > a {
+    padding: 0 8px;
+  }
+  .terminal-shell-header .header-status {
+    gap: 6px;
+  }
+  .terminal-shell-header .header-account-select {
+    width: 158px;
+  }
+}
+@media (max-width: 1050px) {
+  .terminal-shell {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+  .terminal-navigation details,
+  .terminal-nav-title strong {
+    display: none;
+  }
+  .terminal-shell-header > nav > a {
+    padding: 0 5px;
+  }
+  .terminal-shell-header .header-clock {
+    display: none;
+  }
+}

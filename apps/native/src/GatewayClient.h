@@ -23,6 +23,7 @@ public:
     void executeOperation(const QString &operationId, const QString &confirmationHash);
     void queryOperation(const QString &operationId);
     void getLegacy(const QString &path,const QString &tag);
+    void queryRelated(const QString &eventId);
     void postLegacy(const QString &path,const QJsonObject &body,const QString &tag);
 
 Q_SIGNALS:
@@ -36,6 +37,7 @@ Q_SIGNALS:
     void operationReceipt(const QJsonObject &receipt);
     void requestFailed(const QString &operation, const QString &detail);
     void datasetReceived(const QString &tag,const QJsonValue &value);
+    void relatedReceived(const QString &eventId,const QList<QJsonObject> &events,bool truncated);
 
 private:
     QNetworkRequest requestFor(const QString &path, const QByteArray &method="GET", const QByteArray &body={}) const;
@@ -73,4 +75,5 @@ private:
     QHash<QString, QJsonObject> m_pendingMarketEvents;
     quint64 m_conflatedCount = 0;
     QTimer m_frameTimer;
+    QString m_observationScope;
 };

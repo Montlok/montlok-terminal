@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Montlok Web Terminal for live quantitative operations and execution investigation",
-  "repository": "https://github.com/KeikaJames/montlok-terminal",
+  "repository": "https://github.com/Montlok/montlok-terminal",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "analyze": "cross-env ANALYZE=1 max build",

@@ -2,7 +2,7 @@
 
 Montlok Terminal is an open-source, institutional-style terminal for operating,
 investigating, and publishing systematic trading workloads. It provides two
-first-class clients over one typed data and control plane:
+clients over one typed data and control plane. The v2 migration is in progress:
 
 - `apps/web`: the production React terminal, migrated with its existing Git
   history and complete operator capabilities.
@@ -32,7 +32,14 @@ The Web and native clients expose the same six logical workspaces:
 
 `capabilities.yaml` is the machine-readable parity contract. A business
 capability is complete only when both clients expose the same fields, actions,
-states, and receipts.
+states, and receipts. Workspace and capability declarations describe the target
+contract; they are not completion flags. Existing Web business forms remain
+available while specialized native panels are implemented.
+
+The Web shell uses one dockable tab layer and a keyboard-searchable function
+catalog. Both clients can inspect a selected event through the Rust indexed
+order/route/fill history service. See [Execution detail](docs/EXECUTION_DETAIL.md)
+for scope, precision, recovery and bounded-query semantics.
 
 ## Development
 

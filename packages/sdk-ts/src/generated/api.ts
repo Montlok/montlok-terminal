@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v2/events/{event_id}/related": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Indexed order, route, fill, position and PnL history for the selected event */
+        get: operations["getRelatedEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/device/authorizations": {
         parameters: {
             query?: never;
@@ -556,6 +573,42 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getRelatedEvents: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scope-isolated history; timestamps and Decimal values retained in Protobuf */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        encoding: "protobuf-base64";
+                        events: string[];
+                        truncated: boolean;
+                    };
+                };
+            };
+            /** @description Event has not entered the history index */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     createDeviceAuthorization: {
         parameters: {
             query?: never;

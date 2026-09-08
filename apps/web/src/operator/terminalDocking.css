@@ -1,5 +1,7 @@
 .terminal-docking {
   position: relative;
+  display: flex;
+  flex-direction: column;
   --color-background: #0b0f14;
   --color-base: #10161d;
   --color-1: #10161d;
@@ -11,18 +13,158 @@
   --color-drag1: #2f81f766;
   --color-drag2: #2f81f7;
 }
-.terminal-docking .flexlayout__layout { background: var(--op-bg); }
-.terminal-docking .flexlayout__tab { background: var(--op-panel); overflow: hidden; }
-.terminal-docking .flexlayout__tabset_tabbar_outer { background: #10161d; border-bottom: 1px solid #222d39; }
-.terminal-docking .flexlayout__tab_button { border-radius: 0; padding: 5px 10px; font-size: 12px; }
-.terminal-docking .flexlayout__tab_button--selected { background: #142b46; border-bottom: 2px solid #4498f7; }
-.terminal-docking .flexlayout__splitter { background: #222d39; }
-.terminal-docking .flexlayout__splitter:hover { background: #4498f7; }
-.terminal-docking .workspace-inspector { display: block; position: static; width: 100%; height: 100%; border: 0; box-shadow: none; overflow: auto; }
-.terminal-docking .workspace-main, .terminal-docking .workspace-editor { height: 100%; min-height: 0; }
-.terminal-docking .workspace-route-tabs { padding: 0 6px; }
-.terminal-docking .workspace-route-tabs .ant-tabs-nav { min-height: 32px; }
-.terminal-docking .flexlayout__tabset-selected { outline: none; }
-.terminal-docking .flexlayout__tabset-maximized { background: #10161d; }
-.terminal-docking .flexlayout__tab_toolbar_button { color: #9aa7b5; }
-.terminal-docking .flexlayout__tab_button:focus-visible { outline: 1px solid #4498f7; outline-offset: -2px; }
+.terminal-docking .flexlayout__layout {
+  background: var(--op-bg);
+}
+.terminal-docking .flexlayout__tab {
+  background: var(--op-panel);
+  overflow: hidden;
+}
+.terminal-docking .flexlayout__tabset_tabbar_outer {
+  background: #10161d;
+  border-bottom: 1px solid #222d39;
+}
+.terminal-docking .flexlayout__tab_button {
+  border-radius: 0;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.terminal-docking .flexlayout__tab_button--selected {
+  background: #142b46;
+  border-bottom: 2px solid #4498f7;
+}
+.terminal-docking .flexlayout__splitter {
+  background: #222d39;
+}
+.terminal-docking .flexlayout__splitter:hover {
+  background: #4498f7;
+}
+.terminal-docking .workspace-inspector {
+  display: block;
+  position: static;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  box-shadow: none;
+  overflow: auto;
+}
+.terminal-docking .workspace-main,
+.terminal-docking .workspace-editor {
+  height: 100%;
+  min-height: 0;
+}
+.terminal-docking .workspace-route-tabs {
+  padding: 0 6px;
+}
+.terminal-docking .workspace-route-tabs .ant-tabs-nav {
+  min-height: 32px;
+}
+.terminal-docking .flexlayout__tabset-selected {
+  outline: none;
+}
+.terminal-docking .flexlayout__tabset-maximized {
+  background: #10161d;
+}
+.terminal-docking .flexlayout__tab_toolbar_button {
+  color: #9aa7b5;
+}
+.terminal-docking .flexlayout__tab_button:focus-visible {
+  outline: 1px solid #4498f7;
+  outline-offset: -2px;
+}
+.terminal-docking-surface {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.terminal-workspace-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 34px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #29333c;
+  padding: 0 6px;
+  background: #10161b;
+  overflow: auto;
+}
+.terminal-workspace-bar nav {
+  display: flex;
+  height: 100%;
+  flex-shrink: 0;
+  margin-right: auto;
+}
+.terminal-workspace-bar nav button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #a9b5c1;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.terminal-workspace-bar nav button[aria-current] {
+  color: #e3eaf3;
+  background: #172738;
+  border-bottom-color: #4498f7;
+}
+.terminal-workspace-bar nav button:hover {
+  color: #fff;
+  background: #1b2631;
+}
+.terminal-workspace-bar .ant-btn {
+  border-radius: 2px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.terminal-command-trigger kbd {
+  color: #99a5b0;
+  font:
+    10px ui-monospace,
+    monospace;
+  margin-left: 15px;
+}
+.terminal-command-results {
+  max-height: 420px;
+  overflow: auto;
+  margin-top: 8px;
+}
+.terminal-command-results button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: #d9e3ed;
+  cursor: pointer;
+}
+.terminal-command-results button[aria-selected="true"] {
+  background: #173659;
+}
+.terminal-command-results small {
+  color: #8998a8;
+}
+.terminal-docking .workspace-route-content {
+  padding: 8px 10px;
+}
+.terminal-docking .portfolio-heading h1,
+.terminal-docking .group-heading h1 {
+  font-size: 16px;
+}
+.terminal-docking .panel {
+  border-radius: 1px;
+}
+@media (max-width: 1450px) {
+  .terminal-workspace-bar nav button {
+    padding: 0 7px;
+  }
+  .terminal-command-trigger kbd {
+    display: none;
+  }
+}

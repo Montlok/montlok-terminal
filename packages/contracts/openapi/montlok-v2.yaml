@@ -11,6 +11,26 @@ security:
   - sessionCookie: []
   - deviceBearer: []
 paths:
+  /api/v2/events/{event_id}/related:
+    get:
+      operationId: getRelatedEvents
+      summary: Indexed order, route, fill, position and PnL history for the selected event
+      parameters:
+        - { name: event_id, in: path, required: true, schema: { type: string, maxLength: 128 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 2048, default: 500 } }
+      responses:
+        '200':
+          description: Scope-isolated history; timestamps and Decimal values retained in Protobuf
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [encoding, events, truncated]
+                properties:
+                  encoding: { type: string, const: protobuf-base64 }
+                  events: { type: array, maxItems: 2048, items: { type: string, contentEncoding: base64 } }
+                  truncated: { type: boolean }
+        '404': { description: Event has not entered the history index }
   /api/v2/device/authorizations:
     post:
       operationId: createDeviceAuthorization

@@ -62,6 +62,13 @@ GatewayClient::GatewayClient(QUrl baseUrl, TerminalContext *context, QObject *pa
     connect(&m_socket, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError) {
         Q_EMIT requestFailed(QStringLiteral("stream"), m_socket.errorString());
     });
+    // Batch a multi-field selection change into one new observation subscription.
+    auto *selectionTimer=new QTimer(this);selectionTimer->setSingleShot(true);selectionTimer->setInterval(0);
+    connect(context,&TerminalContext::contextChanged,this,[this,selectionTimer]{
+        const auto scope=m_context->accountId()+QStringLiteral("/")+m_context->strategyGroupId()+QStringLiteral("/")+m_context->runId();
+        if(scope==m_observationScope)return;m_observationScope=scope;selectionTimer->start();
+    });
+    connect(selectionTimer,&QTimer::timeout,this,[this]{if(m_socket.state()==QAbstractSocket::ConnectedState)sendSubscription();});
 }
 
 void GatewayClient::setBearerToken(const QByteArray &token) { m_bearerToken = token; }
@@ -229,13 +236,15 @@ void GatewayClient::sendSubscription()
     montlok::v2::ClientMessage message;
     auto *subscription = message.mutable_subscribe();
     subscription->set_request_id(QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString());
-    subscription->add_topics("*");
+    if(m_context->runId().isEmpty())return;
+    subscription->add_topics((QStringLiteral("run.")+m_context->runId()).toStdString());
     subscription->set_conflate_ms(50);
     auto *context = subscription->mutable_context();
     context->set_account_id(m_context->accountId().toStdString());
     context->set_strategy_group_id(m_context->strategyGroupId().toStdString());
     context->set_run_id(m_context->runId().toStdString());
-    context->set_instrument_id(m_context->instrumentId().toStdString());
+    // The run stream includes all instruments so its sequence remains contiguous.
+    // Per-instrument filtering is a view concern, not a reason to omit run events.
     context->set_model_release_id(m_context->modelReleaseId().toStdString());
     context->set_signal_version(m_context->signalVersion().toStdString());
     std::string encoded;
@@ -376,6 +385,27 @@ void GatewayClient::getLegacy(const QString &path,const QString &tag)
         const QJsonValue value=document.isArray()?QJsonValue(document.array()):QJsonValue(document.object());
         if(reply->error()==QNetworkReply::NoError)Q_EMIT datasetReceived(tag,value);
         else Q_EMIT requestFailed(tag,value.toObject().value(QStringLiteral("error")).toString(reply->errorString()));
+        reply->deleteLater();
+    });
+}
+
+void GatewayClient::queryRelated(const QString &eventId)
+{
+    const auto path=QStringLiteral("/api/v2/events/")+QString::fromLatin1(QUrl::toPercentEncoding(eventId))+QStringLiteral("/related?limit=500");
+    auto *reply=m_network.get(requestFor(path));
+    connect(reply,&QNetworkReply::finished,this,[this,reply,eventId]{
+        const auto object=parseObject(reply->readAll());
+        if(reply->error()!=QNetworkReply::NoError){Q_EMIT requestFailed(QStringLiteral("detail/")+eventId,reply->errorString());reply->deleteLater();return;}
+        QList<QJsonObject> events;
+        const auto encoded=object.value(QStringLiteral("events")).toArray();
+        bool valid=object.value(QStringLiteral("encoding")).toString()==QStringLiteral("protobuf-base64")&&encoded.size()<=2048;
+        for(const auto &value:encoded){
+            const auto bytes=QByteArray::fromBase64(value.toString().toLatin1());montlok::v2::EventEnvelope event;
+            if(!event.ParseFromArray(bytes.constData(),bytes.size())){valid=false;break;}
+            events.append(envelopeJson(event));
+        }
+        if(valid)Q_EMIT relatedReceived(eventId,events,object.value(QStringLiteral("truncated")).toBool());
+        else Q_EMIT requestFailed(QStringLiteral("detail/")+eventId,QStringLiteral("关联事件响应格式不完整"));
         reply->deleteLater();
     });
 }

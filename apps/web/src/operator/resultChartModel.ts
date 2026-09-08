@@ -23,6 +23,15 @@ export function chartTime(value: unknown): number | undefined {
 
 /** The chart library requires unique ascending timestamps. Do not interpolate gaps. */
 export function orderedPoints(points: TimePoint[]): TimePoint[] {
+  if (
+    points.every(
+      (point, index) =>
+        Number.isFinite(point.time) &&
+        Number.isFinite(point.value) &&
+        (index === 0 || point.time > points[index - 1].time),
+    )
+  )
+    return points;
   return [
     ...new Map(
       points
@@ -33,6 +42,25 @@ export function orderedPoints(points: TimePoint[]): TimePoint[] {
         .map((point) => [point.time, point]),
     ).values(),
   ].sort((a, b) => a.time - b.time);
+}
+
+/** Only the unchanged prefix permits incremental chart updates; corrections reset the series. */
+export function appendedPoints(
+  previous: TimePoint[],
+  next: TimePoint[],
+): TimePoint[] | undefined {
+  if (!previous.length || next.length < previous.length) return undefined;
+  for (let index = 0; index < previous.length - 1; index++)
+    if (
+      previous[index].time !== next[index].time ||
+      previous[index].value !== next[index].value
+    )
+      return undefined;
+  const last = previous.length - 1;
+  if (previous[last].time !== next[last]?.time) return undefined;
+  return next.slice(
+    previous[last].value === next[last].value ? previous.length : last,
+  );
 }
 
 function candleOf(row: unknown, priceOnly: boolean): Row | undefined {

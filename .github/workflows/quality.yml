@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-python@v5.6.0
         with:
           python-version: '3.12'
-      - run: pip install -r apps/web/server/requirements.txt pytest
+      - run: pip install -r apps/web/server/requirements.txt pytest pandas==2.2.3
       - run: python -m pytest -q tests
         working-directory: apps/web/server
       - run: python -m unittest test_alpha_execution test_live_alpha_worker test_live_controls test_live_hft_worker test_live_model_worker

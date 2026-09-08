@@ -99,8 +99,16 @@ def run():
             events = json.load(response)
         assert [int(event['stream_seq']) for event in events] == list(range(10101, 10201))
         assert recovered.poll() is None
+        detail_times=[]
+        for event in events[:30]:
+            request=urllib.request.Request(f'http://127.0.0.1:{gateway_port}/api/v2/events/{event["event_id"]}/related',headers={'Authorization':'Bearer '+key})
+            began=time.perf_counter()
+            with urllib.request.urlopen(request,timeout=5) as response: detail=json.load(response)
+            detail_times.append((time.perf_counter()-began)*1000)
+            assert detail['encoding']=='protobuf-base64' and len(detail['events'])==1 and not detail['truncated']
         report = {'events': 10000, 'startup_seconds': round(startup,3), 'pipeline_seconds': round(elapsed, 3), 'events_per_second': round(10000 / elapsed),
-                  'gateway_after_restart': 10200, 'projector_events': 10200, 'replay_count': len(events), 'state_dir': str(state)}
+                  'gateway_after_restart': 10200, 'projector_events': 10200, 'replay_count': len(events),
+                  'detail_http_p50_ms':round(sorted(detail_times)[14],3),'detail_http_p95_ms':round(sorted(detail_times)[28],3), 'state_dir': str(state)}
         print(json.dumps(report, ensure_ascii=False))
     finally:
         for process in reversed(processes):

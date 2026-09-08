@@ -1,4 +1,5 @@
 #include "EventBlotterModel.h"
+#include "EventPresentation.h"
 #include <QDateTime>
 #include <QTimeZone>
 
@@ -6,8 +7,8 @@ QVariant EventBlotterModel::data(const QModelIndex &index,int role)const{
     if(!index.isValid()||index.row()>=m_events.size()||role!=Qt::DisplayRole)return {};
     const auto &event=m_events.at(index.row());
     switch(index.column()){
-    case 0:return QDateTime::fromMSecsSinceEpoch(event.value(QStringLiteral("occurredAtNs")).toVariant().toLongLong()/1'000'000,QTimeZone::UTC).toLocalTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"));
-    case 1:return event.value(QStringLiteral("eventType")).toString();
+    case 0:return exactEventTime(event.value(QStringLiteral("occurredAtNs")).toVariant().toLongLong());
+    case 1:return eventTypeLabel(event.value(QStringLiteral("eventType")).toString());
     case 2:return event.value(QStringLiteral("stream")).toString()+QStringLiteral(" / ")+event.value(QStringLiteral("streamSeq")).toVariant().toString();
     case 3:return event.value(QStringLiteral("instrumentId")).toString();
     case 4:return event.value(QStringLiteral("correlationId")).toString();

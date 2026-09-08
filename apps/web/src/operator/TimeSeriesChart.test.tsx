@@ -4,6 +4,7 @@ import { TimeSeriesChart } from './TimeSeriesChart';
 
 const calls = vi.hoisted(() => ({
   data: vi.fn(),
+  update: vi.fn(),
   fit: vi.fn(),
   remove: vi.fn(),
   options: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('lightweight-charts', () => ({
     return {
       addSeries: () => ({
         setData: calls.data,
+        update: calls.update,
         applyOptions: calls.seriesOptions,
       }),
       timeScale: () => ({ fitContent: calls.fit }),
@@ -84,6 +86,7 @@ describe('time series rendering', () => {
       />,
     );
     expect(calls.fit).toHaveBeenCalledTimes(1);
+    expect(calls.update).toHaveBeenLastCalledWith({ time: 3, value: 5 });
     unmount();
     expect(calls.remove).toHaveBeenCalledTimes(1);
   });

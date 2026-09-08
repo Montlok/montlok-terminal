@@ -3,6 +3,8 @@
 #include "ArrowTableModel.h"
 #include "ApiWorkbench.h"
 #include "EventBlotterModel.h"
+#include "EventInspector.h"
+#include "RunOverview.h"
 #include "CommandPalette.h"
 #include "GatewayClient.h"
 #include "StrategyControlPanel.h"
@@ -123,14 +125,12 @@ void MainWindow::createMenus()
 
 void MainWindow::createPanels()
 {
-    auto *market = marketPanel();
-    setPersistentCentralWidget(market);
+    auto *overview=new RunOverview(m_gateway,m_context,this);
+    setPersistentCentralWidget(overview->chartWidget());
 
     auto *universe = addPanel(QStringLiteral("策略标的"), QStringLiteral("策略标的"),
-        tablePanel({QStringLiteral("品种"), QStringLiteral("板块"), QStringLiteral("目标权重"), QStringLiteral("实际权重"),
-                    QStringLiteral("偏差"), QStringLiteral("持仓"), QStringLiteral("PnL")},
-                   QStringLiteral("等待所选运行的策略标的快照")), KDDockWidgets::Location_OnLeft);
-    auto *metrics = addPanel(QStringLiteral("收益与执行"), QStringLiteral("收益与执行"), metricPanel(),
+        overview->universeWidget(), KDDockWidgets::Location_OnLeft);
+    auto *metrics = addPanel(QStringLiteral("收益与执行"), QStringLiteral("收益与执行"), overview->metricsWidget(),
                              KDDockWidgets::Location_OnTop);
     addPanel(QStringLiteral("策略控制"), QStringLiteral("策略控制"), new StrategyControlPanel(m_gateway, m_context),
              KDDockWidgets::Location_OnRight, metrics);
@@ -143,10 +143,12 @@ void MainWindow::createPanels()
     addPanel(QStringLiteral("事件与订单"), QStringLiteral("事件 / Order / Route / Fill / Risk / Inference"), blotter,
              KDDockWidgets::Location_OnBottom, universe);
 
-    addPanel(QStringLiteral("生命周期"), QStringLiteral("执行生命周期"),
-        tablePanel({QStringLiteral("发生时间"), QStringLiteral("阶段"), QStringLiteral("耗时"), QStringLiteral("订单号"),
-                    QStringLiteral("Route"), QStringLiteral("成交号"), QStringLiteral("结果")},
-                   QStringLiteral("选择订单或成交后显示完整关联链")), KDDockWidgets::Location_OnRight);
+    auto *inspector=new EventInspector(m_gateway,this);
+    addPanel(QStringLiteral("生命周期"),QStringLiteral("事件详情与执行生命周期"),inspector,KDDockWidgets::Location_OnRight);
+    connect(blotter->selectionModel(),&QItemSelectionModel::currentRowChanged,this,[this,inspector](const QModelIndex &index){
+        const auto event=m_blotterModel->eventAt(index.row());if(event.isEmpty())return;
+        inspector->selectEvent(event);m_panels.value(QStringLiteral("生命周期"))->show();
+    });
     addPanel(QStringLiteral("研究证据"), QStringLiteral("研究证据"),
         tablePanel({QStringLiteral("制品"), QStringLiteral("数据版本"), QStringLiteral("样本外区间"), QStringLiteral("交易数"),
                     QStringLiteral("PnL"), QStringLiteral("回撤"), QStringLiteral("Sharpe"), QStringLiteral("推理 P95")},
@@ -257,14 +259,13 @@ void MainWindow::activateWorkspace(const QString &workspace)
 void MainWindow::applyBootstrap(const QJsonObject &bootstrap)
 {
     const auto catalog = bootstrap.value(QStringLiteral("catalog")).toObject();
-    const auto accounts = catalog.value(QStringLiteral("accounts")).toArray();
-    const auto groups = catalog.value(QStringLiteral("strategy_groups")).toArray();
     const auto runs = catalog.value(QStringLiteral("runs")).toArray();
-    if (!accounts.isEmpty()) m_context->setAccountId(accounts.first().toObject().value(QStringLiteral("id")).toString());
-    if (!groups.isEmpty()) m_context->setStrategyGroupId(groups.first().toObject().value(QStringLiteral("id")).toString());
+    // Refreshing authorization must preserve the operator's observed run.
+    if(!m_context->runId().isEmpty())return;
     if (!runs.isEmpty()) {
-        const auto run = runs.first().toObject();
-        m_context->setRunId(run.value(QStringLiteral("id")).toString());
+        auto run = runs.first().toObject();
+        for(const auto &candidate:runs)if(candidate.toObject().value(QStringLiteral("status")).toString()==QStringLiteral("RUN_RUNNING")){run=candidate.toObject();break;}
+        m_context->setSelection(run.value(QStringLiteral("account_id")).toString(),run.value(QStringLiteral("strategy_group_id")).toString(),run.value(QStringLiteral("id")).toString());
         m_context->setInstrumentId(run.value(QStringLiteral("instrument_id")).toString());
         m_context->setModelReleaseId(run.value(QStringLiteral("model_release_id")).toString());
         m_context->setSignalVersion(run.value(QStringLiteral("signal_version")).toString());

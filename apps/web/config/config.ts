@@ -1,5 +1,4 @@
 import { defineConfig } from '@umijs/max';
-import settings from './defaultSettings';
 import routes from './routes';
 
 export default defineConfig({
@@ -11,7 +10,7 @@ export default defineConfig({
   access: {},
   request: {},
   reactQuery: {},
-  layout: { locale: false, ...settings },
+  layout: false,
   locale: { default: 'zh-CN', antd: true, baseNavigator: false },
   antd: { appConfig: {} },
   proxy: {

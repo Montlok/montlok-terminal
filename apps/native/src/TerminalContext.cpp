@@ -23,3 +23,8 @@ void TerminalContext::setRunId(const QString &value) { update(m_runId, value); }
 void TerminalContext::setInstrumentId(const QString &value) { update(m_instrumentId, value); }
 void TerminalContext::setModelReleaseId(const QString &value) { update(m_modelReleaseId, value); }
 void TerminalContext::setSignalVersion(const QString &value) { update(m_signalVersion, value); }
+void TerminalContext::setSelection(const QString &account,const QString &group,const QString &run) {
+    if(m_accountId==account&&m_strategyGroupId==group&&m_runId==run)return;
+    m_accountId=account;m_strategyGroupId=group;m_runId=run;m_instrumentId.clear();m_modelReleaseId.clear();m_signalVersion.clear();
+    Q_EMIT contextChanged();
+}

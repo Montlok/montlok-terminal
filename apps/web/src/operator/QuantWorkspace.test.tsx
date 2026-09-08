@@ -38,15 +38,39 @@ beforeEach(() => {
   routing.path = '/trade/spot/terminal';
   localStorage.clear();
   vi.clearAllMocks();
-  vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockReturnValue(new DOMRect(0,0,1600,900));
-  vi.stubGlobal('ResizeObserver',class {
-    constructor(private callback:ResizeObserverCallback){}
-    observe(target:Element){queueMicrotask(()=>this.callback([{target,contentRect:new DOMRect(0,0,1600,900),borderBoxSize:[{inlineSize:1600,blockSize:900}],contentBoxSize:[{inlineSize:1600,blockSize:900}],devicePixelContentBoxSize:[]}],this as unknown as ResizeObserver));}
-    unobserve(){}
-    disconnect(){}
-  });
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+    new DOMRect(0, 0, 1600, 900),
+  );
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(private callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        queueMicrotask(() =>
+          this.callback(
+            [
+              {
+                target,
+                contentRect: new DOMRect(0, 0, 1600, 900),
+                borderBoxSize: [{ inlineSize: 1600, blockSize: 900 }],
+                contentBoxSize: [{ inlineSize: 1600, blockSize: 900 }],
+                devicePixelContentBoxSize: [],
+              },
+            ],
+            this as unknown as ResizeObserver,
+          ),
+        );
+      }
+      unobserve() {}
+      disconnect() {}
+    },
+  );
 });
-afterEach(()=>{cleanup();vi.restoreAllMocks();vi.unstubAllGlobals();});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('persistent quant workspace', () => {
   it('keeps the same market instance and selection when lower routes change', async () => {
@@ -98,7 +122,10 @@ describe('persistent quant workspace', () => {
     expect(routing.push).toHaveBeenLastCalledWith(
       '/strategies/groups/overview',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'remove' }));
+    fireEvent.keyDown(screen.getByRole('tab', { name: /交易策略 · 网格/ }), {
+      key: 'Delete',
+      ctrlKey: true,
+    });
     expect(routing.push).toHaveBeenLastCalledWith('/trade/spot/terminal');
     routing.path = '/trade/spot/terminal';
     view.rerender(
@@ -126,8 +153,8 @@ describe('persistent quant workspace', () => {
       container.querySelector('.workspace-route-content'),
     ).toContainElement(screen.getByText('one active page'));
     expect(container.querySelector('.workspace-editor')).toBeInTheDocument();
-    expect(screen.getByRole('complementary',{name:'策略控制'})).toContainElement(
-      screen.getByText('independent strategy inspector'),
-    );
+    expect(
+      screen.getByRole('complementary', { name: '策略控制' }),
+    ).toContainElement(screen.getByText('independent strategy inspector'));
   });
 });

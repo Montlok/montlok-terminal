@@ -52,8 +52,10 @@ qt_add_executable(montlok-terminal-native
   src/CommandPalette.cpp
   src/DeviceIdentity.cpp
   src/EventBlotterModel.cpp
+  src/EventInspector.cpp
   src/GatewayClient.cpp
   src/MainWindow.cpp
+  src/RunOverview.cpp
   src/StrategyControlPanel.cpp
   src/TerminalContext.cpp
   ${MONTLOK_PROTO_SRCS}
@@ -103,12 +105,14 @@ install(TARGETS montlok-terminal-native
 )
 
 include(CTest)
-if(BUILD_TESTING)
+if(MONTLOK_BUILD_TESTS)
   qt_add_executable(montlok-native-tests
     tests/TerminalContextTest.cpp
     src/TerminalContext.cpp
+    src/EventBlotterModel.cpp
   )
   target_include_directories(montlok-native-tests PRIVATE src)
+  target_compile_definitions(montlok-native-tests PRIVATE QT_NO_KEYWORDS QT_NO_CAST_FROM_ASCII QT_NO_CAST_TO_ASCII)
   target_link_libraries(montlok-native-tests PRIVATE Qt6::Test Qt6::Widgets)
   add_test(NAME montlok-native-tests COMMAND montlok-native-tests)
 endif()

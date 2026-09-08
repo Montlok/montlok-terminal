@@ -69,6 +69,10 @@ jobs:
           -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
           -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR"
       - run: cmake --build build/native --config Release -j 3
+      - name: Native context and event presentation tests
+        run: ctest --test-dir build/native -C Release --output-on-failure
+        env:
+          QT_QPA_PLATFORM: offscreen
       - name: Install candidate
         run: cmake --install build/native --prefix build/candidate --config Release
       - uses: actions/upload-artifact@v4.6.2

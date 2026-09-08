@@ -29,6 +29,7 @@ public:
     void setInstrumentId(const QString &value);
     void setModelReleaseId(const QString &value);
     void setSignalVersion(const QString &value);
+    void setSelection(const QString &account,const QString &group,const QString &run);
 
 Q_SIGNALS:
     void contextChanged();

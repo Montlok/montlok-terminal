@@ -41,8 +41,7 @@ describe('app getInitialState', () => {
       access: 'admin',
     });
     expect(state.settings).toEqual({
-      navTheme: 'realDark',
-      title: '交易操作台',
+      layout: 'terminal',
     });
     expect(state.settingDrawerOpen).toBe(false);
     await expect(state.fetchUserInfo?.()).resolves.toEqual(state.currentUser);
