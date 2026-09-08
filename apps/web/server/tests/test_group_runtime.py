@@ -61,7 +61,7 @@ asyncio.run(main())
 class RegistryFixture:
     def setup_registry(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="montlok-groups-", dir="/tmp")
-        self.path = Path(self.temporary.name)
+        self.path = Path(self.temporary.name).resolve()
         self.runtime = self.path / "runtime"
         self.runtime.mkdir()
         for name in ("settings.py", "run.py", "node_config.py", "health.py", "commands.py", "control.py", "alerts.py"):
