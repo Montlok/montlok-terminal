@@ -1,0 +1,67 @@
+.run-metrics-panel {
+  border-bottom: 1px solid var(--op-border);
+  padding: 8px 10px;
+}
+.run-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--op-border);
+  border: 1px solid var(--op-border);
+}
+.run-metrics-grid button {
+  background: #11191f;
+  border: 0;
+  color: var(--op-text);
+  padding: 9px 8px;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.run-metrics-grid button:hover {
+  background: #172c40;
+}
+.run-metrics-grid button:focus-visible {
+  outline: 1px solid #4498f7;
+  outline-offset: -1px;
+}
+.run-metrics-grid span {
+  display: flex;
+  gap: 5px;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--op-muted);
+  white-space: nowrap;
+}
+.run-metrics-grid small {
+  font-size: 9px;
+}
+.run-metrics-grid strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.run-metrics-source {
+  padding-top: 6px;
+  font-size: 10px;
+  color: var(--op-muted);
+}
+.run-metric-definition {
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 12px;
+}
+.run-metric-definition dt {
+  color: var(--op-muted);
+}
+.run-metric-definition dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}

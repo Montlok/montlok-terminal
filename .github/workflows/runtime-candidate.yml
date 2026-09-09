@@ -21,7 +21,7 @@ jobs:
       - name: Create production artifact
         run: |
           mkdir -p build/runtime/bin build/runtime/licenses
-          cp target/release/montlok-gateway target/release/montlok-projector target/release/montlok-nautilus-adapter build/runtime/bin/
+          cp target/release/montlok-gateway target/release/montlok-projector target/release/montlok-nautilus-adapter target/release/montlok-run-watcher build/runtime/bin/
           cp LICENSE THIRD_PARTY_NOTICES.md build/runtime/licenses/
           cp -R deploy build/runtime/configuration
           tar -C build/runtime -czf build/montlok-runtime-linux-x64.tar.gz .

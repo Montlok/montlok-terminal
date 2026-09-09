@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v2/strategy-groups/{id}/observation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read-side live run metrics and scoped positions from persisted production snapshots */
+        get: operations["getRunObservation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/events/{event_id}/related": {
         parameters: {
             query?: never;
@@ -573,6 +590,82 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getRunObservation: {
+        parameters: {
+            query?: {
+                run_id?: string;
+                include?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Source-stamped snapshot with Decimal monetary values */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        runId: string;
+                        accountId: string;
+                        /** @constant */
+                        mode: "live";
+                        name?: string;
+                        status?: string;
+                        observed_at_ns?: string | null;
+                        observedAt?: number | null;
+                        fresh: boolean;
+                        age_ms?: number | null;
+                        metrics: {
+                            [key: string]: string | null;
+                        };
+                        sources: {
+                            [key: string]: boolean;
+                        };
+                        provenance: {
+                            [key: string]: unknown;
+                        };
+                        positions?: {
+                            [key: string]: unknown;
+                        }[] | null;
+                        orders?: {
+                            [key: string]: unknown;
+                        }[] | null;
+                        fills?: {
+                            [key: string]: unknown;
+                        }[] | null;
+                    };
+                };
+            };
+            /** @description Run has not been recorded */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Snapshot context mismatch */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Snapshot is incomplete or unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getRelatedEvents: {
         parameters: {
             query?: {

@@ -11,6 +11,42 @@ security:
   - sessionCookie: []
   - deviceBearer: []
 paths:
+  /api/v2/strategy-groups/{id}/observation:
+    get:
+      operationId: getRunObservation
+      summary: Read-side live run metrics and scoped positions from persisted production snapshots
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {name: run_id, in: query, schema: {type: string}}
+        - {name: include, in: query, schema: {type: string, default: 'universe,execution'}}
+      responses:
+        '200':
+          description: Source-stamped snapshot with Decimal monetary values
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, runId, accountId, mode, metrics, sources, provenance, fresh]
+                properties:
+                  id: {type: string}
+                  runId: {type: string}
+                  accountId: {type: string}
+                  mode: {type: string, const: live}
+                  name: {type: string}
+                  status: {type: string}
+                  observed_at_ns: {type: [string, 'null']}
+                  observedAt: {type: [number, 'null']}
+                  fresh: {type: boolean}
+                  age_ms: {type: [integer, 'null']}
+                  metrics: {type: object, additionalProperties: {type: [string, 'null']}}
+                  sources: {type: object, additionalProperties: {type: boolean}}
+                  provenance: {type: object, additionalProperties: true}
+                  positions: {type: [array, 'null'], items: {type: object, additionalProperties: true}}
+                  orders: {type: [array, 'null'], items: {type: object, additionalProperties: true}}
+                  fills: {type: [array, 'null'], items: {type: object, additionalProperties: true}}
+        '404': {description: Run has not been recorded}
+        '409': {description: Snapshot context mismatch}
+        '503': {description: Snapshot is incomplete or unavailable}
   /api/v2/events/{event_id}/related:
     get:
       operationId: getRelatedEvents

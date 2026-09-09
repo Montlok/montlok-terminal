@@ -1,8 +1,9 @@
 import { defineConfig } from '@umijs/max';
 import routes from './routes';
 
-const terminalBase=process.env.MONTLOK_WEB_BASE||'/';
-if(!/^\/(?:[a-zA-Z0-9_-]+\/)*$/.test(terminalBase))throw new Error('Invalid terminal base path');
+const terminalBase = process.env.MONTLOK_WEB_BASE || '/';
+if (!/^\/(?:[a-zA-Z0-9_-]+\/)*$/.test(terminalBase))
+  throw new Error('Invalid terminal base path');
 
 export default defineConfig({
   hash: true,

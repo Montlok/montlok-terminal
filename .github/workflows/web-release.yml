@@ -25,6 +25,7 @@ jobs:
       - name: Package static runtime
         run: |
           find apps/web/dist -name '*.map' -delete
+          find apps/web/dist -name 'stats*.json' -delete
           find apps/web/dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.wasm' -o -name '*.html' \) -exec gzip -9 -k {} \;
           mkdir -p build
           tar -C apps/web/dist -czf build/montlok-web-runtime.tar.gz .

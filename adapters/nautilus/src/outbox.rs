@@ -10,6 +10,7 @@ use rusqlite::{Connection, params};
 use crate::{Checkpoint, PersistedEvent, map_event};
 
 pub struct Outbox {
+    _lock: std::fs::File,
     db: Connection,
     source: String,
 }
@@ -25,6 +26,14 @@ impl Outbox {
         if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
             std::fs::create_dir_all(parent)?;
         }
+        let lock = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(path.with_extension("lock"))?;
+        lock.try_lock()
+            .map_err(|error| anyhow::anyhow!("another adapter owns this outbox: {error}"))?;
         let db = Connection::open(path)?;
         db.pragma_update(None, "journal_mode", "WAL")?;
         db.pragma_update(None, "synchronous", "FULL")?;
@@ -42,7 +51,11 @@ impl Outbox {
             "INSERT OR IGNORE INTO source_offsets(source,offset) VALUES(?1,0)",
             [&source],
         )?;
-        Ok(Self { db, source })
+        Ok(Self {
+            db,
+            source,
+            _lock: lock,
+        })
     }
 
     pub fn offset(&self) -> Result<u64> {

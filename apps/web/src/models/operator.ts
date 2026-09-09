@@ -21,6 +21,19 @@ export default function useOperator() {
   const [selectionOwner, setSelectionOwner] = useState('');
   const selectionEdits = useRef(0);
   const { selectedGroup, selectedRuns } = selection;
+  const [instrumentSelection, setInstrumentSelection] = useState({
+    group: '',
+    instrument: '',
+  });
+  const selectedInstrument =
+    instrumentSelection.group === selectedGroup
+      ? instrumentSelection.instrument
+      : '';
+  const setSelectedInstrument = useCallback(
+    (instrument: string) =>
+      setInstrumentSelection({ group: selectedGroup, instrument }),
+    [selectedGroup],
+  );
   const setSelectedGroup = useCallback((value: SetStateAction<string>) => {
     selectionEdits.current += 1;
     setSelection((current) => ({
@@ -161,5 +174,7 @@ export default function useOperator() {
     setSelectedGroup,
     selectedRuns,
     setSelectedRuns,
+    selectedInstrument,
+    setSelectedInstrument,
   };
 }

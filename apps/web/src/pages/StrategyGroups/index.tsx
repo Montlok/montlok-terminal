@@ -86,7 +86,7 @@ export default function StrategyGroups() {
       <div className="page-heading">
         <div>
           <h1>策略组</h1>
-          <p>运行实例历史 · 资金、持仓与收益独立统计</p>
+          <p>运行、执行与收益 · 按账户和实例统计</p>
         </div>
         <div className="group-selector">
           <Select
@@ -111,7 +111,7 @@ export default function StrategyGroups() {
               {
                 value: '',
                 label: originalRun
-                  ? `原始运行 · ${originalRun}`
+                  ? `当前 / 最近一次 · ${originalRun}`
                   : runtimeRuns.length
                     ? `选择记录 · 共 ${runtimeRuns.length} 个实例`
                     : '等待首次运行',

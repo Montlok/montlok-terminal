@@ -13,6 +13,11 @@ const routing = vi.hoisted(() => ({
 vi.mock('@umijs/max', () => ({
   history: { push: routing.push },
   useLocation: () => ({ pathname: routing.path }),
+  useModel: () => ({
+    selectedGroup: 'g',
+    selectedRuns: {},
+    setSelectedInstrument: vi.fn(),
+  }),
 }));
 vi.mock('./MarketDock', () => ({
   MarketDock: function TestMarketDock() {

@@ -8,6 +8,7 @@ import {
 import { api, number, type Row, timeOf } from './api';
 import { ConfirmOperation } from './ConfirmOperation';
 import { ModelRuntime } from './ModelRuntime';
+import { RunMetricsStrip } from './RunMetricsStrip';
 import { OperationProgress } from './OperationProgress';
 import { usePoll } from './usePoll';
 import './strategyRun.css';
@@ -398,6 +399,7 @@ export function StrategyRunPanel({ instrument }: { instrument?: string }) {
 
   return (
     <div className={`strategy-run-panel ${activeRun ? '' : 'run-setup'}`}>
+      {live && <RunMetricsStrip group={selectedGroup} run={selectedRun} />}
       {busy && <OperationProgress label={busyAction} />}
       {!busy &&
         (pendingStart || (receiptUnknown && receipt?.action === 'start')) && (

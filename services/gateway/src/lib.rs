@@ -39,6 +39,7 @@ const OPERATION_TTL_SECONDS: i64 = 60;
 pub mod auth;
 pub mod bus;
 pub mod legacy;
+pub mod live_views;
 pub mod telemetry;
 
 #[derive(Debug, thiserror::Error)]
@@ -225,6 +226,7 @@ impl EventHub {
 
 #[derive(Clone)]
 pub struct GatewayState {
+    pub live_views: Arc<live_views::LiveViews>,
     pub events: EventHub,
     pub auth: auth::AuthState,
     operations: Arc<OperationStore>,
@@ -236,6 +238,7 @@ pub struct GatewayState {
 impl GatewayState {
     pub fn new(database: impl AsRef<Path>, control_socket: Option<PathBuf>) -> Result<Self> {
         Ok(Self {
+            live_views: Arc::new(live_views::LiveViews::disabled()),
             auth: auth::AuthState::open(&database.as_ref().with_extension("devices.sqlite"))?,
             events: EventHub::open(&database.as_ref().with_extension("events.sqlite"))?,
             operations: Arc::new(OperationStore::open(database.as_ref())?),
@@ -249,6 +252,7 @@ impl GatewayState {
 
     pub fn ephemeral() -> Result<Self> {
         Ok(Self {
+            live_views: Arc::new(live_views::LiveViews::disabled()),
             auth: auth::AuthState::open(Path::new(":memory:"))?,
             events: EventHub::new(),
             operations: Arc::new(OperationStore::memory()?),
@@ -267,6 +271,10 @@ pub fn router(state: GatewayState) -> Router {
         .route("/api/v2/fields", get(fields))
         .route("/api/v2/bootstrap", get(bootstrap))
         .route("/api/v2/runs/{run_id}/snapshot", get(run_snapshot))
+        .route(
+            "/api/v2/strategy-groups/{id}/observation",
+            get(live_views::observation),
+        )
         .route("/api/v2/events", get(events))
         .route("/api/v2/events/{event_id}/related", get(related_events))
         .route("/api/v2/query", post(query))

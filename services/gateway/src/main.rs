@@ -15,6 +15,8 @@ struct Arguments {
     database: PathBuf,
     #[arg(long, env = "MONTLOK_CONTROL_SOCKET")]
     control_socket: Option<PathBuf>,
+    #[arg(long, env = "MONTLOK_RUN_ROOT")]
+    run_root: Option<PathBuf>,
     #[arg(long, env = "MONTLOK_NATS_URL")]
     nats_url: Option<String>,
     #[arg(
@@ -57,6 +59,10 @@ async fn main() -> Result<()> {
         );
     }
     let mut state = GatewayState::new(arguments.database, arguments.control_socket)?;
+    if let Some(root) = arguments.run_root {
+        state.live_views =
+            std::sync::Arc::new(montlok_gateway::live_views::LiveViews::open(&root)?);
+    }
     state.auth.public_origin = arguments.public_origin;
     let bff_url = reqwest::Url::parse(&arguments.bff_url)?;
     if !matches!(

@@ -65,7 +65,8 @@ type BlotterRow = {
 };
 
 export default function EventBlotter() {
-  const { selectedGroup, selectedRuns } = useModel('operator');
+  const { selectedGroup, selectedRuns, setSelectedInstrument } =
+    useModel('operator');
   const requestedRun = selectedRuns?.[selectedGroup] || '';
   const selection = `${selectedGroup}/${requestedRun}`;
   const [resolved, setResolved] = useState({
@@ -245,7 +246,13 @@ export default function EventBlotter() {
             emptyLabel={
               error || (runId ? '等待运行事件' : '选择运行实例后读取事件')
             }
-            onSelectRow={(row) => setSelected(row.event)}
+            onSelectRow={(row) => {
+              setSelected(row.event);
+              if (row.event.instrumentId)
+                setSelectedInstrument(
+                  row.event.instrumentId.replace(/\.OKX$/, ''),
+                );
+            }}
             columns={[
               { key: 'time', title: '时间 / UTC+8', width: 180 },
               { key: 'instrument', title: '品种', width: 160 },

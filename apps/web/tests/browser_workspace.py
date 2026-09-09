@@ -34,6 +34,8 @@ def response(path,query=None):
     if path == '/api/account': return {'mode': 'live', 'available': False, 'balances': [], 'orders': [], 'fills': []}
     if path == '/api/catalog': return {'tools': [], 'routes': [], 'nativeMethods': []}
     if path == '/api/strategy-groups': return {'groups': [GROUP_DATA]}
+    if path.startswith('/api/v2/strategy-groups/') and path.endswith('/observation'):
+        return {**GROUP_DATA,'fresh':True,'provenance':{'source':'local.historical-fixture','accounting_basis':'reported_run_mark_to_market','calculation_version':'browser-fixture'}}
     if path.endswith('/runtime'): return RUNTIME
     if path.endswith('/equity'): return {'id': GROUP, 'groupId': GROUP, 'runId': RUN, 'equity': [], 'drawdown': [], 'points': []}
     if path.startswith('/api/strategy-groups/'): return GROUP_DATA
@@ -113,6 +115,11 @@ def main():
             baseline['critical_js_gzip_bytes']=sum(len(gzip.compress((WEB/'dist'/item['url'].removeprefix(WEB_BASE).lstrip('/')).read_bytes())) for item in baseline['scripts'] if (WEB/'dist'/item['url'].removeprefix(WEB_BASE).lstrip('/')).is_file())
             (output/'performance.json').write_text(json.dumps(baseline,indent=2))
             page.screenshot(path=str(output / 'workspace-1920.png'), full_page=True)
+            if page.get_by_role('button',name='查看运行净值口径',exact=True).count():
+                page.get_by_role('button',name='查看运行净值口径',exact=True).click()
+                page.get_by_text('原始值',exact=True).wait_for()
+                page.screenshot(path=str(output/'metric-provenance.png'),full_page=True)
+                page.keyboard.press('Escape')
             page.get_by_role('tab', name='策略组 · 总览', exact=True).click()
             page.wait_for_url('**/strategies/groups/overview')
             assert page.locator('.market-dock').count() == 1

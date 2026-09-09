@@ -1,21 +1,13 @@
 import { LineChartOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
 import { Button, Drawer, Modal, Select, Space } from 'antd';
-import {
-  lazy,
-  memo,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { lazy, memo, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   executionModeLabel,
   statusLabel,
   strategyDisplayName,
 } from '../pages/StrategyGroups/groupModel';
-import { api, number, type Row, timeOf } from './api';
+import { number, timeOf } from './api';
 import { instrumentUnits, marketNumber } from './instrumentFormat';
 import { MarketWorkspace } from './MarketWorkspace';
 import { OrderBook, RecentTrades } from './OrderBook';
@@ -24,7 +16,7 @@ import {
   strategyInstruments,
 } from './strategyMarketModel';
 import { useMarket } from './useMarket';
-import { usePoll } from './usePoll';
+import { useRunObservation } from './runObservation';
 import { Watchlist } from './Watchlist';
 
 const BARS = ['1m', '5m', '15m', '1H', '4H', '1D'];
@@ -39,56 +31,29 @@ export const MarketDock = memo(function MarketDock({
   compact?: boolean;
   onToggle?: () => void;
 }) {
-  const { error, selectedGroup, selectedRuns } = useModel(
-    'operator',
-    (model) => ({
-      error: model.error,
-      selectedGroup: model.selectedGroup,
-      selectedRuns: model.selectedRuns,
-    }),
-  );
+  const {
+    error,
+    selectedGroup,
+    selectedRuns,
+    selectedInstrument,
+    setSelectedInstrument,
+  } = useModel('operator', (model) => ({
+    error: model.error,
+    selectedGroup: model.selectedGroup,
+    selectedRuns: model.selectedRuns,
+    selectedInstrument: model.selectedInstrument,
+    setSelectedInstrument: model.setSelectedInstrument,
+  }));
   const selectedRun = selectedRuns[selectedGroup] || '';
-  const selection = `${selectedGroup}/${selectedRun}`;
-  const [strategySnapshot, setStrategy] = useState<{
-    selection: string;
-    value: Row;
-  }>();
-  const strategy =
-    strategySnapshot?.selection === selection
-      ? strategySnapshot.value
-      : undefined;
-  const loadStrategy = useCallback(
-    async (signal: AbortSignal) => {
-      const suffix = selectedRun
-        ? `?runId=${encodeURIComponent(selectedRun)}&view=market`
-        : '?view=market';
-      try {
-        const value = await api(
-          `strategy-groups/${encodeURIComponent(selectedGroup)}${suffix}`,
-        );
-        if (!signal.aborted) setStrategy({ selection, value });
-      } catch {
-        if (!signal.aborted) setStrategy(undefined);
-      }
-    },
-    [selectedGroup, selectedRun, selection],
-  );
-  usePoll(loadStrategy, 3000);
+  const observation = useRunObservation(selectedGroup, selectedRun);
+  const strategy = observation.data;
   const universe = useMemo(() => strategyInstruments(strategy), [strategy]);
-  const [choice, setChoice] = useState({ group: '', symbol: '' });
-  const instrument =
-    choice.group === selectedGroup
-      ? choice.symbol
-      : primaryStrategyInstrument(universe);
-  const setInstrument = (value: string) =>
-    setChoice({ group: selectedGroup, symbol: value });
+  const instrument = selectedInstrument || primaryStrategyInstrument(universe);
+  const setInstrument = setSelectedInstrument;
   useEffect(() => {
-    if (universe.length && choice.group !== selectedGroup)
-      setChoice({
-        group: selectedGroup,
-        symbol: primaryStrategyInstrument(universe),
-      });
-  }, [selectedGroup, universe, choice.group]);
+    if (universe.length && !selectedInstrument)
+      setSelectedInstrument(primaryStrategyInstrument(universe));
+  }, [universe, selectedInstrument, setSelectedInstrument]);
   const [bar, setBar] = useState('5m');
   const mode = 'live';
   const [manualOpen, setManualOpen] = useState(false);
@@ -208,7 +173,10 @@ export const MarketDock = memo(function MarketDock({
         </span>
         <span>
           {universe.length} 个标的 ·{' '}
-          {strategy?.sources?.positions===false?'—':universe.filter((row) => Math.abs(Number(row.quantity)) > 0).length}{' '}
+          {strategy?.sources?.positions === false
+            ? '—'
+            : universe.filter((row) => Math.abs(Number(row.quantity)) > 0)
+                .length}{' '}
           项持仓
         </span>
         <span>成交 {strategy?.fillsTotal ?? '—'} 笔</span>
@@ -219,8 +187,10 @@ export const MarketDock = memo(function MarketDock({
           <span className="positive">初始调仓完成</span>
         )}
       </section>
-      {(error || market.error) && (
-        <div className="status-message">{error || market.error}</div>
+      {(error || market.error || observation.error) && (
+        <div className="status-message">
+          {error || market.error || observation.error?.message}
+        </div>
       )}
       <div className="trading-grid">
         <div className="dock-watchlist">
@@ -230,7 +200,7 @@ export const MarketDock = memo(function MarketDock({
             universe={universe}
             scopeKey={selectedGroup}
             groupName={strategyDisplayName(strategy)}
-            positionsAvailable={strategy?.sources?.positions!==false}
+            positionsAvailable={strategy?.sources?.positions !== false}
           />
         </div>
         <section className="chart-panel panel">
@@ -313,7 +283,7 @@ export const MarketDock = memo(function MarketDock({
           universe={universe}
           scopeKey={selectedGroup}
           groupName={strategyDisplayName(strategy)}
-          positionsAvailable={strategy?.sources?.positions!==false}
+          positionsAvailable={strategy?.sources?.positions !== false}
         />
       </Drawer>
       <Modal

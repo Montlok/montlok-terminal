@@ -1,8 +1,10 @@
 import { SearchOutlined } from '@ant-design/icons';
-import { history } from '@umijs/max';
+import { history, useModel } from '@umijs/max';
 import { Button, Input, Modal } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { breadcrumbs, pages } from './navigation';
+import { useRunObservation } from './runObservation';
+import { strategyInstruments } from './strategyMarketModel';
 
 export const TERMINAL_WORKSPACES = [
   { name: '实盘运行', path: '/strategies/groups/overview' },
@@ -14,6 +16,8 @@ export const TERMINAL_WORKSPACES = [
 ];
 const commands = pages.map((page) => ({
   ...page,
+  key: page.path,
+  instrument: undefined as string | undefined,
   label: breadcrumbs(page.path).join(' / '),
 }));
 
@@ -31,14 +35,50 @@ export function WorkspaceCommands({
     [query, setQuery] = useState(''),
     [active, setActive] = useState(0);
   const list = useRef<HTMLDivElement>(null);
+  const { selectedGroup, selectedRuns, setSelectedInstrument } =
+    useModel('operator');
+  const observation = useRunObservation(
+    selectedGroup,
+    selectedRuns?.[selectedGroup] || '',
+    open,
+  );
+  const library = useMemo(
+    () => [
+      ...commands,
+      ...strategyInstruments(observation.data).map((row) => ({
+        key: `instrument:${row.instrument}`,
+        path: row.instrument,
+        label: `品种 / ${row.instrument}`,
+        instrument: row.instrument,
+      })),
+      ...(observation.data?.runId
+        ? [
+            {
+              key: `run:${observation.data.runId}`,
+              path: '/strategies/groups/overview',
+              label: `运行 / ${observation.data.runId}`,
+              instrument: undefined,
+            },
+          ]
+        : []),
+    ],
+    [observation.data],
+  );
+  const activate = (command: { path: string; instrument?: string }) => {
+    if (command.instrument) setSelectedInstrument(command.instrument);
+    else history.push(command.path);
+    setOpen(false);
+    setQuery('');
+    setActive(0);
+  };
   const matches = useMemo(
     () =>
-      commands.filter((command) =>
+      library.filter((command) =>
         `${command.label} ${command.path}`
           .toLowerCase()
           .includes(query.trim().toLowerCase()),
       ),
-    [query],
+    [query, library],
   );
   const close = () => {
     setOpen(false);
@@ -103,7 +143,7 @@ export function WorkspaceCommands({
       >
         <Input
           aria-label="功能搜索"
-          placeholder="输入功能、品种类别或页面名称"
+          placeholder="输入功能、品种或运行实例"
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -123,8 +163,7 @@ export function WorkspaceCommands({
               );
             }
             if (event.key === 'Enter' && matches[active]) {
-              history.push(matches[active].path);
-              close();
+              activate(matches[active]);
             }
           }}
           role="combobox"
@@ -147,11 +186,10 @@ export function WorkspaceCommands({
               role="option"
               id={`terminal-command-${index}`}
               aria-selected={active === index}
-              key={item.path}
+              key={item.key}
               onMouseEnter={() => setActive(index)}
               onClick={() => {
-                history.push(item.path);
-                close();
+                activate(item);
               }}
             >
               <span>{item.label}</span>

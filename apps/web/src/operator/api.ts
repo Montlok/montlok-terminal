@@ -116,7 +116,9 @@ async function request<T>(
   try {
     value = JSON.parse(text);
   } catch {
-    throw new Error(text || `HTTP ${response.status}`);
+    throw Object.assign(new Error(text || `HTTP ${response.status}`), {
+      status: response.status,
+    });
   }
   if (
     response.status === 403 &&
@@ -137,7 +139,11 @@ async function request<T>(
       return request<T>(path, body, true);
     throw new Error('会话已更新，请重新确认操作');
   }
-  if (!response.ok) throw new Error(value.error || `HTTP ${response.status}`);
+  if (!response.ok)
+    throw Object.assign(new Error(value.error || `HTTP ${response.status}`), {
+      status: response.status,
+      code: value.code,
+    });
   return value as T;
 }
 export function dataOf(value: any): any {

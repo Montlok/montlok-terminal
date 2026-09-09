@@ -1,0 +1,31 @@
+[Unit]
+Description=Montlok live-run event discovery
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=nautilus
+Group=nautilus
+EnvironmentFile=/etc/montlok-terminal/run-watcher.env
+ExecStart=/opt/montlok-terminal/current/bin/montlok-run-watcher
+WorkingDirectory=/var/lib/montlok-terminal
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=10
+KillMode=control-group
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/montlok-terminal
+InaccessiblePaths=/www/nautilus/credentials /www/nautilus/operator
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=1G
+CPUQuota=200%
+Nice=10
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

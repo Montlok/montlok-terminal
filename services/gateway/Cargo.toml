@@ -11,6 +11,7 @@ anyhow.workspace = true
 async-nats.workspace = true
 axum.workspace = true
 base64.workspace = true
+bigdecimal = "0.4.10"
 bytes.workspace = true
 ed25519-dalek = "2.2.0"
 rand = "0.8.8"
