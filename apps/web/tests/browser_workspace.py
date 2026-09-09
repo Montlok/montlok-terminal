@@ -18,6 +18,7 @@ from urllib.parse import urlsplit,parse_qs
 from playwright.sync_api import sync_playwright
 
 WEB = Path(__file__).resolve().parents[1]
+WEB_BASE=os.environ.get('MONTLOK_BROWSER_BASE','/')
 FIXTURE = json.loads(Path(os.environ['MONTLOK_BROWSER_FIXTURE']).read_text())
 GROUP = FIXTURE['group_id']
 RUN = FIXTURE['run_id']
@@ -52,6 +53,7 @@ def response(path,query=None):
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs): super().__init__(*args, directory=str(WEB / 'dist'), **kwargs)
     def do_GET(self):
+        if WEB_BASE!='/' and self.path.startswith(WEB_BASE): self.path='/'+self.path[len(WEB_BASE):]
         if not (WEB / 'dist' / urlsplit(self.path).path.lstrip('/')).is_file(): self.path = '/index.html'
         super().do_GET()
     def log_message(self, *_): pass
@@ -102,12 +104,13 @@ def main():
                 else: route.fulfill(status=200, json=value)
 
             page.route('**/api/**', api)
-            page.goto(f'http://127.0.0.1:{server.server_port}/workspace/portfolio/overview')
+            site=f'http://127.0.0.1:{server.server_port}{WEB_BASE}'
+            page.goto(site+'workspace/portfolio/overview')
             page.get_by_role('heading', name='实盘组合').wait_for(timeout=20000)
             page.get_by_label('可停靠终端工作区').wait_for()
             page.wait_for_timeout(300)
             baseline=page.evaluate("({...window.__terminalPerf, scripts:performance.getEntriesByType('resource').filter(e=>new URL(e.name).pathname.endsWith('.js')).map(e=>({url:new URL(e.name).pathname,duration:e.duration,size:e.decodedBodySize})),navigation:performance.getEntriesByType('navigation').map(e=>({ttfb:e.responseStart,domContentLoaded:e.domContentLoadedEventEnd}))})")
-            baseline['critical_js_gzip_bytes']=sum(len(gzip.compress((WEB/'dist'/item['url'].lstrip('/')).read_bytes())) for item in baseline['scripts'] if (WEB/'dist'/item['url'].lstrip('/')).is_file())
+            baseline['critical_js_gzip_bytes']=sum(len(gzip.compress((WEB/'dist'/item['url'].removeprefix(WEB_BASE).lstrip('/')).read_bytes())) for item in baseline['scripts'] if (WEB/'dist'/item['url'].removeprefix(WEB_BASE).lstrip('/')).is_file())
             (output/'performance.json').write_text(json.dumps(baseline,indent=2))
             page.screenshot(path=str(output / 'workspace-1920.png'), full_page=True)
             page.get_by_role('tab', name='策略组 · 总览', exact=True).click()
@@ -136,7 +139,7 @@ def main():
                 page.locator('.event-timeline').get_by_text('委托提交',exact=True).wait_for()
                 assert page.locator('.event-timeline>div').count()==3
                 page.screenshot(path=str(output/'event-timeline.png'),full_page=True)
-            page.goto(f'http://127.0.0.1:{server.server_port}/workspace/execution/overview')
+            page.goto(site+'workspace/execution/overview')
             page.get_by_role('button', name='分组与透视', exact=True).click(timeout=20000)
             try:
                 page.locator('perspective-viewer').wait_for(state='visible',timeout=30000)

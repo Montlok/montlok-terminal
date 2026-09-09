@@ -31,6 +31,7 @@ import { WorkspaceCommands } from './WorkspaceCommands';
 import 'flexlayout-react/style/dark.css';
 import './workspace.css';
 import './terminalDocking.css';
+import {assetPath} from './assetPath';
 const MarketDock = lazy(() =>
   import('./MarketDock').then((module) => ({ default: module.MarketDock })),
 );
@@ -147,7 +148,7 @@ export function QuantWorkspace({ children }: { children: ReactNode }) {
           model={model}
           factory={factory}
           realtimeResize={false}
-          popoutURL="/popout.html"
+          popoutURL={assetPath('popout.html')}
           onAction={(action) => {
             if (action.type === Actions.SELECT_TAB) {
               const node = model.getNodeById(action.data.tabNode) as

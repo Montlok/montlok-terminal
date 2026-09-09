@@ -6,8 +6,8 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-User=montlok
-Group=montlok
+User=nautilus
+Group=nautilus
 EnvironmentFile=/etc/montlok-terminal/projector.env
 ExecStart=/opt/montlok-terminal/current/bin/montlok-projector
 WorkingDirectory=/var/lib/montlok-terminal
@@ -19,6 +19,10 @@ ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 ReadWritePaths=/var/lib/montlok-terminal
+InaccessiblePaths=/www/nautilus/credentials /www/nautilus/operator
+MemoryMax=1G
+CPUQuota=200%
+Nice=10
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 UMask=0077
 

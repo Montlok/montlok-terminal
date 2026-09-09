@@ -7,7 +7,7 @@ Build on CI or a build host. Install only the release binaries, signed manifest,
 static assets, and reviewed configuration on Tokyo. Source trees, test suites,
 notebooks, package managers, and capacity scripts stay on build/research hosts.
 
-The runtime user requires read access to the existing durable run log and
+The runtime user (`nautilus` in the supplied units) requires read access to the existing durable run log and
 control socket. Its writable state belongs under `/var/lib/montlok-terminal`.
 Set `MONTLOK_EVENT_LOG`, `MONTLOK_ACCOUNT_ID`, `MONTLOK_GROUP_ID`,
 `MONTLOK_RUN_ID`, `MONTLOK_ADAPTER_DB`, and `MONTLOK_NATS_URL` for each adapter.
@@ -21,7 +21,7 @@ native compatibility link uses one private 32-byte-or-longer key file via
 authentication. Native devices use the v2 authorization endpoints and system
 credential storage.
 
-The Nginx excerpt assumes the existing HTTP-level `connection_upgrade` map.
+The Nginx excerpt assumes the existing HTTP-level `operator_connection_upgrade` map.
 Private APIs, authentication, streams, operations, and receipts use `no-store`.
 Only fingerprinted static assets and versioned third-party WASM/JS bundles
 receive immutable caching. The WASM table component requires

@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { Client, ColumnType, Table } from '@perspective-dev/client';
 import type { HTMLPerspectiveViewerElement } from '@perspective-dev/viewer';
 import '@perspective-dev/viewer/themes/pro-dark.css';
+import {assetPath} from './assetPath';
 
 let runtime: Promise<Client> | undefined;
 const loadModule = (url: string): Promise<unknown> =>
   import(/* webpackIgnore: true */ url);
 function engine(): Promise<Client> {
   runtime ??= (async () => {
-    const base = '/vendor/perspective-5.3.1/';
+    const base = assetPath('vendor/perspective-5.3.1/');
     const [clientModule] = await Promise.all([
       loadModule(base + 'cdn/perspective.js'),
       loadModule(base + 'cdn/perspective-viewer.js'),

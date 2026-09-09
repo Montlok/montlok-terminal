@@ -1,0 +1,38 @@
+name: Web runtime release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: '22.20.0'
+          cache: npm
+      - run: npm ci
+      - run: npm --workspace @montlok/web run tsc
+      - run: npm --workspace @montlok/web test
+      - run: npm --workspace @montlok/web run build
+        env:
+          MONTLOK_WEB_BASE: /terminal-v2/
+      - name: Package static runtime
+        run: |
+          find apps/web/dist -name '*.map' -delete
+          find apps/web/dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.wasm' -o -name '*.html' \) -exec gzip -9 -k {} \;
+          mkdir -p build
+          tar -C apps/web/dist -czf build/montlok-web-runtime.tar.gz .
+      - uses: actions/attest-build-provenance@v4.2.2
+        with:
+          subject-path: build/montlok-web-runtime.tar.gz
+      - uses: actions/upload-artifact@v4.6.2
+        with:
+          name: montlok-web-runtime
+          path: build/montlok-web-runtime.tar.gz
+          if-no-files-found: error
