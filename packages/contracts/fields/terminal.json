@@ -2,6 +2,19 @@
   "schemaVersion": 2,
   "fields": [
     {
+      "id": "execution.free_cash",
+      "label_zh": "可用执行资金",
+      "label_en": "Available execution cash",
+      "data_type": "decimal",
+      "unit": "USDT",
+      "precision": 8,
+      "source": "nautilus.execution.freeCashUsdt",
+      "description": "Cash reported by the current execution process after its working-order reservations; not total account equity.",
+      "freshness_sla_ms": 1000,
+      "sensitive": true,
+      "calculation_version": "runner-execution-v1"
+    },
+    {
       "id": "alert.code",
       "label_zh": "告警代码",
       "label_en": "Alert Code",
