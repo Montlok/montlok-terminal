@@ -118,7 +118,8 @@ def main():
             if page.get_by_role('button',name='查看运行净值口径',exact=True).count():
                 page.get_by_role('button',name='查看运行净值口径',exact=True).click()
                 page.get_by_text('原始值',exact=True).wait_for()
-                page.screenshot(path=str(output/'metric-provenance.png'),full_page=True)
+                page.get_by_role('dialog').wait_for(state='visible')
+                page.screenshot(path=str(output/'metric-provenance.png'),full_page=True,animations='disabled')
                 page.keyboard.press('Escape')
             page.get_by_role('tab', name='策略组 · 总览', exact=True).click()
             page.wait_for_url('**/strategies/groups/overview')
