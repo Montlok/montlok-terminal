@@ -13,6 +13,10 @@ clients over one typed data and control plane. The v2 migration is in progress:
   query service.
 - `adapters/nautilus`: a non-blocking adapter that exports the persisted
   Nautilus event log without entering the trading hot path.
+- `engine/`: the Weilan/Nautilus trading-engine source, vendored from
+  `KeikaJames/nautilus-weilan` (see `engine/README.md`). It keeps its
+  upstream LGPL-3.0-or-later license and is not a member of the root Cargo
+  or CMake workspace. The operator UI remains `apps/web`.
 - `packages/contracts`: Protobuf, OpenAPI, Arrow, and JSON Schema contracts.
 
 The live trading process remains independent of every UI and data-plane
