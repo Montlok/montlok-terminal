@@ -1,0 +1,18 @@
+[package]
+name = "nautilus-model-runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Bounded model input and prediction contracts for Nautilus runtimes"
+
+[dependencies]
+serde_json = { workspace = true }
+
+[lib]
+name = "nautilus_model_runtime"
+
+[[bin]]
+name = "nautilus-model-guard"
+path = "src/main.rs"

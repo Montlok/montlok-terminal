@@ -1,0 +1,56 @@
+[package]
+name = "nautilus-plugin"
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+build = "build.rs"
+authors.workspace = true
+license.workspace = true
+description = "Plug-in system for the Nautilus trading engine"
+categories.workspace = true
+keywords.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+name = "nautilus_plugin"
+crate-type = ["rlib"]
+
+[features]
+default = []
+# Compatibility feature retained for downstream manifests
+host = []
+artifact-trust = [
+  "dep:blake3",
+  "dep:nautilus-analysis",
+  "dep:nautilus-cryptography",
+  "dep:nautilus-provenance",
+  "dep:serde",
+  "dep:thiserror",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+nautilus-analysis = { workspace = true, optional = true }
+nautilus-cryptography = { workspace = true, optional = true }
+nautilus-model = { workspace = true }
+nautilus-provenance = { workspace = true, optional = true }
+
+blake3 = { workspace = true, optional = true }
+log = { workspace = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
+
+[dev-dependencies]
+ed25519-dalek = { workspace = true }
+nautilus-core = { workspace = true }
+rstest = { workspace = true }
+serde_json = { workspace = true }

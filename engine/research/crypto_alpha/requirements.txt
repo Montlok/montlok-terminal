@@ -1,0 +1,5 @@
+numpy
+pandas
+scikit-learn
+lightgbm==4.7.0
+torch

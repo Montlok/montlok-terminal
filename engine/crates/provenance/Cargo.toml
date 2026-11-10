@@ -1,0 +1,37 @@
+[package]
+name = "nautilus-provenance"
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Native artifact and run provenance for NautilusTrader"
+categories.workspace = true
+keywords.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["redb"]
+redb = ["dep:redb", "dep:rmp-serde"]
+
+[lib]
+name = "nautilus_provenance"
+crate-type = ["rlib"]
+
+[dependencies]
+blake3 = { workspace = true }
+redb = { workspace = true, optional = true }
+rmp-serde = { workspace = true, optional = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+rmp-serde = { workspace = true }
+rstest = { workspace = true }
+tempfile = { workspace = true }
