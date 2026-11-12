@@ -1,11 +1,12 @@
 # Sidecar deployment
 
-The gateway, projector, NATS, and per-run adapters are independent services.
-None of their systemd units requires or restarts a Nautilus strategy service.
+The gateway, projector, NATS and per-run adapters are independent services;
+their systemd units start and stop apart from the Nautilus strategy services.
 
-Build on CI or a build host. Install only the release binaries, signed manifest,
-static assets, and reviewed configuration on Tokyo. Source trees, test suites,
-notebooks, package managers, and capacity scripts stay on build/research hosts.
+Build on CI or a build host. Tokyo receives the release binaries, signed
+manifest, static assets and reviewed configuration; source trees, test suites,
+notebooks, package managers and capacity scripts stay on build and research
+hosts.
 
 The runtime user (`nautilus` in the supplied units) requires read access to the existing durable run log and
 control socket. Its writable state belongs under `/var/lib/montlok-terminal`.
@@ -37,18 +38,18 @@ changes only these sidecars and static assets.
 `montlok-run-watcher` reads only the supervisor status command. Configure its
 `MONTLOK_CONTROL_SOCKET`, `MONTLOK_RUN_ROOT`, `MONTLOK_ADAPTER_ROOT`,
 `MONTLOK_ADAPTER_BINARY` and `MONTLOK_NATS_URL` in `run-watcher.env`.
-The watcher validates each run's persisted manifest and follows only explicit
-live runs. Historical research directories are not promoted by a registry mode
-change. Completed runs are released once the adapter's durable offset and
+The watcher validates each run's persisted manifest and follows explicit live
+runs; historical research directories keep their status when the registry mode
+changes. Completed runs are released once the adapter's durable offset and
 outbox show that all recorded events were acknowledged.
 
 When migrating from individual adapter units, stop only the corresponding
 `montlok-adapter@...` units before enabling the watcher. Keep the same adapter
-database directory. The per-outbox lock rejects two adapter owners, and the
-watcher only terminates child processes it created, never a trading PID.
+database directory. The per-outbox lock admits one adapter owner, and the
+watcher terminates only the child processes it created.
 
 The supplied units isolate writable state, memory and CPU from the trading
 services. On a separate data volume, create `/var/lib/montlok-terminal` as a
 link to that volume before starting the units. Keep archive capacity and
-JetStream limits within the provisioned volume; never put growing event stores
-on a nearly full root disk.
+JetStream limits within the provisioned volume, on a disk with room for the
+event stores to grow.

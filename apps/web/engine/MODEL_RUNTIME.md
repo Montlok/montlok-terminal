@@ -1,138 +1,108 @@
-# Local model releases and inference
+# Model inference
 
-This runner loads existing trained models; it does not retrain or claim alpha.
-Production inference is a local subprocess on the Tokyo host. There is no Spark
-RPC or other remote prediction dependency. Spark is only for training/offline
-comparison. Modes are `shadow` (targets only) and `sandbox` (Nautilus local
-simulated execution with actual client-class inspection). Real execution is not
-implemented by this path.
+The engine runs published model releases in a local inference subprocess next to
+the Nautilus node. Each release names one runner:
+
+| `runnerId` | Model | Device | Modes | Runtime |
+|---|---|---|---|---|
+| `gru_v1` | GRU on 15-minute BTC spot, BTC perpetual and ETH spot bars | CPU | `shadow`, `sandbox` | PyTorch or montlok (`modelRuntime.inferenceBackend`) |
+| `rdt4quant_v1` | RDT4quant multi-asset | CUDA BF16 | `shadow` | PyTorch with official Mamba3 |
+| `rdt4quant_cpu_v2` | RDT4quant multi-asset, crypto BTC-USDT on 1-minute bars | CPU | `live` | `montlok.rdt` kernels |
+
+Training and offline comparison happen on the research hosts; production
+inference is the local subprocess on the Tokyo host.
 
 ## Components
 
-- `model_release.py`: immutable manifest + weights/scalers/provenance packaging,
-  host-installed reviewed runner loading, safe `torch.load(weights_only=True)`.
-- `model_inference_worker.py`: one persistent model instance, warmup, bounded
-  queue, compatible-contract batching, per-request deadline checks before and
-  after inference, hash-correlated outputs and latency counters.
-- `model_client.py`: mandatory local Rust guard and local PyTorch subprocesses.
-  A hard prediction timeout stops the dedicated processes. There is no Python
-  fallback for the Rust guard and no CPU fallback for the RDT GPU runner.
-- `model_strategy.py`: Nautilus Strategy receives raw completed-bar feature
-  windows on `model.features.<releaseId>`, schedules async inference, publishes
-  validated targets on `model.targets.<releaseId>`, and optionally applies spot
-  long/cash targets only to a verified SandboxExecutionClient.
-- `model_market_actor.py`: local async public-OKX confirmed-candle producer;
-  exact quote-currency volume and original reviewed feature code, off the event
-  callback thread; three aligned markets, stale and gap checks, no fake candles.
-  RDT supports explicitly selected `crypto:BTC-USDT` (57 features, 480 x 1m
-  input sequence) and `token_hour:XNVDA` (23 features, 64 x 1H sequence).
-- `model_group_worker.py`: fixed root-registered worker assembling the hardened
-  node/settings, producer, model Strategy, durable control endpoint and isolated
-  manifest/status/view/equity/final artifacts. The root registry's `modelRuntime`
-  selects installed paths and the explicit RDT `contractKey` (string or
-  `{ "rdt4quant_v1": "crypto:BTC-USDT" }` mapping). This selection is not a
-  browser argument and is not added to immutable manifest.runtime.
-  Published releases are dynamic groups named
-  `model-<manifestSha256 first 16 characters>`. Production mode starts as shadow.
-- `model_probe.py`: existing GRU bars → original feature implementation →
-  identical scaler → actual prediction. Historical direct reference mode is
-  explicitly distinct from a current guarded runtime probe.
-- `model_rdt_probe.py`: existing NPZ eligible windows → real CUDA BF16 weights,
-  selected horizon, all quantiles, batch latency and repeat-error measurement.
+| File | Role |
+|---|---|
+| `model_release.py` | Packages GRU and RDT releases, validates manifests, and loads the host-installed reviewed runner code by hash (`torch.load(weights_only=True)` for weights) |
+| `model_inference_worker.py` | One persistent model instance: warmup, bounded queue, batches of one contract, deadline checks before and after inference, hash-tagged outputs and latency counters |
+| `model_client.py` | Starts the Rust guard and the inference worker. The guard normalizes inputs, validates predictions and turns them into targets; a timed-out prediction stops both processes |
+| `model_strategy.py` | Nautilus strategy of a model group: receives feature windows on `model.features.<releaseId>`, publishes targets on `model.targets.<releaseId>`, and in `sandbox` mode applies spot long/cash targets through a verified `SandboxExecutionClient` |
+| `model_market_actor.py` | OKX public closed-candle producer; runs the reviewed feature code off the event thread |
+| `model_group_worker.py` | Model group process: hardened node and settings, producer, strategy, control socket and run artifacts |
+| `live_model_worker.py` | Live `rdt4quant_cpu_v2` execution: one-minute feature windows through guard and worker, then post-only limit orders toward the target fraction on BTC-USDT |
+| `model_probe.py` | GRU bars → original features → scaler → prediction, through the guard or with `--direct-offline` on historical data |
+| `model_live_probe.py` | One current public-data GRU prediction through guard and worker, compared with the direct reference |
+| `model_rdt_probe.py` | CUDA BF16 RDT reload and timed inference on prepared NPZ windows |
+| `model_normalization_audit.py` | Bitwise comparison of NumPy and Rust-guard normalization on historical GRU windows |
+| `model_capsule_probe.py`, `model_ingress_ws_probe.py` | Native market-data ABI and OKX subscription-ACK regressions |
+| `model_preopen_validation.py` | Administrator smoke run of shadow groups in an isolated directory on the Tokyo host |
 
-The model strategy does not manufacture candles from quote ticks. Its upstream
-market actor must supply all three GRU markets, aligned completed bars and true
-`volume_quote`. The included actor reads OKX's confirmed `volCcyQuote` directly;
-base volume times close is not substituted. The original feature code in `recent_btc/prepare.py` is the
-reference, and `model_probe.py` validates its installed hash. Source timestamps
-label bar opens; runtime `asOfNs` is the completed bar's UTC close timestamp.
+## Data flow
 
-## Release trust and schema
+1. The market actor publishes a raw completed-bar window on `model.features.<releaseId>`;
+   `asOfNs` is the UTC close of the last completed bar.
+2. The guard's `prepare` normalizes it and returns the `workerRequest`.
+3. The inference worker predicts on normalized float32 inputs.
+4. The guard's `validate_prediction` checks the prediction and derives the target fraction,
+   published on `model.targets.<releaseId>`.
 
-ZIP root is `manifest.json`. All model/source paths are relative, accompanied by
-SHA256. The root-admin launch registry pins the exact manifest hash. A digest
-alone is integrity evidence, not authority to execute unreviewed code.
+GRU windows come from three aligned 15-minute markets with OKX's confirmed
+`volCcyQuote` as quote volume and the original `recent_btc/prepare.py` feature code
+(hash-checked by `model_probe.py`). A full GRU warmup takes 128 aligned bars (96-bar
+feature lookback + 32-bar sequence).
 
-Uploaded/bundled Python source is provenance only and is **never imported**.
-`--runner-root` is a host-admin process option, not a manifest field. It names
-preinstalled reviewed research pipeline implementations. GRU model and feature
-implementation hashes are additionally fixed in `model_release.py`; RDT compares
-the installed full source tree against reviewed provenance before import.
+RDT runs one host-selected contract. Crypto loads 963 aligned 1-minute bars (480-bar
+feature lookback + 480-bar sequence + 3 overlap bars) and then refreshes the three latest
+bars; token-hour loads 131 hourly bars (64 + 64 + 3) and uses base `volume`, as
+`fullpass.prepare` and its historical CSV do. A gap triggers a bounded re-bootstrap.
+Both feature implementations compute float64 inputs, and the contract's cadence bounds
+input age before and after inference.
 
-Key fields are `schemaVersion:1`, `releaseId`, `runnerId` (`gru_v1` or
-`rdt4quant_v1`), `family`, `modelVersion`, `model`, `sources`, `featureContract`
-(GRU) or `domainContracts` (RDT), `outputContract`, `runtime`, `policy`, and
-`provenance`. Each domain contract binds ordered features, scaler, clip, sequence
-length, instrument and asset embedding ID. RDT `selectedHeadByDomain` is required
-and selected explicitly when packaging; no first-head assumption is allowed.
+## Release manifest
 
-Runtime requests contain `requestId`, `releaseId`, `modelHash`, `instrument`,
-optional RDT `domain`, `mode`, `asOfNs`, `deadlineNs`, ordered `featureNames`,
-`inputs[sequence][features]`, and `normalized`. The guard takes unnormalized
-inputs and returns `workerRequest`. The worker requires normalized float32 data.
-Responses carry identity, input timestamp, completion timestamp, selected
-`horizon` / `horizonUnit`, scalar `prediction` as simple return, and RDT's full
-`quantilesBps` matrix (log-return basis points), with queue/inference/total time.
+A release ZIP has `manifest.json` at its root; every model and source path is relative
+and carries a SHA256. The root registry pins the exact manifest hash. Bundled sources are
+provenance records: the runner code comes from `--runner-root`, a host-installed directory
+of reviewed pipelines. GRU model and feature hashes are fixed in `model_release.py`; RDT
+compares the installed source tree with the release provenance before import.
 
-## Verified GRU artifact
+Key fields: `schemaVersion: 1`, `releaseId`, `runnerId`, `family`, `modelVersion`,
+`model`, `sources`, `featureContract` (GRU) or `domainContracts` (RDT), `outputContract`,
+`runtime`, `policy` and `provenance`. A domain contract binds ordered features, scaler,
+clip, sequence length, instrument and asset embedding ID. RDT releases name their output
+head per domain in `selectedHeadByDomain`.
 
-The bundled `releases/gru-latest-20260906-v1` is the existing
-`btc_gru_recent_20260905/latest` export, not a new fit:
+Requests carry `requestId`, `releaseId`, `modelHash`, `instrument`, optional RDT `domain`,
+`mode`, `asOfNs`, `deadlineNs`, ordered `featureNames`, `inputs[sequence][features]` and
+`normalized`. Responses carry identity, input and completion timestamps, the selected
+`horizon` / `horizonUnit`, the scalar `prediction` as a simple return, RDT's full
+`quantilesBps` matrix (log-return basis points), and queue, inference and total time.
 
-- Model SHA256: `e14b9e6327ca24bfe0d8d4ca969f0b5c76c912c068bb0ce84f091172d2cc1b9c`.
-- 40 features, sequence 32, 15-minute BTC spot / BTC perpetual / ETH spot inputs.
-- Full raw warmup needs 128 aligned bars (96-feature lookback + 32 sequence).
-- Existing 12 bps validation-selected threshold, long/cash maximum fraction 1.
-- Output scale 1000, forecast open t+1 to open t+5 (four 15-minute bars).
-- Latest refit has no independent holdout performance attached.
+## GRU releases
 
-Package a new immutable GRU release:
+The bundled `releases/gru-latest-20260906-v1` is the `btc_gru_recent_20260905/latest`
+export:
+
+- Model SHA256 `e14b9e6327ca24bfe0d8d4ca969f0b5c76c912c068bb0ce84f091172d2cc1b9c`.
+- 40 features, sequence 32.
+- Validation-selected threshold 12 bps, long/cash maximum fraction 1.
+- Output scale 1000; forecast from the open of t+1 to the open of t+5 (four 15-minute bars).
+- `provenance.independentTestMetrics` is `null` for the latest refit.
 
 ```sh
 python model_release.py gru --model-dir /reviewed/models/trained/btc_gru_recent_20260905/latest \
   --source-dir /reviewed/pipelines/recent_btc --output /releases/new-version --release-id new-version
+python model_probe.py --manifest /releases/new-version/manifest.json --manifest-sha256 MANIFEST_DIGEST \
+  --runner-root /reviewed/pipelines --data-dir DATA_DIR --guard-binary /installed/model-guard
 ```
 
-The CLI prints the exact manifest SHA. Run a current guarded probe with
-`model_probe.py --manifest ... --manifest-sha256 ... --runner-root ...
---data-dir ... --guard-binary /installed/model-guard`. For historical data use
-`--direct-offline` explicitly instead; that is not runtime readiness evidence.
+The first command prints the manifest SHA256. `model_probe.py --direct-offline` replays
+historical data for comparison; readiness comes from the guarded probe.
 
-Deployment requirements tested locally are recorded in
-`requirements-model-cpu.txt`. The model requires `torch==2.11.0`,
-`numpy==2.2.6`, `pandas==3.0.2`, `certifi==2026.4.22`, and `psutil==7.2.2`.
-Use the same Python interpreter family as the existing compiled Nautilus node
-(this checkout requires Python >=3.12,<3.15 and msgspec >=0.21.1,<1.0.0).
-A separate venv using `--system-site-packages` can reuse the existing native
-Nautilus build; do not install a different Nautilus release merely for PyTorch.
-Use the official CPU PyTorch wheel index on CPU-only Tokyo.
+## RDT releases
 
-The deployed worker directory needs `model_group_worker.py`,
-`model_market_actor.py`, `model_strategy.py`, `model_client.py`,
-`model_inference_worker.py`, `model_release.py`, `model_probe.py`, `commands.py`,
-and `control.py`. Its sibling `server` directory needs the current registered
-`group_runtime.py` and model release-store modules. Hardened `runtimePath` needs
-`settings.py`, `node_config.py`, `health.py`, `alerts.py` and their existing
-runtime dependencies. GRU `runnerRoot` needs only reviewed
-`recent_btc/train_gru.py` and `recent_btc/prepare.py`.
-
-## RDT packaging and offline GPU validation
-
-Required artifacts are a stable `results/latest/seed_N/best.pt`, its full-pass
-`prepared/manifest.json`, parent crypto `prepared/metadata.json`, and the reviewed
-pipeline source root. Weights alone omit the per-asset input and output scalers.
-The checkpoint must have completed a latest full pass and its asset order must
-match the prepared metadata. Do not copy metrics from walk-forward fold models
-onto this joint latest checkpoint.
-
-Compute the reviewed source-tree digest over `rdt_source_files(root)` sorted
-relative `path:sha256` lines joined with `\n` (no trailing newline). The set is
-`rdt4quant/model.py`, `rdt4quant/prepare.py`, `rdt4quant/download.py`, all runtime `.py`
-under `rdt4quant/native` excluding `tests/` and bytecode, `rdt4quant_fullpass/multiasset_model.py`, and
-`rdt4quant_fullpass/prepare.py`. Pass that digest explicitly with
-`--source-tree-sha256`. Pass an administrator-selected JSON file mapping each
-domain to a zero-based output head through `--selected-head-by-domain`; horizons
-are taken from the checkpoint's actual config.
+GPU releases (`rdt4quant_v1`) need a stable `results/latest/seed_N/best.pt` from a
+completed full pass, its `prepared/manifest.json`, the parent crypto
+`prepared/metadata.json` and the reviewed pipeline source root; the checkpoint's asset
+order matches the prepared metadata, and metrics come from this joint checkpoint. The
+source-tree digest is the SHA256 of the sorted relative `path:sha256` lines of
+`rdt_source_files(root)`, joined with `\n`: `rdt4quant/model.py`, `rdt4quant/prepare.py`,
+`rdt4quant/download.py`, every runtime `.py` under `rdt4quant/native` outside `tests/`,
+`rdt4quant_fullpass/multiasset_model.py` and `rdt4quant_fullpass/prepare.py`. A JSON file
+maps each domain to its zero-based output head; horizons come from the checkpoint config.
 
 ```sh
 python model_release.py rdt --checkpoint /stable/results/latest/seed_7/best.pt \
@@ -147,72 +117,76 @@ python model_rdt_probe.py --manifest /releases/rdt-version/manifest.json \
   --batch-size 1 --iterations 20
 ```
 
-Repeat for batch 8 and the crypto/equity domains against their matching prepared
-NPZ. The reported p50/p95/p99 must fit the release deadline on the actual
-production host; Spark offline results alone do not establish Tokyo capacity.
+Repeat the probe for batch 8 and each domain against its prepared NPZ; the p50/p95/p99
+on the production host must fit the release deadline. These releases run on nodes with
+CUDA BF16 and official Mamba3, whose `forward` uses Triton/TileLang and `step` CuteDSL
+and Triton rotary
+([mamba3.py](https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba3.py),
+[reference tests](https://github.com/state-spaces/mamba/blob/main/tests/ops/triton/test_mamba3_siso.py)).
 
-The existing runner requires CUDA BF16 and official Mamba3. A CPU-only host must
-report a missing CUDA requirement and must not start an RDT model run, even if
-the ZIP and manifest are technically valid. Source review found that official
-Mamba3 `forward` uses Triton / TileLang, while `step` uses CuteDSL and Triton
-rotary. Official tests contain pure PyTorch SISO step/forward references, but
-these are not an already integrated full-model CPU backend. A future CPU port
-must preserve weights/architecture, replace all fused dependencies, and compare
-full RDT outputs and target decisions against GPU golden results on all domains
-before it can be offered as deployment-ready.
+CPU releases (`rdt4quant_cpu_v2`) come from an installed montlok.cpp checkpoint:
+`deploy/publish_cpu_model.py` publishes it through the model catalog, and
+`deploy/enable_cpu_model_live.py` binds it to `live_model_worker.py`
+(`modelRuntime.liveExecution`, `runnerRoots`, `contractKey`).
 
-Continuous RDT production is single-contract, shadow-only. The root registry
-selects the contract; the manifest selects its explicit output head. The worker
-requires this contract at startup, warms that contract only and rejects another
-domain/instrument. For crypto, initial pagination loads 963 aligned 1m bars
-(480-feature lookback + 480 sequence + 3 overlap bars), then cached history is
-updated with three latest bars. Token-hour uses 131 bars (64 + 64 + 3). Missing
-intervals force a bounded rebootstrap, never synthetic bars. Crypto uses true
-quote volume; token-hour intentionally uses original base `volume`, matching
-fullpass.prepare and its historical CSV. Both feature implementations compute
-float64 inputs. Cadence-specific freshness is enforced before and after model
-inference. No equity-daily feed is silently substituted for either path.
+## montlok
 
-Primary references:
+`model_release.py` uses montlok (`import montlok`, from
+[montlok.cpp](https://github.com/Montlok/montlok.cpp)) in two places:
 
-- https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba3.py
-- https://github.com/state-spaces/mamba/blob/main/tests/ops/triton/test_mamba3_siso.py
+- `rdt4quant_cpu_v2` releases run `montlok.rdt` over the host-reviewed
+  `runnerRoot/rdt4quant/native` Model tree once its hashes are verified, with the
+  installed `montlok._C` kernels (`MONTLOK_REQUIRE_PREBUILT=1`).
+- GRU releases run on montlok when the root registry sets
+  `modelRuntime.inferenceBackend` to `montlok` (GROUP_RUNTIME.md). The worker exports
+  the reviewed `ReturnGRU` to montlok at load time and starts once the export matches
+  PyTorch within 1e-5 of the output scale on 16 probe windows across the published clip
+  range. On an M4 Max the bundled release answers a single request in 54 µs (PyTorch:
+  216 µs); predictions agree to 1e-8.
+
+The worker's `ready` event carries `backend`: the montlok version, the number of
+installed montlok files that match the wheel RECORD, and the GRU parity result. Install
+montlok into the model runtime environment after torch, so its kernels are built against
+that torch:
+
+```sh
+pip install --no-build-isolation "montlok @ git+https://github.com/Montlok/montlok.cpp@v0.2.0"
+```
+
+## Deployment
+
+`requirements-model-cpu.txt` lists the tested versions: `torch==2.11.0`, `numpy==2.2.6`,
+`pandas==3.0.2`, `certifi==2026.4.22`, `psutil==7.2.2` and `montlok==0.2.0`. Use the
+Python interpreter family of the compiled Nautilus node (Python >=3.12,<3.15 and msgspec
+>=0.21.1,<1.0.0); a venv with `--system-site-packages` reuses the installed native
+Nautilus build. CPU-only hosts use the official CPU PyTorch wheel index.
+
+The worker directory holds `model_group_worker.py`, `model_market_actor.py`,
+`model_strategy.py`, `model_client.py`, `model_inference_worker.py`, `model_release.py`,
+`model_probe.py`, `commands.py` and `control.py`; its sibling `server` directory holds
+the registered `group_runtime.py` and the model release store. The hardened
+`runtimePath` holds `settings.py`, `node_config.py`, `health.py` and `alerts.py`. A GRU
+`runnerRoot` needs the reviewed `recent_btc/train_gru.py` and `recent_btc/prepare.py`.
 
 ## Checks
 
-`python -m unittest -v test_model_inference` exercises malformed targets, real
-GRU packaging/reload, ordered feature and hash checks, invalid live mode,
-nonfinite/shape errors, bounded queue, expired requests and late-output discard,
-and eight concurrent requests to a real persistent worker. Synthetic timestamps
-used by the protocol fixture are test data only. No test sends exchange orders.
+```sh
+python -m unittest -v test_model_inference test_model_rdt_features
+```
 
-`python -m unittest -v test_model_rdt_features test_model_inference` additionally
-compares original RDT crypto 480x57 and token 64x23 feature arrays exactly,
-checks token base-volume semantics and rejects missing bars, feature reordering
-and a contract other than the host-selected one. It also kills a real inference
-subprocess and verifies readiness becomes false. The group supervisor checks
-both local child processes every cycle, and control.status carries the actual
-`warmupComplete`, exact `modelHash` and `manifestSha256`; a dead child is an error,
-not a permanently remembered successful warmup.
+`test_model_inference` covers target validation, real GRU packaging and reload, feature
+order and hash checks, mode checks, nonfinite and shape errors, the bounded queue, expired
+requests, late-output discard, eight concurrent requests to a persistent worker, and the
+montlok GRU backend against PyTorch on the bundled release. `test_model_rdt_features`
+compares the original RDT crypto 480x57 and token 64x23 feature arrays exactly, checks
+token base-volume semantics, missing bars, feature order and the host-selected contract,
+and kills a real inference subprocess to confirm readiness turns false; the group
+supervisor checks both child processes every cycle, and `control.status` reports the
+actual `warmupComplete`, `modelHash` and `manifestSha256`. Test fixtures use synthetic
+timestamps and local processes.
 
-`model_normalization_audit.py` compared 32 real historical GRU windows, 40,960
-values total. Original raw/scaler arrays were float64 and network inputs
-float32. Rust f64 normalization/clipping then f32 matched both NumPy and the
-saved training NPZ bit-for-bit (zero differences for all 40 features). An
-incorrect f32-normalization variant differed on 20,328 values. The exact
-per-feature evidence is `/private/tmp/gru-normalization-bit-audit-20260906.json`.
-
-`model_live_probe.py` takes the same manifest/hash/runner-root/guard-binary
-arguments and performs one real current public-data → Rust guard → persistent
-worker → Rust target check with direct reference comparison. It does not create
-a node or submit orders. On 2026-09-06, a local probe read 199 completed candles
-for each of the three markets through the 05:45 UTC close; reference and guarded
-forecasts both equaled `-0.0003701332211494446`, difference zero, target fraction
-zero, worker latency 0.423 ms. This is actual inference evidence, not PnL evidence
-or proof of Tokyo deployment. No source/training artifact was modified.
-
-The Strategy and assembled model group are source/API checked against this
-Nautilus checkout. Actual deployed-node lifecycle and Sandbox fill/equity history
-need separate integration evidence in the compiled native runtime. Publication
-does not automatically start a model strategy group. A technically valid RDT
-manifest remains unavailable for running on CPU-only Tokyo.
+`model_live_probe.py` takes the manifest, hash, runner-root and guard-binary arguments
+and runs one current public-data prediction through the guard and the persistent worker,
+compared with the direct reference. Node lifecycle, Sandbox fills and equity history are
+verified on the target host's compiled Nautilus runtime. Publishing a release makes it
+available to start; a run starts from a confirmed operation.
