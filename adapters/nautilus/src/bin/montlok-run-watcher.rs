@@ -243,7 +243,7 @@ async fn main() -> Result<()> {
             children.insert(source.run.clone(), child);
             report("following_live_run", &source.run);
         }
-        // A directory disappearing must not make us manipulate any trading PID.
+        // A vanished directory removes only the adapter children this watcher started.
         let removed = children
             .keys()
             .filter(|run| !known.contains(*run))

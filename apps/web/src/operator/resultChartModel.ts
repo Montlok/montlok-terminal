@@ -67,8 +67,8 @@ function candleOf(row: unknown, priceOnly: boolean): Row | undefined {
   if (!row || typeof row !== 'object') return undefined;
   const record = row as Row;
   if (Array.isArray(row)) {
-    // Index/mark-price responses end in confirm, not volume. Unknown six-field
-    // arrays are ambiguous and must not acquire a manufactured volume series.
+    // Index/mark-price responses end in confirm; volume series come from
+    // responses that name a volume field.
     if (
       priceOnly
         ? row.length !== 6 || !['0', '1'].includes(String(row[5]))

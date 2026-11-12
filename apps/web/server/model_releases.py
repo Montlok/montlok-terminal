@@ -1,9 +1,9 @@
 """Versioned model publication, not execution or model-quality approval.
 
-Only registered artifacts can become releases. A bundle's source files are
-provenance; this module never imports code, unpickles weights, spawns a runner,
-or accesses trading credentials. A host-installed, allowlisted runner interprets
-the frozen manifest later under a separate, explicitly confirmed run action.
+Registered artifacts become releases. A bundle's source files are provenance
+records; this module stores, hashes and validates files. A host-installed,
+allowlisted runner interprets the frozen manifest later, under a separate,
+explicitly confirmed run action.
 """
 from __future__ import annotations
 
@@ -477,8 +477,8 @@ class ModelReleaseStore:
             prepared = self.prepare(action, arguments)
         except ModelReleaseConflict:
             # A concurrent copy may commit between the initial lookup and the
-            # read-only preflight. Its exact receipt wins over stale active-ID
-            # rejection, without creating another publication.
+            # read-only preflight. Its exact receipt wins over a stale active-ID
+            # rejection, and the publication stays single.
             with self.connect() as db:
                 prior = db.execute("SELECT * FROM operations WHERE id=?", (operation_id,)).fetchone()
                 if prior and prior["request"] == serialized:
@@ -515,8 +515,8 @@ class ModelReleaseStore:
                         release["modelVersion"], release["manifestSha256"], release["artifactId"], release["artifactSha256"],
                         encode(bundle["manifest"]), bundle["bytes"], time.time(), actor))
             else:
-                # Explicit old version is checked again; rollback never means
-                # 'previous' by position and never mutates an active run.
+                # The explicitly named version is checked again; rollback selects it
+                # by ID and moves only the pointer that new runs read.
                 manifest_path = released_file(self.root / "releases" / release["manifestSha256"], "manifest.json")
                 if not manifest_path.is_file() or manifest_path.stat().st_size > ArtifactStore.MAX_JSON_BYTES or digest(manifest_path.read_bytes()) != release["manifestSha256"]:
                     raise ModelReleaseError("回滚版本的不可变清单已改变或丢失")

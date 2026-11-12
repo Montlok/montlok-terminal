@@ -171,8 +171,8 @@ impl Journal {
         };
         let seed = v2::EventEnvelope::decode(seed.as_slice())?;
         let limit = limit.clamp(1, 2048);
-        // Visit each linkage key once. A broad correlation must not expand an
-        // O(n^2) recursive join or hold the event-ingestion writer lock.
+        // Visit each linkage key once, so a broad correlation stays linear and
+        // reads one snapshot outside the event-ingestion writer lock.
         let mut events = vec![seed];
         let mut seen = std::collections::HashSet::from([id.to_owned()]);
         let mut visited = std::collections::HashSet::new();

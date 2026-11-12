@@ -1,7 +1,7 @@
 """Continuous Alpha execution on Nautilus's native quotes, risk and order state.
 
 One reservation per instrument/side, retained through cancel acknowledgement.
-Portfolio weights remain the released Alpha; this module does not invent a model.
+Portfolio weights are the released Alpha's.
 """
 from collections import Counter, deque
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR

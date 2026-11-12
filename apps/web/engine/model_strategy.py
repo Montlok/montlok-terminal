@@ -2,8 +2,8 @@
 
 The upstream market actor supplies completed-bar raw feature windows. The Rust
 guard owns normalization, prediction validation, and target policy. Shadow mode
-publishes targets only. Sandbox orders require actual SandboxExecutionClient
-route inspection, not a mode label or a caller-provided boolean.
+publishes targets. Sandbox orders go out after each order's route is inspected
+and confirmed as Nautilus's SandboxExecutionClient.
 """
 from __future__ import annotations
 
@@ -170,8 +170,8 @@ def make_model_strategy(node, client, *, mode, instrument_id, budget_usdt, loop=
                 free = account.balance_free(self.instrument.quote_currency)
                 if free is None:
                     return
-                # Use released instrument taker fee, never spend nonexistent
-                # cash to approximate a desired weight. No leverage or shorts.
+                # Buys are capped by free cash after the instrument's taker fee;
+                # positions stay spot long/cash.
                 amount = min(amount, float(free) / (ask * (1 + float(self.instrument.taker_fee))))
             else:
                 amount = min(amount, max(0, current))

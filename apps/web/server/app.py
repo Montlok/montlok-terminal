@@ -445,8 +445,8 @@ class Operator:
         except TimeoutError:
             return web.json_response({"error": "上传超时，请重试"}, status=408)
         except Exception:
-            # Filesystem paths, SQLite messages and uploaded contents never
-            # cross the API boundary through generic exception formatting.
+            # The client receives a fixed message; paths, SQLite messages and
+            # uploaded contents stay in the server log.
             return web.json_response({"error": "文件库暂不可用"}, status=503)
 
     async def strategy_groups_route(self, request):
@@ -750,8 +750,8 @@ class Operator:
                                       (status, json.dumps(redact(result)), identifier))
                 self.database.commit()
             except (ValueError, TimeoutError, OSError):
-                # A temporarily unavailable worker does not change a receipt
-                # into a failure and must not cause an automatic retry.
+                # A temporarily unavailable worker leaves the receipt unknown;
+                # the operator queries it again.
                 status = "unknown"
         return web.json_response({"id": identifier, "status": status, "result": redact(result)})
 

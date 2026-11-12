@@ -243,8 +243,8 @@ void GatewayClient::sendSubscription()
     context->set_account_id(m_context->accountId().toStdString());
     context->set_strategy_group_id(m_context->strategyGroupId().toStdString());
     context->set_run_id(m_context->runId().toStdString());
-    // The run stream includes all instruments so its sequence remains contiguous.
-    // Per-instrument filtering is a view concern, not a reason to omit run events.
+    // The run stream includes all instruments so its sequence remains contiguous;
+    // per-instrument filtering happens in the view.
     context->set_model_release_id(m_context->modelReleaseId().toStdString());
     context->set_signal_version(m_context->signalVersion().toStdString());
     std::string encoded;

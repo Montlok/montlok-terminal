@@ -199,8 +199,8 @@ def attach(node, runtime, spec, snapshot, config):
             if not candidates:
                 self.phase='ALLOCATED'
                 return
-            # Reduce excess inventory first, but an illiquid sell must not
-            # prevent other symbols from using cash already available.
+            # Reduce excess inventory first; other symbols use the cash already
+            # available while an illiquid sell waits.
             candidates.sort(key=lambda item: item[2] >= 0)
             for key,row,delta,quantity in candidates:
                 if runtime.state == 'REDUCING' and delta > 0:

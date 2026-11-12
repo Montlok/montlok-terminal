@@ -731,7 +731,7 @@ async fn deliver_initial(
     resume: &HashMap<String, u64>,
 ) -> Result<HashMap<String, u64>> {
     // The receiver is subscribed before this consistent journal transaction.
-    // All per-stream watermarks are retained; unrelated stream counters are never combined.
+    // All per-stream watermarks are retained; each stream keeps its own counter.
     let context = request.context.clone().unwrap_or_default();
     let (watermarks, events) = hub
         .snapshot(request.topics.clone(), context)

@@ -1,7 +1,7 @@
 """Real CUDA/BF16 RDT weight reload and timed inference on existing NPZ windows.
 
-This reads fixed training/prepared artifacts, never creates orders or a new fit.
-Historical inputs are explicitly an offline replay, not current market evidence.
+It reads fixed training/prepared artifacts and replays historical inputs
+offline.
 """
 from __future__ import annotations
 

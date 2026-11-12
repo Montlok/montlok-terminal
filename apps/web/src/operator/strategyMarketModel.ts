@@ -21,7 +21,7 @@ const finite = (value: unknown) =>
     ? Number(value)
     : undefined;
 
-/** Display scope follows the selected run, never an unrelated paper account. */
+/** Display scope follows the selected run and its own account. */
 export function strategyInstruments(strategy?: Row): StrategyInstrument[] {
   const result = new Map<string, StrategyInstrument>();
   for (const row of strategy?.universe || []) {

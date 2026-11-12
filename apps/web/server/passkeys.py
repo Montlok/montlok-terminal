@@ -40,7 +40,7 @@ class Passkeys:
         if initialize:
             descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
             os.close(descriptor)
-        # A missing/replaced database must never silently restore password access.
+        # mode=rw: a missing or replaced database fails here, keeping password access off.
         self.database = sqlite3.connect(f"file:{path}?mode=rw", uri=True)
         self.database.row_factory = sqlite3.Row
         if initialize:

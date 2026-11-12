@@ -1,8 +1,8 @@
 """Operator commands for a native node, applied only by its polling thread.
 
-Control requests carry run identity and durable operation IDs. Selection/GETs
-never reach this queue. Cash reductions use this run's allocation ledger, not
-the complete exchange wallet or reconciled EXTERNAL orders.
+Control requests carry run identity and durable operation IDs; this queue holds
+control requests alone. Cash reductions draw on this run's allocation ledger:
+its own fills and assigned cash.
 """
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ class NativeControls:
             raise ValueError('运行已结束')
         future = Future()
         self.queue.put_nowait((dict(request), future))
-        # A transport timeout must not cancel a command already accepted.
+        # Shielded: an accepted command completes even when the caller's transport times out.
         return await asyncio.shield(asyncio.wrap_future(future))
 
     def process(self):
@@ -184,7 +184,7 @@ class NativeControls:
                 limit *= min(Decimal(1), Decimal(row['ask'])/Decimal(str(quote.bid_price)))
             quantity = min(quantity, (limit/Decimal(row['lotSize'])).to_integral_value(rounding=ROUND_DOWN)*Decimal(row['lotSize']))
             if quantity < Decimal(row['minSize']):
-                # Locked balance is not a completed liquidation.
+                # A locked or below-minimum balance stays allocated.
                 task['results'][symbol] = {'state':'balance_or_minimum','remaining':str(allocated)}
                 continue
             price = (Decimal(str(quote.bid_price))*Decimal('.999')/Decimal(row['tickSize'])).to_integral_value(rounding=ROUND_DOWN)*Decimal(row['tickSize'])

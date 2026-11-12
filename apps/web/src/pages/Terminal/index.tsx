@@ -6,7 +6,7 @@ import { ConfirmOperation } from '../../operator/ConfirmOperation';
 import { DataGrid, type GridColumn } from '../../operator/DataGrid';
 import { valueLabel } from '../../operator/labels';
 
-// Static column sets live at module scope so the memoized grids never see new props per tick.
+// Static column sets live at module scope so the memoized grids keep stable props across ticks.
 const FILL_COLUMNS: GridColumn[] = [
   { key: 'fillTime', title: '时间', width: 105, render: timeOf },
   { key: 'instId', title: '交易品种' },

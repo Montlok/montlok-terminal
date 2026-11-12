@@ -1,8 +1,8 @@
 """Private UNIX control with durable, at-most-once operation receipts.
 
-Socket delivery is not acknowledgement: a disconnected client must query the
-same operation ID, never infer failure or create an automatic retry. SQLite
-commits intent before the handler and its result before attempting a reply.
+The SQLite receipt is the acknowledgement: a disconnected client queries the
+same operation ID. SQLite commits the intent before the handler and its result
+before the reply.
 """
 from __future__ import annotations
 
@@ -97,8 +97,8 @@ class ControlServer:
             with self.db:
                 self.db.execute("INSERT INTO operations VALUES (?,?,?,NULL,?,?)",
                                 (operation_id, serialized, "processing", now, now))
-            # A handler can partially apply before raising. Such exceptions are
-            # unknown, not a definitive rejection of the requested side effect.
+            # A handler can partially apply before raising, so its exceptions are
+            # recorded as unknown outcomes.
             try:
                 result = handler(request)
                 if inspect.isawaitable(result):
@@ -176,7 +176,7 @@ class ControlServer:
 
 
 async def call(path: Path, command: str, timeout=5.0, **arguments):
-    # Generate once at the client boundary; an unknown response is never retried.
+    # Generated once at the client boundary; an unknown response is queried by this ID.
     if command not in {"status", "receipt"}:
         arguments.setdefault("operationId", uuid.uuid4().hex)
     reader, writer = await asyncio.wait_for(asyncio.open_unix_connection(str(path), limit=MAX_MESSAGE), timeout)

@@ -157,7 +157,7 @@ export function stateWarning(
   return undefined;
 }
 
-/** A group switch must never display the previous group's holdings or returns. */
+/** After a group switch, holdings and returns show once they belong to the new group. */
 export function matchingGroup<T extends { id?: string; groupId?: string }>(
   value: T | undefined,
   id: string,

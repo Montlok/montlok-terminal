@@ -1,4 +1,4 @@
-"""Immutable artifact registration. Stored uploads are never imported or executed.
+"""Immutable artifact registration: uploads are stored and hashed as data.
 
 HTTP integration authenticates admin/CSRF before consuming multipart content.
 ``register_async`` accepts byte chunks from the file part; metadata fields are

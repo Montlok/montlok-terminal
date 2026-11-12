@@ -1,4 +1,4 @@
-"""Read-only model probe using existing completed bars, no orders or retraining."""
+"""Read-only model probe on existing completed bars."""
 from __future__ import annotations
 
 import argparse
