@@ -6,8 +6,9 @@ import unittest
 
 from model_market_actor import MARKETS, rdt_feature_module, rdt_window_from_markets
 from model_release import ModelAdapter, rdt_source_files, sha
+from model_release import RESEARCH_ROOT
 
-ROOT = Path(__file__).resolve().parents[3] / "model_training"
+ROOT = RESEARCH_ROOT
 
 
 def fixture_manifest():

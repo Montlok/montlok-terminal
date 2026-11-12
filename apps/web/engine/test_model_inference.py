@@ -8,10 +8,10 @@ import unittest
 import sys
 
 from model_inference_worker import InferenceService
-from model_release import ModelAdapter, package_gru, sha
+from model_release import RESEARCH_ROOT, ModelAdapter, package_gru, sha
 from model_strategy import checked_fraction
 
-ROOT = Path(__file__).resolve().parents[3] / "model_training"
+ROOT = RESEARCH_ROOT
 
 
 class FakeAdapter:
@@ -215,6 +215,90 @@ class ModelTests(unittest.TestCase):
             (Path(info["manifest"]).parent / "source/train_gru.py").write_text("raise RuntimeError('upload code')")
             with self.assertRaises(ValueError):
                 ModelAdapter(info["manifest"], info["sha256"], ROOT / "pipelines")
+
+
+RELEASE = Path(__file__).resolve().parent / "releases/gru-latest-20260906-v1"
+
+
+def montlok_available():
+    try:
+        import montlok  # noqa: F401
+        return (ROOT / "pipelines/recent_btc/train_gru.py").exists()
+    except ImportError:
+        return False
+
+
+@unittest.skipUnless(montlok_available(), "montlok or the reviewed research tree unavailable")
+class MontlokBackendTests(unittest.TestCase):
+    def adapters(self):
+        manifest = RELEASE / "manifest.json"
+        torch_adapter = ModelAdapter(manifest, sha(manifest), ROOT / "pipelines")
+        native = ModelAdapter(manifest, sha(manifest), ROOT / "pipelines", backend="montlok")
+        return torch_adapter, native
+
+    def requests(self, adapter, count, seed):
+        import numpy as np
+        m, c = adapter.manifest, adapter.manifest["featureContract"]
+        rng = np.random.default_rng(seed)
+        return [dict(releaseId=m["releaseId"], modelHash=m["model"]["sha256"], mode="shadow", instrument="BTC-USDT",
+                     normalized=True, featureNames=c["names"],
+                     inputs=np.clip(rng.normal(size=(c["sequenceBars"], len(c["names"]))) * 2, *c["clip"]).astype("float32"))
+                for _ in range(count)]
+
+    def test_bundled_gru_release_matches_torch(self):
+        torch_adapter, native = self.adapters()
+        self.assertEqual(native.backend_info["name"], "montlok")
+        self.assertLess(native.backend_info["parityMaxAbs"], 1e-5)
+        for batch in (1, 16):
+            requests = self.requests(torch_adapter, batch, seed=batch)
+            expected = torch_adapter.predict_batch(requests)
+            got = native.predict_batch(requests)
+            for a, b in zip(got, expected):
+                self.assertAlmostEqual(a["prediction"], b["prediction"], delta=1e-8)
+                self.assertEqual((a["horizon"], a["horizonUnit"]), (b["horizon"], b["horizonUnit"]))
+        native.warmup()
+
+    @unittest.skipUnless((ROOT / "data/recent_20260905").exists(), "local market data unavailable")
+    def test_real_feature_window(self):
+        import numpy as np
+        from model_probe import gru_feature_window
+        torch_adapter, native = self.adapters()
+        raw = gru_feature_window(torch_adapter.manifest, ROOT / "data/recent_20260905", ROOT / "pipelines")
+        c = torch_adapter.manifest["featureContract"]
+        request = {**raw, "releaseId": torch_adapter.manifest["releaseId"],
+                   "modelHash": torch_adapter.manifest["model"]["sha256"], "mode": "shadow", "normalized": True,
+                   "inputs": np.clip((np.asarray(raw["inputs"]) - c["mean"]) / c["scale"], *c["clip"]).astype("float32")}
+        self.assertAlmostEqual(native.predict_batch([request])[0]["prediction"],
+                               torch_adapter.predict_batch([request])[0]["prediction"], delta=1e-8)
+
+    def test_unknown_backend_is_refused(self):
+        manifest = RELEASE / "manifest.json"
+        with self.assertRaises(ValueError):
+            ModelAdapter(manifest, sha(manifest), ROOT / "pipelines", backend="onnx")
+
+
+@unittest.skipUnless(montlok_available() and (ROOT / "pipelines/rdt4quant/native/Model").exists(),
+                     "montlok or the reviewed RDT tree unavailable")
+class MontlokRdtTests(unittest.TestCase):
+    def test_cpu_runner_builds_from_the_reviewed_reference(self):
+        """The rdt4quant_cpu_v2 path: montlok.rdt over the host-reviewed Model tree."""
+        import subprocess
+        code = (
+            "import json, os, torch\n"
+            "os.environ['MONTLOK_REQUIRE_PREBUILT'] = '1'\n"
+            "from montlok import rdt\n"
+            f"rdt.use_reference({str(ROOT / 'pipelines/rdt4quant/native')!r})\n"
+            "config = json.loads(rdt.REFERENCE_CONFIG.read_text())\n"
+            "model = rdt.MultiAssetRDTCPU(config, 3).eval()\n"
+            "import Model\n"
+            "assert Model.__file__.startswith(" + repr(str(ROOT / "pipelines")) + ")\n"
+            "x = torch.randn(1, 480, 57)\n"
+            "with torch.inference_mode():\n"
+            "    q, _ = model(x, 4, 'crypto', torch.zeros(1, dtype=torch.long))\n"
+            "assert torch.isfinite(q).all()\n"
+            "print(rdt.build_info()['isa'])\n")
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=300)
+        self.assertEqual(out.returncode, 0, out.stderr[-2000:])
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 """Bounded strategy-group lifecycle over a private UNIX socket.
 
 The BFF authenticates the operator and confirms the exact request before calling
-``execute``. This separate service owns new sandbox processes; it never adopts an
-existing paper/live PID. Root-owned launch registrations, not HTTP payloads, select
-the executable, frozen signals and reviewed strategy source. A successful start
-means a child was launched, not that its market connection is ready.
+``execute``. This separate service owns the processes it starts. Root-owned launch
+registrations select the executable, frozen signals and reviewed strategy source;
+an HTTP request selects a published group. A successful start means the child was
+launched; the run reports market readiness separately.
 """
 from __future__ import annotations
 
@@ -68,7 +68,7 @@ def money(value):
 
 
 def duration_policy(spec):
-    """Versioned so an old worker is never sent an unlimited-run request."""
+    """Versioned: continuous runs go to workers registered with durationPolicyVersion 1."""
     continuous = spec.get("kind") == "live" and spec.get("durationPolicyVersion") == 1
     return {"continuous": continuous and spec.get("maxDurationSeconds") is None,
             "maxSeconds": spec.get("maxDurationSeconds", 86400),
@@ -209,13 +209,17 @@ class LaunchRegistry:
     def configure_models(self, values):
         fields = {"storePath", "workerPath", "pythonPath", "guardBinary", "runnerRoot", "settingsPath",
                   "settingsSha256", "runtimePath", "mode", "maxBudgetUsdt", "maxDurationSeconds"}
-        if not isinstance(values, dict) or not fields.issubset(values) or set(values) - fields - {"contractKey", "maxConcurrentRuns", "liveExecution", "runnerRoots"} or values.get("mode") != "shadow":
+        if not isinstance(values, dict) or not fields.issubset(values) or set(values) - fields - {"contractKey", "maxConcurrentRuns", "liveExecution", "runnerRoots", "inferenceBackend"} or values.get("mode") != "shadow":
             raise ValueError("modelRuntime 仅允许固定 root 配置和 shadow 模式")
         config = copy.deepcopy(values)
         slots = config.get("maxConcurrentRuns", 2)
         if type(slots) is not int or not 1 <= slots <= 16:
             raise ValueError("modelRuntime.maxConcurrentRuns 必须为 1 至 16 的整数")
         config["maxConcurrentRuns"] = slots
+        # GRU releases run on the selected backend; RDT releases keep their own.
+        config["inferenceBackend"] = config.get("inferenceBackend", "torch")
+        if config["inferenceBackend"] not in {"torch", "montlok"}:
+            raise ValueError("modelRuntime.inferenceBackend 仅允许 torch 或 montlok")
         contracts = config.get("contractKey")
         if contracts is not None:
             if isinstance(contracts, str):
@@ -249,8 +253,8 @@ class LaunchRegistry:
         config["maxBudgetUsdt"] = money(config["maxBudgetUsdt"])
         if type(config["maxDurationSeconds"]) is not int or not 60 <= config["maxDurationSeconds"] <= 86400:
             raise ValueError("模型运行时长上限必须在 60 至 86400 秒之间")
-        # Every imported runtime module is host-installed. The release tree is
-        # only data and is never placed on sys.path or used as a working dir.
+        # Every imported runtime module is host-installed; the release tree is
+        # read as data.
         worker_root = Path(config["workerPath"]).parent
         for name in ("model_release.py", "model_client.py", "model_inference_worker.py", "model_market_actor.py",
                      "model_strategy.py", "model_probe.py", "commands.py", "control.py"):
@@ -266,7 +270,11 @@ class LaunchRegistry:
     @staticmethod
     def probe_model_node(config):
         script = """import importlib.util,json
-result={"torch":False,"numpy":False,"nautilus":False,"nativeBridge":False,"dataAbi":False,"cuda":False,"cudaBf16":False,"mamba3":False}
+result={"torch":False,"numpy":False,"nautilus":False,"nativeBridge":False,"dataAbi":False,"cuda":False,"cudaBf16":False,"mamba3":False,"montlok":False}
+try:
+ result["montlok"]=importlib.util.find_spec("montlok") is not None
+except Exception:
+ pass
 try:
  import torch
  import numpy
@@ -388,9 +396,19 @@ print(json.dumps(result))
             return "此模型需要 CUDA BF16，当前节点未检测到兼容 GPU"
         if spec["runnerId"] == "rdt4quant_v1" and node.get("mamba3") is not True:
             return "目标节点缺少已安装的官方 Mamba3 运行依赖"
+        if self.backend(spec) == "montlok" and node.get("montlok") is not True:
+            return "目标节点尚未安装 montlok 推理运行时"
         if "shadow" not in spec["modelManifest"]["policy"]["allowedModes"]:
             return "该模型清单未允许 shadow 运行"
         return None
+
+    @staticmethod
+    def backend(spec):
+        """Inference backend of a model group: GRU releases use modelRuntime.inferenceBackend,
+        CPU RDT releases montlok, other RDT releases torch."""
+        if spec.get("runnerId") == "gru_v1":
+            return spec.get("inferenceBackend", "torch")
+        return "montlok" if spec.get("runnerId") == "rdt4quant_cpu_v2" else "torch"
 
     def command(self, group_id, request_path):
         spec = self.spec(group_id) if isinstance(group_id, str) else group_id
@@ -398,9 +416,12 @@ print(json.dumps(result))
             return [spec["pythonPath"], spec["workerPath"], "--registry", str(self.path),
                     "--group-id", spec["id"], "--request", str(request_path)]
         if spec.get("kind") == "model":
-            return [spec["pythonPath"], spec["workerPath"], "--registry", str(self.path), "--request", str(request_path),
-                    "--release-manifest", spec["releaseManifest"], "--manifest-sha256", spec["manifestSha256"],
-                    "--guard-binary", spec["guardBinary"], "--runner-root", spec["runnerRoot"]]
+            command = [spec["pythonPath"], spec["workerPath"], "--registry", str(self.path), "--request", str(request_path),
+                       "--release-manifest", spec["releaseManifest"], "--manifest-sha256", spec["manifestSha256"],
+                       "--guard-binary", spec["guardBinary"], "--runner-root", spec["runnerRoot"]]
+            if spec.get("runnerId") == "gru_v1":
+                command += ["--backend", self.backend(spec)]
+            return command
         if self.python is None or self.worker is None:
             raise ValueError("生产运行服务未配置模拟运行器")
         return [str(self.python), str(self.worker), "--registry", str(self.path), "--request", str(request_path)]
@@ -648,8 +669,8 @@ class GroupSupervisor:
             CREATE TABLE IF NOT EXISTS operations (
                 id TEXT PRIMARY KEY, request TEXT NOT NULL, result TEXT);
         """)
-        # A crash between intent and completion is not proof of failure. The
-        # durable operation ID is queried at the worker; never sent as a retry.
+        # After a crash between intent and completion the outcome is unknown; the
+        # durable operation ID is queried at the worker.
         with self.db:
             self.db.execute("UPDATE operations SET result=? WHERE result IS NULL",
                             (encode({"status": "unknown", "receiptStatus": "unknown"}),))
@@ -1005,8 +1026,8 @@ class GroupSupervisor:
         result.setdefault("receiptStatus", "unknown" if result.get("status") == "unknown" else
                           "failed" if result.get("status") == "failed" else "completed")
         if result["receiptStatus"] in {"processing", "unknown"} and request["action"] in {"halt", "reduce", "resume"}:
-            # Query only; an observed trading state is not a receipt for this
-            # particular action (another operator may have changed it since).
+            # Query this action's receipt: the trading state may already reflect
+            # another operator's later action.
             try:
                 row = self.row(request["runId"], request["groupId"])
                 if self.owned_process(row):
@@ -1045,7 +1066,7 @@ class GroupSupervisor:
                     "error": engine.get("error") or "引擎未确认操作"}
         state = {"HALTED":"halted", "REDUCING":"reducing", "ACTIVE":"running"}.get(engine.get('tradingState')) or {
             "halt": "halted", "reduce": "reducing", "resume": "running", 'cancel':'halted', 'flatten':'reducing'}[request["action"]]
-        # Receipt reconciliation must not overwrite a later control/run state.
+        # Reconciliation reports the current control/run state with the receipt.
         return {**result, "status": state}
 
     async def launch(self, request):
@@ -1075,8 +1096,8 @@ class GroupSupervisor:
             self.db.execute("INSERT INTO runs(id,group_id,state,budget,duration,created,result) VALUES(?,?,?,?,?,?,?)",
                             (run_id, request["groupId"], "starting", request.get("budgetUsdt", "0.00"),
                              request["durationSeconds"], frozen["createdAt"], encode(metadata)))
-        # No OKX credentials, shell, proxy env, PYTHONPATH, or user-supplied imports
-        # cross into this sandbox worker. The service has its own cgroup.
+        # The sandbox worker gets this fixed environment, with empty OKX credentials;
+        # the service has its own cgroup.
         environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "LANG": "C.UTF-8", "TZ": "UTC",
                        "PYTHONUNBUFFERED": "1", "PYTHONDONTWRITEBYTECODE": "1",
                        "OKX_API_KEY": "", "OKX_API_SECRET": "", "OKX_API_PASSPHRASE": ""}
@@ -1141,7 +1162,7 @@ class GroupSupervisor:
             if (not isinstance(saved_model, dict) or saved_model.get("modelHash") != previous["modelHash"]
                     or saved_model.get("releaseId") != previous.get("releaseId")):
                 saved_model = engine.get("model", {})
-            # A completed process must not retain the last live readiness flag.
+            # A completed process reports itself stopped and unready.
             result["engine"] = {**engine, "tradingState": "ERROR" if state in {"failed", "interrupted"} else "STOPPED",
                 "warmupComplete": False, "marketReady": False, "connected": {"data": False, "exec": False},
                 "model": {**saved_model, "warmupComplete": False,

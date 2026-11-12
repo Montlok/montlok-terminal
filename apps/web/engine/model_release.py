@@ -17,6 +17,10 @@ from pathlib import Path
 
 GRU_SOURCE_HASH = "a88577d4056864e486aca926402b0cdb4d92fc9945f3bec40256b7f246e0ad47"
 GRU_FEATURE_HASH = "186cea5c66fd1b58c7c5862455d245918333f17b3a0b6b98bd66e9afc4bddd92"
+# The research checkout beside this repository (apps/web/engine -> ../../../../model_training),
+# the development default; hosts pass --runner-root.
+RESEARCH_ROOT = Path(os.environ.get("MONTLOK_RESEARCH_ROOT") or Path(__file__).resolve().parents[4] / "model_training")
+BACKENDS = ("torch", "montlok")
 
 
 def sha(path):
@@ -131,7 +135,7 @@ def package_rdt(checkpoint_path, prepared_manifest, crypto_metadata, source_root
     """Package reviewed MultiAssetRDT. Metadata/scalers are mandatory, not inferred.
 
     source_tree_sha256 is an administrator-reviewed digest over sorted relative
-    paths and individual file hashes. It cannot be supplied by a web upload.
+    paths and individual file hashes, passed by the administrator on the command line.
     """
     import torch
     source_root, output = Path(source_root), Path(output)
@@ -183,6 +187,40 @@ def package_rdt(checkpoint_path, prepared_manifest, crypto_metadata, source_root
     return {"manifest": str((output / "manifest.json").resolve()), "sha256": sha(output / "manifest.json")}
 
 
+def montlok_distribution():
+    """Version of the installed montlok package, after checking its files
+    against the wheel RECORD."""
+    import base64
+    from importlib import metadata
+    dist = metadata.distribution("montlok")
+    verified = 0
+    for record in dist.files or []:
+        if record.hash is None or record.hash.mode != "sha256":
+            continue
+        digest = base64.urlsafe_b64encode(hashlib.sha256(record.locate().read_bytes()).digest()).rstrip(b"=").decode()
+        if digest != record.hash.value:
+            raise ValueError(f"Installed montlok file differs from its RECORD: {record}")
+        verified += 1
+    return {"name": "montlok", "version": dist.version, "verifiedFiles": verified}
+
+
+def montlok_gru(reference, input_size, sequence_bars, clip, probes=16):
+    """Export the reviewed ReturnGRU to montlok and check it against PyTorch on
+    probe windows spanning the published clip range."""
+    import numpy as np
+    import torch
+    from montlok import export
+    native = export.from_torch([reference.gru, export.LAST, reference.head], features=input_size,
+        sequence=sequence_bars, metadata={"source": "recent_btc/train_gru.py:ReturnGRU"}).load()
+    x = np.random.default_rng(0).uniform(*clip, size=(probes, sequence_bars, input_size)).astype(np.float32)
+    with torch.inference_mode():
+        expected = reference(torch.from_numpy(x)).double().numpy()
+    difference = float(np.abs(native.predict(x)[:, 0] - expected).max())
+    if not difference <= 1e-5 * max(1.0, float(np.abs(expected).max())):
+        raise RuntimeError(f"montlok GRU differs from PyTorch by {difference:.3g}")
+    return native, difference
+
+
 def rdt_source_files(root):
     root = Path(root)
     return sorted([root / "rdt4quant/model.py", root / "rdt4quant/prepare.py", root / "rdt4quant/download.py",
@@ -194,16 +232,20 @@ def rdt_source_files(root):
 
 
 class ModelAdapter:
-    def __init__(self, manifest_path, expected_hash, runner_root=None, contract_key=None):
+    def __init__(self, manifest_path, expected_hash, runner_root=None, contract_key=None, backend="torch"):
         import numpy as np
         import torch
         self.np, self.torch = np, torch
         self.manifest = load_manifest(manifest_path, expected_hash)
         self.contract_key = contract_key
+        if backend not in BACKENDS:
+            raise ValueError(f"Unknown inference backend: {backend}")
+        self.native = None
+        self.backend_info = {"name": "torch", "version": str(torch.__version__)}
         root = Path(manifest_path).resolve().parent
-        # runner_root is a host-admin deployment option, NEVER a release field.
-        # Uploaded/packaged .py files are provenance only and never imported.
-        runner_root = Path(runner_root or Path(__file__).resolve().parents[3] / "model_training/pipelines").resolve()
+        # runner_root is a host-admin deployment option and supplies the code that
+        # runs; packaged .py files are provenance records.
+        runner_root = Path(runner_root or RESEARCH_ROOT / "pipelines").resolve()
         self.device = self.manifest["runtime"]["device"]
         torch.set_num_threads(self.manifest["runtime"].get("threads", 1))
         c = torch.load(checked_path(root, self.manifest["model"]), map_location="cpu", weights_only=True)
@@ -218,7 +260,14 @@ class ModelAdapter:
                 raise ValueError("Unreviewed GRU implementation")
             self.model = import_file("montlok_release_gru", source).ReturnGRU(c["input_size"], c["hidden_size"])
             self.model.load_state_dict(c["state_dict"], strict=True)
+            self.model.eval()
+            if backend == "montlok":
+                self.native, difference = montlok_gru(self.model, c["input_size"], contract["sequenceBars"],
+                                                      contract["clip"])
+                self.backend_info = {**montlok_distribution(), "family": "sequential", "parityMaxAbs": difference}
         else:
+            if backend == "montlok" and self.manifest["runnerId"] != "rdt4quant_cpu_v2":
+                raise ValueError("The montlok backend serves GRU and CPU RDT releases")
             if contract_key not in self.manifest["domainContracts"]:
                 raise ValueError("RDT needs an explicit administrator-selected published contract key")
             cpu = self.manifest["runnerId"] == "rdt4quant_cpu_v2"
@@ -236,11 +285,12 @@ class ModelAdapter:
                 if self.device != "cpu":
                     raise ValueError("montlok.cpp requires an explicit CPU release")
                 os.environ["MONTLOK_CPP"] = "1"
-                sys.path.insert(0, str(runner_root / "rdt4quant_cpu"))
-                # Production uses the prebuilt extension; never JIT during a run.
-                import montlok_cpp_v2
-                self.backend_info = montlok_cpp_v2.build_info()
-                self.model = import_file("montlok_release_cpu", runner_root / "rdt4quant_cpu/model_cpu.py").MultiAssetRDTCPU(c["base_config"], len(c["asset_order"]))
+                os.environ["MONTLOK_REQUIRE_PREBUILT"] = "1"
+                from montlok import rdt
+                # The CPU classes wrap the reviewed Model tree verified above.
+                rdt.use_reference(base / "native")
+                self.backend_info = {**montlok_distribution(), "kernels": rdt.build_info()}
+                self.model = rdt.MultiAssetRDTCPU(c["base_config"], len(c["asset_order"]))
             else:
                 self.model = import_file("montlok_release_multiasset", runner_root / "rdt4quant_fullpass/multiasset_model.py").MultiAssetRDT(c["base_config"], len(c["asset_order"]))
             self.model.load_state_dict(c["model"], strict=True)
@@ -276,16 +326,22 @@ class ModelAdapter:
         np, torch = self.np, self.torch
         arrays = [self.validate(r) for r in requests]
         contract = self.contract(requests[0])
-        if any(self.contract(r) != contract for r in requests):
+        if any(self.contract(r) != contract for r in requests[1:]):
             raise ValueError("Batch crosses feature/scaler/domain contracts")
+        batch = np.stack(arrays)
+        if self.manifest["family"] == "recent_btc_gru":
+            if self.native is not None:
+                result = self.native.predict(batch)[:, 0]
+            else:
+                with torch.inference_mode():
+                    result = self.model(torch.as_tensor(batch, device=self.device)).cpu().numpy()
+            if not np.isfinite(result).all():
+                raise ValueError("Nonfinite model output")
+            output = self.manifest["outputContract"]
+            return [{"prediction": float(value) / output["targetScale"], "horizon": output["selectedHorizon"],
+                "horizonUnit": output["selectedHorizonUnit"]} for value in result]
         with torch.inference_mode():
-            x = torch.as_tensor(np.stack(arrays), device=self.device)
-            if self.manifest["family"] == "recent_btc_gru":
-                result = self.model(x).cpu().numpy()
-                if not np.isfinite(result).all():
-                    raise ValueError("Nonfinite model output")
-                return [{"prediction": float(value) / self.manifest["outputContract"]["targetScale"], "horizon": self.manifest["outputContract"]["selectedHorizon"],
-                    "horizonUnit": self.manifest["outputContract"]["selectedHorizonUnit"]} for value in result]
+            x = torch.as_tensor(batch, device=self.device)
             asset = torch.tensor([contract["assetId"]] * len(requests), device=self.device)
             q, _ = self.model(x, self.manifest["outputContract"]["depth"], contract["domain"], asset)
             q = q.float().cpu().numpy() * np.asarray(contract["yScale"])[None, :, None]

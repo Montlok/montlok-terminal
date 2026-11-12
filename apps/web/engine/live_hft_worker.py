@@ -34,9 +34,11 @@ def sha(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def atomic_json(path, value):
+def atomic_json(path, value, *, compact=False):
     temporary = Path(str(path) + ".tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
+    text = json.dumps(value, ensure_ascii=False, allow_nan=False,
+                      **({"separators": (",", ":")} if compact else {"indent": 2}))
+    temporary.write_text(text + "\n")
     os.replace(temporary, path)
 
 
@@ -87,7 +89,7 @@ def registered(args, worker_path=None, spec_override=None):
                "cancelAllAfterHeartbeatSecs"}
     optional = {"maxQuoteExposureUsdt", "preserveInitialInventory", "useQuoteBalance", "executionCheck",
                 "executionCheckSide", "executionCheckQuantity", "inventoryFloor", "marketDataAgeSecs",
-                "startupReconciliationLookbackMins"}
+                "startupReconciliationLookbackMins", "pollIdleMicros"}
     account_fields = {"uid", "mainUid", "type", "acctLv", "posMode", "ip"}
     if (not required.issubset(config) or set(config) - required - optional or config["schemaVersion"] != 1
             or set(config.get("account", {})) != account_fields):
@@ -96,6 +98,9 @@ def registered(args, worker_path=None, spec_override=None):
     if "marketDataAgeSecs" in config and (type(config["marketDataAgeSecs"]) not in (int, float)
             or not 0.1 <= config["marketDataAgeSecs"] <= 15):
         raise ValueError("行情时效范围为 0.1 至 15 秒")
+    if "pollIdleMicros" in config and (type(config["pollIdleMicros"]) is not int
+                                       or not 0 <= config["pollIdleMicros"] <= 1000):
+        raise ValueError("空闲轮询间隔范围为 0 至 1000 微秒")
     if ("startupReconciliationLookbackMins" in config
             and (type(config["startupReconciliationLookbackMins"]) is not int
                  or not 0 <= config["startupReconciliationLookbackMins"] <= 60)):
@@ -207,7 +212,7 @@ async def venue_snapshot(spec, config):
             exposure_cap = config.get("maxQuoteExposureUsdt")
             if exposure_cap is not None:
                 # Leave 5% below the published hard cap so a small move between preflight and
-                # order admission cannot make a nominally 1 USDT test cross that boundary.
+                # order admission keeps a nominally 1 USDT test inside that boundary.
                 quote_budget = min(quote_budget, Decimal(exposure_cap) * Decimal("0.95"))
             minimum_position = base_available if config.get("preserveInitialInventory") else Decimal(0)
             maximum = base_available + quote_budget / ask
@@ -257,14 +262,64 @@ def public_snapshot(snapshot):
     return {key: value for key, value in snapshot.items() if key != "credentials"}
 
 
+TERMINAL_STATUSES = frozenset({"FILLED", "CANCELED", "REJECTED", "DENIED", "EXPIRED"})
+EXTERNAL_ORDER = object()
+
+
+class OrderView:
+    """What a status cycle reads from one order. A terminal order keeps its
+    final state, so its view is kept and reused by later cycles."""
+    __slots__ = ("client_order_id", "status", "accepted", "instrument", "filled", "direction", "avg_px",
+                 "commissions", "row", "fills", "error")
+
+    def __init__(self, order, client_order_id):
+        self.client_order_id = client_order_id
+        self.status = str(order.status)
+        self.accepted = order.venue_order_id is not None
+        self.instrument = str(order.instrument_id).removesuffix('.OKX')
+        self.filled = float(order.filled_qty)
+        self.direction = 1 if str(order.side) == 'BUY' else -1
+        self.avg_px = float(order.avg_px) if order.avg_px else 0.0
+        self.commissions = {str(ccy): float(value.as_decimal()) for ccy, value in order.commissions().items()}
+        self.row, self.fills, self.error = None, None, None
+
+    @property
+    def terminal(self):
+        return self.status in TERMINAL_STATUSES
+
+    def display(self, order):
+        """The order row, its fills and its rejection reason, read once per view."""
+        if self.row is None:
+            self.row = {"id": self.client_order_id, "clientOrderId": self.client_order_id,
+                        "venueOrderId": str(order.venue_order_id) if order.venue_order_id else None,
+                        "strategy": str(order.strategy_id), "instrument": str(order.instrument_id),
+                        "side": str(order.side), "quantity": str(order.quantity),
+                        "filledQuantity": str(order.filled_qty), "leavesQuantity": str(order.leaves_qty),
+                        "price": str(order.price) if order.price else None,
+                        "averagePrice": str(order.avg_px) if order.avg_px is not None else None,
+                        "status": self.status, "time": order.ts_init}
+            self.fills = []
+            for event in order.events():
+                if self.status in {'DENIED', 'REJECTED'} and hasattr(event, 'reason'):
+                    self.error = str(event.reason)
+                if not hasattr(event, 'trade_id'):
+                    continue
+                self.fills.append({'id': str(event.trade_id), 'orderId': str(event.client_order_id),
+                    'venueOrderId': str(event.venue_order_id), 'instrument': str(event.instrument_id),
+                    'side': str(event.order_side), 'quantity': str(event.last_qty), 'price': str(event.last_px),
+                    'fee': str(event.commission.as_decimal()), 'feeCurrency': str(event.commission.currency),
+                    'time': event.ts_event, 'source': 'okx_live_fill'})
+        return self.row, self.fills, self.error
+
+
 def owned_orders(node):
-    # Reconciliation imports historical venue fills as EXTERNAL orders. They
-    # must not count as current-run submissions, fills, inventory or completion.
+    # Reconciliation imports historical venue fills as EXTERNAL orders; the run
+    # counts its own submissions, fills, inventory and completion.
     return [order for order in node.cache.orders() if not str(order.strategy_id).startswith('EXTERNAL')]
 
 
 def risk_notional_limits(snapshot):
-    """Return run-frozen absolute caps, never caps derived from a stale quote.
+    """Per-instrument notional caps, frozen for the run.
 
     Continuous executors size every order against the same absolute USDT cap
     before risk admission. Single-allocation runs retain their finite,
@@ -345,6 +400,7 @@ class Runtime:
         self.peak_nav = None
         self.max_drawdown = 0.0
         self.fee_overrides = {}
+        self.order_views = {}
         self.snapshot = {"ok": True, "pid": os.getpid(), "environment": "live", "tradingState": self.state,
                          "profileId": snapshot["profileId"], "inventory": public_snapshot(snapshot),
                          "marketReady": False, "executionReady": False,
@@ -365,6 +421,25 @@ class Runtime:
             self.snapshot["tradingState"] = self.state
         return {"tradingState": self.state}
 
+    def views(self, orders, *, owned_only):
+        """(OrderView, order) pairs in the given order. Terminal orders come from
+        the kept views; reconciled EXTERNAL orders are skipped when owned_only."""
+        kept, pairs = self.order_views, []
+        for order in orders:
+            key = str(order.client_order_id)
+            view = kept.get(key)
+            if view is EXTERNAL_ORDER:
+                continue
+            if view is None:
+                if owned_only and str(order.strategy_id).startswith('EXTERNAL'):
+                    kept[key] = EXTERNAL_ORDER
+                    continue
+                view = OrderView(order, key)
+                if view.terminal:
+                    kept[key] = view
+            pairs.append((view, order))
+        return pairs
+
     def update(self, node, started):
         from nautilus_trader.core import nautilus_pyo3 as n
         quotes = []
@@ -374,32 +449,21 @@ class Runtime:
                            "bid": str(quote.bid_price) if quote else None, "ask": str(quote.ask_price) if quote else None})
         account = node.cache.account_for_venue(n.Venue("OKX"))
         executor=getattr(getattr(self.model_feed,'strategy',None),'executor',None)
-        native_orders = ([order for oid in executor.order_ids if (order:=node.cache.order(oid)) is not None]
-                         if executor is not None else owned_orders(node))
-        orders_denied = sum(str(order.status) == "DENIED" for order in native_orders)
-        orders_rejected = sum(str(order.status) == "REJECTED" for order in native_orders)
-        orders_accepted = sum(order.venue_order_id is not None for order in native_orders)
-        orders = [{"id": str(order.client_order_id), "clientOrderId": str(order.client_order_id),
-                   "venueOrderId": str(order.venue_order_id) if order.venue_order_id else None,
-                   "strategy": str(order.strategy_id), "instrument": str(order.instrument_id),
-                   "side": str(order.side), "quantity": str(order.quantity),
-                   "filledQuantity": str(order.filled_qty), "leavesQuantity": str(order.leaves_qty),
-                   "price": str(order.price) if order.price else None,
-                   "averagePrice": str(order.avg_px) if order.avg_px is not None else None,
-                   "status": str(order.status), "time": order.ts_init} for order in native_orders[-1000:]]
-        fills = []
+        pairs = (self.views([order for oid in executor.order_ids if (order:=node.cache.order(oid)) is not None],
+                            owned_only=False)
+                 if executor is not None else self.views(node.cache.orders(), owned_only=True))
+        native_orders = [view for view, _ in pairs]
+        orders_denied = sum(view.status == "DENIED" for view in native_orders)
+        orders_rejected = sum(view.status == "REJECTED" for view in native_orders)
+        orders_accepted = sum(view.accepted for view in native_orders)
+        orders, fills = [], []
         last_order_error = None
-        for order in native_orders[-1000:]:
-            for event in order.events():
-                if str(order.status) in {'DENIED', 'REJECTED'} and hasattr(event, 'reason'):
-                    last_order_error = str(event.reason)
-                if not hasattr(event, 'trade_id'):
-                    continue
-                fills.append({'id': str(event.trade_id), 'orderId': str(event.client_order_id),
-                    'venueOrderId': str(event.venue_order_id), 'instrument': str(event.instrument_id),
-                    'side': str(event.order_side), 'quantity': str(event.last_qty), 'price': str(event.last_px),
-                    'fee': str(event.commission.as_decimal()), 'feeCurrency': str(event.commission.currency),
-                    'time': event.ts_event, 'source': 'okx_live_fill'})
+        for view, order in pairs[-1000:]:
+            row, order_fills, error = view.display(order)
+            orders.append(row)
+            fills.extend(dict(fill) for fill in order_fills)
+            if error is not None:
+                last_order_error = error
         for client_id, commission in self.fee_overrides.items():
             matching = [fill for fill in fills if fill['orderId'] == client_id]
             if len(matching) == 1:
@@ -418,25 +482,23 @@ class Runtime:
         if self.inventory.get('allocationCapitalUsdt') is not None:
             capital = float(self.inventory['allocationCapitalUsdt'])
         cash, fees = capital - initial_assets, 0.0
-        for order in native_orders:
-            instrument = str(order.instrument_id).removesuffix('.OKX')
-            if instrument not in quantities:
+        for view in native_orders:
+            instrument = view.instrument
+            if instrument not in quantities or not (view.filled or view.commissions or
+                                                    view.client_order_id in self.fee_overrides):
                 continue
-            filled = float(order.filled_qty)
-            if filled:
-                direction = 1 if str(order.side) == 'BUY' else -1
-                quantities[instrument] += direction * filled
-                cash -= direction * filled * float(order.avg_px)
-            exact = self.fee_overrides.get(str(order.client_order_id))
-            commissions = ({exact['currency']: float(exact['amount'])} if exact else
-                           {str(ccy): float(value.as_decimal()) for ccy, value in order.commissions().items()})
+            if view.filled:
+                quantities[instrument] += view.direction * view.filled
+                cash -= view.direction * view.filled * view.avg_px
+            exact = self.fee_overrides.get(view.client_order_id)
+            commissions = {exact['currency']: float(exact['amount'])} if exact else view.commissions
             for currency, value in commissions.items():
                 if str(currency) == 'USDT':
                     cash -= value
                     fees += value
                 elif str(currency) == instrument.split('-')[0]:
                     quantities[instrument] -= value
-                    fees += value * float(order.avg_px or marks[instrument])
+                    fees += value * (view.avg_px or marks[instrument])
         self.allocated_positions = quantities
         if executor is not None:
             quantities={key.removesuffix('.OKX'):float(value) for key,value in executor.positions.items()}
@@ -484,7 +546,7 @@ class Runtime:
             with (self.directory / 'equity.jsonl').open('a') as stream:
                 stream.write(encode({key: self.snapshot[key] for key in
                     ('observed_at', 'nav_usdt', 'pnl_usdt', 'max_drawdown', 'fees_usdt')}) + '\n')
-            atomic_json(self.directory / "view.json", {"schemaVersion": 1, "runId": self.request["runId"],
+            atomic_json(self.directory / "view.json", compact=True, value={"schemaVersion": 1, "runId": self.request["runId"],
                 "groupId": self.request["groupId"], "observed_at": self.snapshot["observed_at"],
                 "tradingState": self.state, "completed": False, "positions": positions,
                 "orders": orders, "fills": fills, "ordersTotal": self.snapshot["ordersTotal"],
@@ -635,6 +697,8 @@ def run(args, spec, config, snapshot, strategy_factory=None):
     deadline = run_deadline(request, spec, started)
     error = None
     handled_denials = 0
+    # Sleep between empty polls; 0 polls continuously and keeps a core busy.
+    idle = config.get("pollIdleMicros", 1000) / 1e6
     try:
         node.start()
         runtime.state = "ACTIVE"
@@ -653,23 +717,24 @@ def run(args, spec, config, snapshot, strategy_factory=None):
                 # Reductions always use a ledger refreshed after the latest
                 # native fills; no repeated sell against an older snapshot.
                 runtime.controls.poll()
-                denied = runtime.status().get('ordersDenied',0)
+                status = runtime.status()
+                denied = status.get('ordersDenied',0)
                 if denied > handled_denials:
                     handled_denials = denied
                     if snapshot.get('executionSettings') and snapshot['executionSettings']['mode']!='initial_allocation':
                         runtime.controls.apply({'command':'halt'})
-                        runtime.snapshot['riskHaltReason']=runtime.status().get('lastOrderError') or '引擎拒绝送单'
+                        runtime.snapshot['riskHaltReason']=status.get('lastOrderError') or '引擎拒绝送单'
                     else:
-                        raise RuntimeError(runtime.status().get('lastOrderError') or "引擎拒绝送单")
-                if config.get('executionCheck') and runtime.status().get('ordersRejected', 0):
-                    raise RuntimeError(runtime.status().get('lastOrderError') or 'OKX 拒绝订单')
+                        raise RuntimeError(status.get('lastOrderError') or "引擎拒绝送单")
+                if config.get('executionCheck') and status.get('ordersRejected', 0):
+                    raise RuntimeError(status.get('lastOrderError') or 'OKX 拒绝订单')
                 if runtime.model_feed and runtime.model_feed.failure:
                     raise RuntimeError(runtime.model_feed.failure)
-                if config.get("executionCheck") and runtime.status().get("fillsTotal", 0):
+                if config.get("executionCheck") and status.get("fillsTotal", 0):
                     runtime.stop.set()
                 last_write = now
-            if not count:
-                time.sleep(.001)
+            if not count and idle:
+                time.sleep(idle)
     except BaseException as failure:
         error = repr(failure)
         runtime.state = "ERROR"

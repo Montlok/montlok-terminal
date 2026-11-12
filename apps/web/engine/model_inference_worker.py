@@ -138,7 +138,8 @@ def emit(value):
 
 async def serve(args):
     started = time.perf_counter()
-    adapter = await asyncio.to_thread(ModelAdapter, args.manifest, args.manifest_sha256, args.runner_root, args.contract_key)
+    adapter = await asyncio.to_thread(ModelAdapter, args.manifest, args.manifest_sha256, args.runner_root,
+                                      args.contract_key, args.backend)
     await asyncio.to_thread(adapter.warmup)
     service = InferenceService(adapter, emit)
     emit({"type": "ready", "releaseId": adapter.manifest["releaseId"],
@@ -146,7 +147,8 @@ async def serve(args):
         "device": adapter.device, "modelVersion": adapter.manifest["modelVersion"],
         "runtimeLocation": "local_subprocess", "torchVersion": str(adapter.torch.__version__),
         "cudaVersion": adapter.torch.version.cuda,
-        "parameters": sum(p.numel() for p in adapter.model.parameters()), "metrics": service.metrics()})
+        "parameters": sum(p.numel() for p in adapter.model.parameters()), "backend": adapter.backend_info,
+        "metrics": service.metrics()})
     reader = asyncio.StreamReader(limit=MAX_LINE)
     protocol = asyncio.StreamReaderProtocol(reader)
     await asyncio.get_running_loop().connect_read_pipe(lambda: protocol, sys.stdin.buffer)
@@ -170,8 +172,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--manifest-sha256", required=True)
-    parser.add_argument("--runner-root", help="Administrator-installed reviewed pipeline directory; never an upload")
+    parser.add_argument("--runner-root", help="Administrator-installed reviewed pipeline directory")
     parser.add_argument("--contract-key", help="Administrator-selected RDT domain:instrument; required for RDT")
+    parser.add_argument("--backend", choices=("torch", "montlok"), default="torch",
+                        help="Administrator-selected GRU backend; montlok starts after a parity check "
+                             "against PyTorch")
     args = parser.parse_args()
     try:
         asyncio.run(serve(args))
