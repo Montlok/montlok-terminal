@@ -1,27 +1,27 @@
 # Montlok Terminal
 
-Montlok Terminal is an open-source, institutional-style terminal for operating,
-investigating, and publishing systematic trading workloads. It provides two
-clients over one typed data and control plane. The v2 migration is in progress:
+Montlok Terminal operates, investigates and publishes systematic trading
+workloads. A Web client and a native desktop client share one typed data and
+control plane; the trading engine runs in its own processes, and the v2 data
+plane runs alongside the Web terminal during the migration.
 
-- `apps/web`: the production React terminal, migrated with its existing Git
-  history and complete operator capabilities.
-- `apps/native`: a C++20/Qt 6 desktop terminal for macOS, Windows, and Linux.
-- `services/gateway`: the Rust HTTPS/WebSocket edge for snapshots, streams,
-  queries, device authorization, and operation receipts.
-- `services/projector`: the Rust Arrow/DataFusion event projector and history
-  query service.
-- `adapters/nautilus`: a non-blocking adapter that exports the persisted
-  Nautilus event log without entering the trading hot path.
-- `packages/contracts`: Protobuf, OpenAPI, Arrow, and JSON Schema contracts.
+| Path | Contents |
+|---|---|
+| `apps/web` | React terminal, its aiohttp BFF (`server/`) and the strategy-group supervisor |
+| `apps/web/engine` | Nautilus strategy workers (sandbox, model, live HFT, live model and Alpha groups) and local model inference on montlok or PyTorch |
+| `apps/native` | C++20/Qt 6 desktop terminal for macOS, Windows and Linux |
+| `services/gateway` | Rust HTTPS/WebSocket edge: snapshots, streams, queries, device authorization, operation receipts |
+| `services/projector` | Rust Arrow/DataFusion event projector and history queries |
+| `adapters/nautilus` | Publishes the persisted Nautilus event log to NATS |
+| `packages/contracts` | Protobuf, OpenAPI, Arrow and JSON Schema contracts |
 
-The live trading process remains independent of every UI and data-plane
-component. Restarting a terminal client, the gateway, NATS, or the projector
-must not stop or alter a strategy run.
+Strategy runs continue while a terminal client, the gateway, NATS or the
+projector restarts: Nautilus persists each event first, and the adapter reads
+that log asynchronously.
 
 ## Workspaces
 
-The Web and native clients expose the same six logical workspaces:
+The Web and native clients expose the same six workspaces:
 
 1. Live Operations
 2. Execution Investigation
@@ -30,37 +30,46 @@ The Web and native clients expose the same six logical workspaces:
 5. Market and Data
 6. Operations and Security
 
-`capabilities.yaml` is the machine-readable parity contract. A business
-capability is complete only when both clients expose the same fields, actions,
-states, and receipts. Workspace and capability declarations describe the target
-contract; they are not completion flags. Existing Web business forms remain
-available while specialized native panels are implemented.
+`capabilities.yaml` lists every business capability as the target contract. A
+capability is complete when both clients expose the same fields, actions,
+states and receipts; until then the existing Web forms serve it.
 
-The Web shell uses one dockable tab layer and a keyboard-searchable function
-catalog. Both clients can inspect a selected event through the Rust indexed
-order/route/fill history service. See [Execution detail](docs/EXECUTION_DETAIL.md)
-for scope, precision, recovery and bounded-query semantics.
+The Web shell has dockable tabs and a searchable function catalog. Both clients
+trace a selected event through the Rust order/route/fill index
+([Execution detail](docs/EXECUTION_DETAIL.md)).
 
 ## Development
 
-Prerequisites are Node.js 22+, Rust 1.94, CMake 3.28+, Qt 6.8, Protobuf, and
-Ninja. Third-party source dependencies are fetched directly from their
-upstream releases at pinned versions; this project does not require GitHub
-forks of those repositories.
+Prerequisites: Node.js 22+, Rust 1.94, CMake 3.28+, Qt 6.8, Protobuf and
+Ninja. Third-party sources come from their upstream releases at pinned
+versions.
 
 ```bash
 npm ci
 npm --prefix apps/web test
 cargo test --workspace
-cmake --preset macos-debug
-cmake --build --preset macos-debug
+cmake --preset macos-debug && cmake --build --preset macos-debug
+(cd apps/web/server && python -m pytest -q tests)
+(cd apps/web/engine && PYTHONPATH=.:../server python -m unittest test_alpha_execution test_live_alpha_worker \
+    test_live_controls test_live_hft_worker test_live_model_worker)
 ```
 
-See [Architecture](docs/ARCHITECTURE.md), [protocol contracts](packages/contracts),
-and [contributing](CONTRIBUTING.md) for the repository rules.
+## Documentation
+
+| Topic | Document |
+|---|---|
+| Architecture and the trading boundary | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Event detail queries | [docs/EXECUTION_DETAIL.md](docs/EXECUTION_DETAIL.md) |
+| Run observations API | [docs/RUN_OBSERVATIONS.md](docs/RUN_OBSERVATIONS.md) |
+| Sidecar deployment | [deploy/README.md](deploy/README.md) |
+| Web client | [apps/web/README.md](apps/web/README.md) |
+| Strategy-group supervisor | [apps/web/engine/GROUP_RUNTIME.md](apps/web/engine/GROUP_RUNTIME.md) |
+| Model inference | [apps/web/engine/MODEL_RUNTIME.md](apps/web/engine/MODEL_RUNTIME.md) |
+| Model releases | [apps/web/server/MODEL_RELEASES.md](apps/web/server/MODEL_RELEASES.md) |
+| Repository rules | [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) |
 
 ## License
 
 Montlok Terminal is licensed under the GNU Affero General Public License,
 version 3 or later. Third-party attributions and exceptions are recorded in
-`THIRD_PARTY_NOTICES.md`.
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
