@@ -1,7 +1,6 @@
 """Loopback-only native OKX subscription-ACK failure regression.
 
-No trading client, exchange account, public endpoint, or model order is used.
-Run each case in a fresh process against the newly installed native extension.
+Every case runs on loopback. Run each case in a fresh process against the newly installed native extension.
 """
 from __future__ import annotations
 

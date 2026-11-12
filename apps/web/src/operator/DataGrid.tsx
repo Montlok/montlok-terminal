@@ -7,7 +7,7 @@ export type GridColumn = {
   width?: number;
   render?: (value: any, row: Row) => React.ReactNode;
 };
-/** Blueprint table; memoized so market ticks do not re-render the blotter. */
+/** Blueprint table; memoized, so the blotter re-renders when its rows change. */
 export const DataGrid = memo(function DataGrid({
   rows,
   columns,

@@ -1,4 +1,4 @@
-"""One current public-data GRU shadow prediction, no node/order submission."""
+"""One current public-data GRU shadow prediction through the guard and worker."""
 import argparse
 import asyncio
 import json

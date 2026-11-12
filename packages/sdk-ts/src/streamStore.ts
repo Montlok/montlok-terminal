@@ -66,7 +66,7 @@ export class TerminalStreamStore {
           this.snapshots.delete(end.subscriptionId);this.pendingMarket.clear();
           this.update({events:staged.events,positions:staged.positions,phase:'live'});
         }else{
-          // Replay completion never advances beyond events actually received.
+          // Replay completes once the received events reach every confirmed watermark.
           if(end.watermarks.some(p=>(this.working.positions.get(p.stream)??0n)<p.lastStreamSeq))throw new Error('回放未达到确认水位');
           this.update({phase:'live'});
         }

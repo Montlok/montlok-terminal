@@ -370,8 +370,8 @@ class GroupViews:
                 self.partial = self.offset < stat.st_size
                 self._reduce_samples()
         except OSError as error:
-            # Preserve already read points, but never describe source loss as an
-            # empty history or a catch-up that will automatically succeed.
+            # Keep the points already read and report the source as unavailable,
+            # so the gap shows as source loss.
             self.source_available = False
             self.source_status = "missing" if isinstance(error, FileNotFoundError) else "unreadable"
             self.source_issue = "未读取到 equity.jsonl" if self.source_status == "missing" else "无法读取 equity.jsonl"

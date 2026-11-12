@@ -32,7 +32,7 @@ function engine(): Promise<Client> {
 }
 
 export type PerspectiveRow = Record<string, string | number | boolean | null>;
-/** Explicit schema preserves source precision; financial strings are never coerced to floats. */
+/** Explicit schema preserves source precision; financial strings stay strings. */
 export default function PerspectiveGrid({
   rows,
   schema,

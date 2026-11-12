@@ -14,7 +14,7 @@ export function marketNumber(value: unknown, increment?: unknown): string {
   if (value === undefined || value === null || value === '') return '—';
   const digits = incrementDigits(increment);
   if (digits !== undefined && digits <= 20) return number(value, digits);
-  // Until instrument metadata is verified, preserve the exchange precision instead of guessing.
+  // Until instrument metadata is verified, keep the precision the exchange sent.
   const text = String(value);
   if (!/^-?\d+(\.\d+)?$/.test(text)) return number(value, 20);
   const [integer, fraction] = text.split('.');

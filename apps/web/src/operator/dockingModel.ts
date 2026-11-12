@@ -119,7 +119,7 @@ export function loadDockingModel(raw: string | null): Model {
       )
         return model;
     } catch {
-      /* Invalid preferences do not remove access to business views. */
+      /* Invalid preferences fall back to the default layout with every business view. */
     }
   return Model.fromJson(DEFAULT_DOCKING_LAYOUT);
 }

@@ -1,7 +1,7 @@
 """Multi-window float-bit comparison: original NumPy normalization vs Rust.
 
-This is an offline numeric audit. Only protocol timestamps are synthesized;
-historical feature values are never represented as current market observations.
+This is an offline numeric audit on historical feature values; only the
+protocol timestamps are synthesized.
 """
 import argparse
 import asyncio

@@ -1,7 +1,7 @@
 """Explicit isolated Tokyo model smoke, invoked only by the administrator.
 
-No existing services or groups are modified. All mutable state is underneath
-/www/nautilus/model-preopen-20260906 and this process only starts shadow groups.
+All mutable state lives under /www/nautilus/model-preopen-20260906, and this
+process starts shadow groups of its own.
 """
 from __future__ import annotations
 
