@@ -72,6 +72,28 @@ class LiveAccountingTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     registered(args, worker)
 
+    def test_idle_poll_interval_is_explicitly_bounded(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            worker = root / 'worker.py'; worker.write_text('# local configuration fixture')
+            config = json.loads((Path(__file__).parents[1] / 'deploy/live-hft.json').read_text())
+            config_path = root / 'config.json'
+            registry_path = root / 'registry.json'
+            spec = dict(id='live-idle', kind='live', environment='live', workerPath=str(worker),
+                        workerSha256=sha(worker), configPath=str(config_path))
+            args = SimpleNamespace(registry=registry_path, group_id=spec['id'])
+            for micros in (0, 50, 1000):
+                config['pollIdleMicros'] = micros
+                config_path.write_text(json.dumps(config)); spec['configSha256'] = sha(config_path)
+                registry_path.write_text(json.dumps({'groups': [spec]}))
+                self.assertEqual(registered(args, worker)[2]['pollIdleMicros'], micros)
+            for micros in (-1, 1001, True, 1.5, '50'):
+                config['pollIdleMicros'] = micros
+                config_path.write_text(json.dumps(config)); spec['configSha256'] = sha(config_path)
+                registry_path.write_text(json.dumps({'groups': [spec]}))
+                with self.assertRaises(ValueError):
+                    registered(args, worker)
+
     def test_continuous_run_has_no_timer_deadline(self):
         spec = {'durationPolicyVersion': 1, 'maxDurationSeconds': None}
         self.assertIsNone(run_deadline({'durationSeconds': 0}, spec, 1234))
@@ -124,6 +146,49 @@ class LiveAccountingTests(unittest.TestCase):
             self.assertFalse(runtime.status()['ordersEnabled'])
             self.assertEqual(runtime.status()['connected'], {'data': False, 'exec': False})
             self.assertEqual(len((Path(directory) / 'equity.jsonl').read_text().splitlines()), 2)
+
+    def test_repeated_status_cycles_keep_terminal_orders_exact(self):
+        pair = dict(instrument='XRKLB-USDT', base='XRKLB', baseAvailable='0', bid='64.5', ask='64.5')
+        usdt = SimpleNamespace(as_decimal=lambda: 0.0001, currency='USDT')
+        reads = []
+
+        def order(name, status, strategy, filled):
+            fill = SimpleNamespace(trade_id='t-' + name, client_order_id=name, venue_order_id='v-' + name,
+                instrument_id='XRKLB-USDT.OKX', order_side='BUY', last_qty=filled, last_px='64.5',
+                commission=usdt, ts_event=1)
+            def events():
+                reads.append(name)
+                return [fill] if float(filled) else []
+            return SimpleNamespace(client_order_id=name, venue_order_id='v-' + name, strategy_id=strategy,
+                instrument_id='XRKLB-USDT.OKX', side='BUY', quantity='0.01', filled_qty=filled, leaves_qty='0',
+                price='64.5', avg_px=64.5 if float(filled) else None, status=status, ts_init=1,
+                commissions=(lambda: {'USDT': usdt}) if float(filled) else (lambda: {}), events=events)
+
+        orders = [order('A', 'FILLED', 'HFT', '0.01'), order('B', 'FILLED', 'EXTERNAL', '0.02'),
+                  order('C', 'ACCEPTED', 'HFT', '0'), order('D', 'CANCELED', 'HFT', '0')]
+        quote = SimpleNamespace(ts_event=time.time_ns(), bid_price='64.5', ask_price='64.5')
+        cache = SimpleNamespace(quote=lambda _: quote, account_for_venue=lambda _: object(), orders=lambda: list(orders))
+        native = SimpleNamespace(InstrumentId=SimpleNamespace(from_str=lambda s: s), Venue=lambda s: s)
+        with TemporaryDirectory() as directory, patch.dict('sys.modules', {
+            'nautilus_trader': SimpleNamespace(), 'nautilus_trader.core': SimpleNamespace(nautilus_pyo3=native)}):
+            runtime = Runtime(Path(directory), dict(runId='test-run', groupId='test'),
+                              dict(profileId='real', pairs=[pair]), dict(maxQuoteExposureUsdt='10'))
+            runtime.state = 'ACTIVE'
+            node = SimpleNamespace(cache=cache, is_running=True)
+            results = []
+            for _ in range(3):
+                runtime.update(node, time.monotonic())
+                status = runtime.status()
+                view = json.loads((Path(directory) / 'view.json').read_text())
+                results.append((status['nav_usdt'], status['fees_usdt'], status['ordersTotal'], status['ordersOpen'],
+                                [row['id'] for row in view['orders']], [fill['id'] for fill in view['fills']]))
+            self.assertEqual(results[0], results[1])
+            self.assertEqual(results[0], results[2])
+            nav, fees, total, open_orders, ids, fills = results[0]
+            self.assertEqual((total, open_orders, ids, fills), (3, 1, ['A', 'C', 'D'], ['t-A']))
+            self.assertAlmostEqual(fees, 0.0001)
+            self.assertEqual(reads.count('A'), 1)
+            self.assertEqual(reads.count('C'), 3)
 
 
 if __name__ == '__main__':

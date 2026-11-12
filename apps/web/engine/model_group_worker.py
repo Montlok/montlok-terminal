@@ -62,6 +62,9 @@ def validate_model_launch(args, *, strict=True):
                          ("guardBinary", args.guard_binary), ("runnerRoot", args.runner_root)):
         if str(spec.get(field)) != str(value):
             raise ValueError(f"CLI {field} differs from root launch registry")
+    backend = spec.get("inferenceBackend", "torch") if spec.get("runnerId") == "gru_v1" else "torch"
+    if args.backend != backend:
+        raise ValueError("CLI backend differs from root launch registry")
     worker_path = registry.document["modelRuntime"]["workerPath"]
     if Path(worker_path).resolve() != Path(__file__).resolve():
         raise ValueError("Registry did not select the preinstalled model worker")
@@ -174,7 +177,7 @@ def assemble_model(args, request, spec, release, loop):
             return client
 
     client = ModelGuardClient(args.release_manifest, args.manifest_sha256, args.guard_binary, args.runner_root,
-        contract_key=spec.get("contractKey"))
+        contract_key=spec.get("contractKey"), backend=args.backend)
     node = TradingNode(config=config, loop=loop)
     if not hasattr(node, "enable_python_data_ingress"):
         raise RuntimeError("Installed Nautilus lacks the explicit bounded sandbox Python data ingress API")
@@ -291,7 +294,7 @@ class ModelViews:
 
 
 async def start_model_until_stop(client, stop):
-    """A stop during native/GPU warmup must never start the trading node later."""
+    """Start the model client; a stop during its native/GPU warmup ends the run before the node starts."""
     startup = asyncio.create_task(client.start())
     stopping = asyncio.create_task(stop.wait())
     try:
@@ -383,8 +386,8 @@ async def supervise_model(args, request, spec, release, components):
             await node.stop_async()
             await asyncio.wait_for(running, 20)
         else:
-            # Warmup was cancelled before node.run_async: close its already
-            # allocated capability before writing the never-started final view.
+            # Warmup was cancelled before node.run_async: close its allocated
+            # capability, then write the final view of the unstarted node.
             strategy.native_data_ingress.close()
         snapshot, view = views.snapshot(final=True, error=error)
         snapshot.update(completed_at=datetime.now(timezone.utc).isoformat(),
@@ -409,6 +412,8 @@ def main():
     p.add_argument("--manifest-sha256", required=True)
     p.add_argument("--guard-binary", type=Path, required=True)
     p.add_argument("--runner-root", type=Path, required=True)
+    p.add_argument("--backend", choices=("torch", "montlok"), default="torch",
+                   help="GRU inference backend selected by modelRuntime.inferenceBackend")
     args = p.parse_args()
     request, spec, release = validate_model_launch(args)
     # Nautilus installs its event-loop policy when the live node module is

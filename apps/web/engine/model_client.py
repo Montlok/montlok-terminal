@@ -1,4 +1,4 @@
-"""Async model + mandatory Rust guard subprocesses; no Python guard fallback."""
+"""Async clients of the model inference subprocess and its mandatory Rust guard."""
 from __future__ import annotations
 
 import asyncio
@@ -94,9 +94,10 @@ class InferenceProcess(JsonProcess):
 
 
 class ModelGuardClient:
-    def __init__(self, manifest, manifest_sha256, guard_binary, runner_root=None, python=sys.executable, contract_key=None):
+    def __init__(self, manifest, manifest_sha256, guard_binary, runner_root=None, python=sys.executable, contract_key=None,
+                 backend=None):
         if not guard_binary or not Path(guard_binary).is_file():
-            raise ValueError("An explicit installed --guard-binary is required; no Python fallback")
+            raise ValueError("An installed --guard-binary is required")
         self.manifest_path = str(Path(manifest).resolve())
         self.manifest = load_manifest(manifest, manifest_sha256)
         self.contract_key = contract_key
@@ -109,6 +110,8 @@ class ModelGuardClient:
             command += ["--runner-root", str(runner_root)]
         if contract_key:
             command += ["--contract-key", contract_key]
+        if backend:
+            command += ["--backend", backend]
         self.worker = InferenceProcess(command)
         self.limit = asyncio.Semaphore(self.manifest["runtime"]["maxQueueSize"])
         self.closed = False
@@ -163,8 +166,8 @@ class ModelGuardClient:
                     self.latest = {"prediction": prediction, "checked": checked}
                     return self.latest
             except TimeoutError:
-                # A timed-out native/GPU call cannot be cancelled in a thread;
-                # terminate the dedicated process so it cannot emit late orders.
+                # A native/GPU call runs to completion in its thread, so a timeout
+                # terminates the dedicated processes; late predictions end with them.
                 await self.close()
                 raise RuntimeError("Inference deadline exceeded; model processes stopped") from None
 

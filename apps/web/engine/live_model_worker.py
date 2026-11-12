@@ -21,6 +21,40 @@ from model_release import load_manifest
 from model_strategy import checked_fraction
 
 
+PENDING_STATES = frozenset({'INITIALIZED', 'SUBMITTED', 'ACCEPTED', 'PARTIALLY_FILLED', 'PENDING_UPDATE',
+                            'PENDING_CANCEL'})
+CLOSED_STATES = frozenset({'FILLED', 'CANCELED', 'REJECTED', 'DENIED', 'EXPIRED'})
+
+
+class PendingOrders:
+    """Pending orders on one instrument. The whole cache is scanned when its
+    order count changes or `rescan_secs` have passed; in between, the orders
+    still open at the last scan are re-read by id."""
+
+    def __init__(self, cache, instrument, rescan_secs=5.0):
+        self.cache, self.instrument, self.rescan_secs = cache, instrument, rescan_secs
+        self.incremental = hasattr(cache, 'orders_total_count') and hasattr(cache, 'order')
+        self.count, self.scanned, self.open = None, 0.0, {}
+
+    def __call__(self):
+        if not self.incremental:
+            return [o for o in self.cache.orders()
+                    if str(o.instrument_id) == self.instrument and str(o.status) in PENDING_STATES]
+        count, now = self.cache.orders_total_count(), time.monotonic()
+        if count != self.count or now - self.scanned >= self.rescan_secs:
+            self.open = {str(o.client_order_id): (o.client_order_id, o) for o in self.cache.orders()
+                         if str(o.instrument_id) == self.instrument and str(o.status) not in CLOSED_STATES}
+            self.count, self.scanned = count, now
+        else:
+            for key, (identifier, _) in list(self.open.items()):
+                order = self.cache.order(identifier)
+                if order is None or str(order.status) in CLOSED_STATES:
+                    del self.open[key]
+                else:
+                    self.open[key] = (identifier, order)
+        return [o for _, o in self.open.values() if str(o.status) in PENDING_STATES]
+
+
 class ModelFeed:
     def __init__(self, spec):
         self.spec = spec
@@ -58,7 +92,7 @@ class ModelFeed:
             await client.start()
             contract = manifest["domainContracts"][contract_key]
             # Venue candle endpoints publish independently. Keep overlap beyond
-            # the minimum so a one-bar delivery skew does not truncate warmup.
+            # the minimum so a one-bar delivery skew still leaves a full warmup.
             rows = 480 + contract["sequenceBars"] + 8
             histories = await asyncio.gather(*[asyncio.to_thread(fetch_bar_history, instrument, "1m", 60, rows)
                                                 for instrument in MARKETS])
@@ -127,6 +161,10 @@ def make_strategy(node, runtime, spec, inventory, config):
     maximum = Decimal(row.get('maxPosition',row['tradeSize'])) - (Decimal(row.get('minPosition','0')) if limited else 0)
     lot = Decimal(row["lotSize"])
     tick = Decimal(row["tickSize"])
+    trade_size = Decimal(row['tradeSize'])
+    min_size = Decimal(row['minSize'])
+    cap = Decimal(config.get("maxQuoteExposureUsdt", row["plannedQuoteExposureUsdt"]))
+    threshold_bps = config['requoteThresholdBps']
 
     class NativeModelStrategy(n.Strategy):
         def __init__(self, strategy_config):
@@ -136,6 +174,7 @@ def make_strategy(node, runtime, spec, inventory, config):
                          Decimal(row['quoteAvailable']) * Decimal(str(config['capitalUtilization'])))
             self.last_submit = 0.0
             self.quote_count = 0
+            self.pending = None
 
         def on_start(self):
             self.subscribe_quotes(identifier)
@@ -173,23 +212,23 @@ def make_strategy(node, runtime, spec, inventory, config):
             if runtime.state == 'REDUCING' and delta > 0:
                 return
             amount = (abs(delta) // lot) * lot
-            amount = min(amount,Decimal(row['tradeSize']))
+            amount = min(amount, trade_size)
             side = n.OrderSide.BUY if delta > 0 else n.OrderSide.SELL
             price = Decimal(str(quote.bid_price if delta > 0 else quote.ask_price))
             price = (price // tick) * tick
-            pending = [o for o in self.cache.orders() if str(o.instrument_id) == str(identifier) and str(o.status) in {
-                'INITIALIZED', 'SUBMITTED', 'ACCEPTED', 'PARTIALLY_FILLED', 'PENDING_UPDATE', 'PENDING_CANCEL'}]
+            if self.pending is None:
+                self.pending = PendingOrders(self.cache, str(identifier))
+            pending = self.pending()
             if pending:
-                if any(str(o.status) == 'ACCEPTED' and (amount < Decimal(row['minSize']) or o.side != side or
-                    abs(Decimal(str(o.price)) / price - 1) * 10000 >= config['requoteThresholdBps']) for o in pending):
+                if any(str(o.status) == 'ACCEPTED' and (amount < min_size or o.side != side or
+                    abs(Decimal(str(o.price)) / price - 1) * 10000 >= threshold_bps) for o in pending):
                     self.cancel_all_orders(identifier)
                     self.last_submit = time.monotonic()
                 return
-            cap = Decimal(config.get("maxQuoteExposureUsdt", row["plannedQuoteExposureUsdt"]))
             if delta > 0:
                 available = max(Decimal(0), min(cap, self.cash))
                 amount = min(amount, (available * Decimal("0.99") / price // lot) * lot)
-            if amount < Decimal(row["minSize"]):
+            if amount < min_size:
                 return
             order = self.order_factory.limit(identifier, side, n.Quantity.from_str(format(amount, 'f')),
                                              n.Price.from_str(format(price, 'f')), post_only=True)

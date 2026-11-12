@@ -7,3 +7,7 @@ numpy==2.2.6
 pandas==3.0.2
 certifi==2026.4.22
 psutil==7.2.2
+# montlok (montlok.cpp): RDT CPU kernels and the montlok GRU backend, built
+# against the torch above:
+#   pip install --no-build-isolation "montlok @ git+https://github.com/Montlok/montlok.cpp@v0.2.0"
+montlok==0.2.0

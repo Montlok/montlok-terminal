@@ -93,6 +93,22 @@ class ModelGroupTests(RegistryFixture, unittest.IsolatedAsyncioTestCase):
         self.assertTrue(group["warmupRequired"])
         self.assertEqual(self.supervisor.rows(self.group_id), [])
 
+    async def test_inference_backend_is_chosen_by_the_root_registry(self):
+        request = self.path / "request.json"
+        self.assertEqual(self.registry.command(self.group_id, request)[-2:], ["--backend", "torch"])
+        self.document["modelRuntime"]["inferenceBackend"] = "montlok"
+        self.registry_path.write_text(json.dumps(self.document))
+        registry = LaunchRegistry(self.registry_path, strict=False, capability_probe=self.probe)
+        self.assertEqual(registry.command(self.group_id, request)[-2:], ["--backend", "montlok"])
+        self.assertEqual(registry.model_reason(registry.spec(self.group_id)), "目标节点尚未安装 montlok 推理运行时")
+        installed = LaunchRegistry(self.registry_path, strict=False,
+                                   capability_probe=lambda config: {**self.probe(config), "montlok": True})
+        self.assertIsNone(installed.model_reason(installed.spec(self.group_id)))
+        self.document["modelRuntime"]["inferenceBackend"] = "onnx"
+        self.registry_path.write_text(json.dumps(self.document))
+        with self.assertRaises(ValueError):
+            LaunchRegistry(self.registry_path, strict=False, capability_probe=self.probe)
+
     async def test_model_command_identity_warmup_and_rollback_preserve_running_version(self):
         prepared = await self.supervisor.prepare({"groupId": self.group_id, "action": "start", "budgetUsdt": "10"})
         run = await self.supervisor.execute(prepared["request"], "model_group_start_001")

@@ -4,7 +4,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from live_model_worker import make_strategy
+from live_model_worker import PendingOrders, make_strategy
 from model_market_actor import MARKETS, rdt_window_from_markets
 
 
@@ -88,6 +88,77 @@ class ModelBudgetTests(unittest.TestCase):
             full.on_quote(quote)
             self.assertGreater(submitted[-1]['quantity']*submitted[-1]['price'],Decimal(1))
             self.assertLessEqual(submitted[-1]['quantity']*submitted[-1]['price'],Decimal(100))
+
+    def test_pending_orders_rescan_the_cache_only_when_it_grows(self):
+        scans = []
+        orders = {}
+
+        def order(key, instrument, status):
+            orders[key] = SimpleNamespace(client_order_id=key, instrument_id=instrument, status=status)
+
+        def all_orders():
+            scans.append(len(orders))
+            return list(orders.values())
+
+        cache = SimpleNamespace(orders=all_orders, orders_total_count=lambda: len(orders), order=orders.get)
+        for i in range(500):
+            order(f'old-{i}', 'BTC-USDT.OKX', 'CANCELED')
+        order('eth', 'ETH-USDT.OKX', 'ACCEPTED')
+        order('a', 'BTC-USDT.OKX', 'ACCEPTED')
+        pending = PendingOrders(cache, 'BTC-USDT.OKX', rescan_secs=3600)
+        self.assertEqual([o.client_order_id for o in pending()], ['a'])
+        for _ in range(100):
+            self.assertEqual([o.client_order_id for o in pending()], ['a'])
+        self.assertEqual(len(scans), 1)
+        orders['a'] = SimpleNamespace(client_order_id='a', instrument_id='BTC-USDT.OKX', status='FILLED')
+        self.assertEqual(pending(), [])
+        order('b', 'BTC-USDT.OKX', 'SUBMITTED')
+        self.assertEqual([o.client_order_id for o in pending()], ['b'])
+        self.assertEqual(len(scans), 2)
+        fallback = PendingOrders(SimpleNamespace(orders=all_orders), 'BTC-USDT.OKX')
+        self.assertEqual([o.client_order_id for o in fallback()], ['b'])
+
+    def test_closed_bar_actor_publishes_each_newer_window_once(self):
+        import asyncio
+        import model_market_actor
+
+        published = []
+
+        class Actor:
+            def __init__(self, config):
+                self.msgbus = SimpleNamespace(publish=lambda topic, msg: published.append((topic, msg['asOfNs'])))
+
+        modules = {'nautilus_trader': SimpleNamespace(), 'nautilus_trader.common': SimpleNamespace(),
+                   'nautilus_trader.common.actor': SimpleNamespace(Actor=Actor),
+                   'nautilus_trader.config': SimpleNamespace(ActorConfig=lambda: None)}
+        manifest = {'runnerId': 'gru_v1', 'releaseId': 'r1', 'runtime': {'maxInputAgeMs': 10 ** 15}}
+        stamps = iter([5, 5, 7])
+        real_sleep = asyncio.sleep
+
+        async def scenario():
+            actor = model_market_actor.make_gru_market_actor(manifest, '/reviewed', loop=asyncio.get_running_loop(),
+                                                             fetcher=lambda name: name)
+
+            def window(release, frames, root):
+                self.assertEqual(list(frames), list(MARKETS))
+                stamp = next(stamps, None)
+                if stamp is None:
+                    actor.accepting = False
+                    raise ValueError('market closed')
+                return {'asOfNs': stamp}
+
+            with patch.object(model_market_actor, 'gru_window_from_markets', window), \
+                    patch.object(model_market_actor.asyncio, 'sleep', lambda _: real_sleep(0)):
+                actor.on_start()
+                await actor.task
+            return actor
+
+        with patch.dict('sys.modules', modules):
+            actor = asyncio.run(scenario())
+        self.assertEqual(published, [('model.features.r1', 5), ('model.features.r1', 7)])
+        snapshot = actor.model_market_snapshot()
+        self.assertEqual((snapshot['asOfNs'], snapshot['fetchErrors'], snapshot['lastError']), (7, 1, 'market closed'))
+        self.assertFalse(snapshot['windowReady'])
 
 
 if __name__ == '__main__': unittest.main()

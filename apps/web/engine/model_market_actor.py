@@ -1,8 +1,7 @@
 """Nautilus actor producing original GRU features from actual OKX closed bars.
 
-HTTP is public data only. No credentials, orders, paper market emulation, or
-remote inference are used. Quote-currency volume comes from volCcyQuote; it is
-never approximated as close * base volume.
+It reads OKX public market data over HTTP. Quote-currency volume comes from
+volCcyQuote.
 """
 from __future__ import annotations
 
@@ -13,13 +12,36 @@ import ssl
 import sys
 from pathlib import Path
 import time
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from model_probe import gru_window_from_markets
 from model_release import import_file, sha
 
 MARKETS = ("BTC-USDT", "BTC-USDT-SWAP", "ETH-USDT")
+OKX_HOST = "www.okx.com"
+_tls = None
+
+
+def okx_public_json(path, params):
+    """GET a public OKX REST endpoint and decode its JSON body (at most 512 kB)."""
+    global _tls
+    if _tls is None:
+        # certifi's bundle when installed: python.org macOS builds have no system CA path.
+        try:
+            import certifi
+            _tls = ssl.create_default_context(cafile=certifi.where())
+        except ImportError:
+            _tls = ssl.create_default_context()
+    request = Request(f"https://{OKX_HOST}{path}?{urlencode(params)}",
+                      headers={"Accept": "application/json", "User-Agent": "Montlok-Model-ClosedBars/1"})
+    with urlopen(request, timeout=10, context=_tls) as response:
+        if urlparse(response.url).hostname != OKX_HOST:
+            raise ValueError("Public market request redirected to an unapproved host")
+        data = response.read(512001)
+    if len(data) > 512000:
+        raise ValueError("Oversized public candle response")
+    return json.loads(data)
 
 
 def parse_completed_candles(payload, now_ns, bar_seconds=900, minimum_rows=128):
@@ -62,21 +84,7 @@ def request_public_candles(instrument, bar, after=None):
     params = {"instId": instrument, "bar": bar, "limit": "300"}
     if after is not None:
         params["after"] = str(after)
-    url = "https://www.okx.com/api/v5/market/history-candles?" + urlencode(params)
-    try:
-        import certifi
-        context = ssl.create_default_context(cafile=certifi.where())
-    except ImportError:
-        context = ssl.create_default_context()
-    with urlopen(Request(url, headers={"Accept": "application/json", "User-Agent": "Montlok-Model-ClosedBars/1"}),
-                 timeout=10, context=context) as response:
-        from urllib.parse import urlparse
-        if urlparse(response.url).hostname != "www.okx.com":
-            raise ValueError("Unapproved public-market redirect")
-        data = response.read(512001)
-    if len(data) > 512000:
-        raise ValueError("Oversized public candle response")
-    return json.loads(data)
+    return okx_public_json("/api/v5/market/history-candles", params)
 
 
 def fetch_bar_history(instrument, bar, bar_seconds, minimum_rows, requester=request_public_candles):
@@ -148,51 +156,34 @@ def rdt_window_from_markets(manifest, markets, module, contract_key):
         "inputs": x.tolist(), "asOfNs": asof}
 
 
-def make_rdt_market_actor(manifest, runner_root, contract_key, *, loop=None, poll_seconds=20, fetcher=fetch_bar_history):
-    """One explicit domain/instrument per Actor; no all-domain auto-execution."""
-    if manifest["runnerId"] != "rdt4quant_v1" or contract_key not in {"crypto:BTC-USDT", "token_hour:XNVDA"}:
-        raise ValueError("Unsupported continuous RDT contract")
-    if contract_key not in manifest["domainContracts"]:
-        raise ValueError("Selected RDT contract was not published")
-    c = manifest["domainContracts"][contract_key]
-    crypto = contract_key == "crypto:BTC-USDT"
-    names, period, bar = (MARKETS, 60, "1m") if crypto else (("XNVDA-USDT",), 3600, "1H")
-    minimum = (480 if crypto else 64) + c["sequenceBars"]
-    module = rdt_feature_module(manifest, runner_root, contract_key)
+def closed_bar_actor(topic, poll_seconds, loop):
+    """Base class of the closed-bar actors: every `poll_seconds` it awaits
+    `next_window()` and publishes the window on `topic` when it is newer."""
     from nautilus_trader.common.actor import Actor
     from nautilus_trader.config import ActorConfig
-    loop = loop or asyncio.get_running_loop()
 
-    class ClosedBarRdtActor(Actor):
+    class ClosedBarActor(Actor):
         def __init__(self):
             super().__init__(ActorConfig())
             self.task, self.accepting, self.last_asof_ns = None, False, 0
             self.last_error, self.fetch_errors, self.window_ready = None, 0, False
-            self.market_frames = {}
+
+        async def next_window(self):
+            raise NotImplementedError
+
+        def reset(self):
+            """Called after a failed poll."""
 
         def on_start(self):
             self.accepting = True
             self.task = loop.create_task(self.poll())
 
         async def poll(self):
-            import pandas as pd
             while self.accepting:
                 try:
-                    count = minimum + 3 if not self.market_frames else 3
-                    frames = await asyncio.gather(*[asyncio.to_thread(fetcher, name, bar, period, count) for name in names])
-                    for name, frame in zip(names, frames):
-                        if name in self.market_frames:
-                            frame = pd.concat([self.market_frames[name], frame])
-                            frame = frame.loc[~frame.index.duplicated(keep="last")].sort_index()
-                        self.market_frames[name] = frame.iloc[-minimum - 3:]
-                    window = await asyncio.to_thread(rdt_window_from_markets, manifest, self.market_frames, module, contract_key)
-                    age_ms = (time.time_ns() - window["asOfNs"]) / 1e6
-                    # Contract cadence caps freshness even if a multi-domain
-                    # release's broad worker limit also accommodates daily data.
-                    if age_ms > min(manifest["runtime"]["maxInputAgeMs"], 2 * period * 1000):
-                        raise ValueError("RDT completed input is stale for its selected cadence")
+                    window = await self.next_window()
                     if self.accepting and window["asOfNs"] > self.last_asof_ns:
-                        self.msgbus.publish(topic=f"model.features.{manifest['releaseId']}", msg=window)
+                        self.msgbus.publish(topic=topic, msg=window)
                         self.last_asof_ns = window["asOfNs"]
                     self.window_ready, self.last_error = True, None
                 except asyncio.CancelledError:
@@ -200,9 +191,7 @@ def make_rdt_market_actor(manifest, runner_root, contract_key, *, loop=None, pol
                 except Exception as failure:
                     self.fetch_errors += 1
                     self.window_ready, self.last_error = False, str(failure)
-                    # Gaps after a disconnected interval require a bounded
-                    # rebootstrap rather than fabricating missing bars.
-                    self.market_frames = {}
+                    self.reset()
                 await asyncio.sleep(poll_seconds)
 
         def on_stop(self):
@@ -214,6 +203,48 @@ def make_rdt_market_actor(manifest, runner_root, contract_key, *, loop=None, pol
             self.on_stop()
             if self.task:
                 await asyncio.gather(self.task, return_exceptions=True)
+
+    return ClosedBarActor
+
+
+def make_rdt_market_actor(manifest, runner_root, contract_key, *, loop=None, poll_seconds=20, fetcher=fetch_bar_history):
+    """One explicit domain/instrument per Actor; no all-domain auto-execution."""
+    if manifest["runnerId"] != "rdt4quant_v1" or contract_key not in {"crypto:BTC-USDT", "token_hour:XNVDA"}:
+        raise ValueError("Unsupported continuous RDT contract")
+    if contract_key not in manifest["domainContracts"]:
+        raise ValueError("Selected RDT contract was not published")
+    c = manifest["domainContracts"][contract_key]
+    crypto = contract_key == "crypto:BTC-USDT"
+    names, period, bar = (MARKETS, 60, "1m") if crypto else (("XNVDA-USDT",), 3600, "1H")
+    minimum = (480 if crypto else 64) + c["sequenceBars"]
+    module = rdt_feature_module(manifest, runner_root, contract_key)
+    loop = loop or asyncio.get_running_loop()
+
+    class ClosedBarRdtActor(closed_bar_actor(f"model.features.{manifest['releaseId']}", poll_seconds, loop)):
+        def __init__(self):
+            super().__init__()
+            self.market_frames = {}
+
+        async def next_window(self):
+            import pandas as pd
+            count = minimum + 3 if not self.market_frames else 3
+            frames = await asyncio.gather(*[asyncio.to_thread(fetcher, name, bar, period, count) for name in names])
+            for name, frame in zip(names, frames):
+                if name in self.market_frames:
+                    frame = pd.concat([self.market_frames[name], frame])
+                    frame = frame.loc[~frame.index.duplicated(keep="last")].sort_index()
+                self.market_frames[name] = frame.iloc[-minimum - 3:]
+            window = await asyncio.to_thread(rdt_window_from_markets, manifest, self.market_frames, module, contract_key)
+            age_ms = (time.time_ns() - window["asOfNs"]) / 1e6
+            # Contract cadence caps freshness even if a multi-domain
+            # release's broad worker limit also accommodates daily data.
+            if age_ms > min(manifest["runtime"]["maxInputAgeMs"], 2 * period * 1000):
+                raise ValueError("RDT completed input is stale for its selected cadence")
+            return window
+
+        def reset(self):
+            # After a gap the frames are fetched again from the bounded warmup.
+            self.market_frames = {}
 
         def model_market_snapshot(self):
             return {"releaseId": manifest["releaseId"], "contractKey": contract_key,
@@ -228,74 +259,22 @@ def make_rdt_market_actor(manifest, runner_root, contract_key, *, loop=None, pol
 def fetch_completed_candles(instrument):
     if instrument not in MARKETS:
         raise ValueError("Unpublished market input")
-    url = "https://www.okx.com/api/v5/market/candles?" + urlencode({"instId": instrument, "bar": "15m", "limit": "200"})
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "Montlok-Model-ClosedBars/1"})
-    # Python.org macOS builds may not have a populated system CA path. Use the
-    # standard certifi trust bundle when installed, never disable verification.
-    try:
-        import certifi
-        context = ssl.create_default_context(cafile=certifi.where())
-    except ImportError:
-        context = ssl.create_default_context()
-    with urlopen(request, timeout=10, context=context) as response:
-        # Reject cross-host redirects; this actor has exactly one public origin.
-        from urllib.parse import urlparse
-        if urlparse(response.url).hostname != "www.okx.com":
-            raise ValueError("Public market request redirected to an unapproved host")
-        data = response.read(512001)
-    if len(data) > 512000:
-        raise ValueError("Oversized candle response")
-    return parse_completed_candles(json.loads(data), time.time_ns())
+    payload = okx_public_json("/api/v5/market/candles", {"instId": instrument, "bar": "15m", "limit": "200"})
+    return parse_completed_candles(payload, time.time_ns())
 
 
 def make_gru_market_actor(manifest, runner_root, *, loop=None, poll_seconds=30, fetcher=fetch_completed_candles):
     if manifest["runnerId"] != "gru_v1" or not 5 <= poll_seconds <= 300:
         raise ValueError("GRU actor or poll interval invalid")
-    from nautilus_trader.common.actor import Actor
-    from nautilus_trader.config import ActorConfig
     loop = loop or asyncio.get_running_loop()
 
-    class ClosedBarModelActor(Actor):
-        def __init__(self):
-            super().__init__(ActorConfig())
-            self.task = None
-            self.accepting = False
-            self.last_asof_ns = 0
-            self.last_error = None
-            self.fetch_errors = 0
-            self.window_ready = False
-
-        def on_start(self):
-            self.accepting = True
-            self.task = loop.create_task(self.poll())
-
-        async def poll(self):
-            while self.accepting:
-                try:
-                    frames = await asyncio.gather(*[asyncio.to_thread(fetcher, name) for name in MARKETS])
-                    window = await asyncio.to_thread(gru_window_from_markets, manifest, dict(zip(MARKETS, frames)), runner_root)
-                    if time.time_ns() - window["asOfNs"] > manifest["runtime"]["maxInputAgeMs"] * 1_000_000:
-                        raise ValueError("Latest aligned completed bars are stale")
-                    if self.accepting and window["asOfNs"] > self.last_asof_ns:
-                        self.msgbus.publish(topic=f"model.features.{manifest['releaseId']}", msg=window)
-                        self.last_asof_ns = window["asOfNs"]
-                    self.window_ready, self.last_error = True, None
-                except asyncio.CancelledError:
-                    return
-                except Exception as failure:
-                    self.fetch_errors += 1
-                    self.window_ready, self.last_error = False, str(failure)
-                await asyncio.sleep(poll_seconds)
-
-        def on_stop(self):
-            self.accepting = False
-            if self.task:
-                self.task.cancel()
-
-        async def quiesce(self):
-            self.on_stop()
-            if self.task:
-                await asyncio.gather(self.task, return_exceptions=True)
+    class ClosedBarModelActor(closed_bar_actor(f"model.features.{manifest['releaseId']}", poll_seconds, loop)):
+        async def next_window(self):
+            frames = await asyncio.gather(*[asyncio.to_thread(fetcher, name) for name in MARKETS])
+            window = await asyncio.to_thread(gru_window_from_markets, manifest, dict(zip(MARKETS, frames)), runner_root)
+            if time.time_ns() - window["asOfNs"] > manifest["runtime"]["maxInputAgeMs"] * 1_000_000:
+                raise ValueError("Latest aligned completed bars are stale")
+            return window
 
         def model_market_snapshot(self):
             return {"releaseId": manifest["releaseId"], "marketSource": "OKX public confirmed 15m candles",
